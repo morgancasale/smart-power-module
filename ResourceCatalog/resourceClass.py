@@ -1,31 +1,33 @@
 from utility import *
 
 class Resource:
-    def __init__(self, resourceData):
+    def __init__(self, resourceData, newResource = False):
         self.resourceKeys = ["resourceID", "resourceName"]
 
-        self.checkKeys(resourceData)
-        self.checkValues(resourceData)
+        if(newResource) : self.checkKeys(resourceData)
+        self.checkSaveValues(resourceData)
 
-        self.resourceID = resourceData["resourceID"]
-        self.resourceName = resourceData["resourceName"]
-        self.Online = self.Ping(self.endPoints)
-        self.lastUpdate = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if(newResource):
+            self.Online = self.Ping()
+            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
     def checkKeys(self, resourceData):
         if(not all(key in self.resourceKeys for key in resourceData.keys())):
             raise web_exception(400, "Missing one or more keys")
 
-    def checkValues(self, resourceData):
-        if(resourceData["resourceID"] == None):
-            raise web_exception(400, "\"resourceID\" value must be a not null string")
-        if(not isinstance(resourceData["resourceID"], str)):
-            raise web_exception(400, "\"resourceID\" value must be a string")
-
-        if(resourceData["resourceName"] == None):
-            raise web_exception(400, "\"resourceName\" value must be a not null string")
-        if(not isinstance(resourceData["resourceName"], str)):
-            raise web_exception(400, "\"resourceName\" value must be a string")
+    def checkSaveValues(self, resourceData):
+        for key in resourceData.keys():
+            match key:
+                case ("resourceID" | "resourceName"):
+                    if(not isinstance(resourceData[key], str)):
+                        raise web_exception(400, "Resource's \"" + key + "\" value must be a string")
+                    match key:
+                        case "resourceID":
+                            self.resourceID = resourceData["resourceID"]
+                        case "resourceName":
+                            self.resourceName = resourceData["resourceName"]
+                case _:
+                    raise web_exception(400, "Unexpected key \"" + key + "\"")
 
     def to_dict(self):
         return {"resourceID": self.resourceID, "resourceName": self.resourceName,
@@ -33,20 +35,35 @@ class Resource:
 
     def save2DB(self, DBPath):
         try:
-            self.Online = self.Ping(self.endPoints)
+            self.Online = self.Ping()
             if(not check_presence_inDB(DBPath, "Resources", "resourceID", self.resourceID)):
                 save_entry2DB(DBPath, "Resources", self.to_dict())
         except web_exception as e:
             raise web_exception(400, "An error occurred while saving resource with ID \"" + self.resourceID + "\" to the DB: " + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving resource with ID \"" + self.resourceID + "\" to the DB: " + e)
+            raise web_exception(400, "An error occurred while saving resource with ID \"" + self.resourceID + "\" to the DB: " + str(e))
+    
+    def updateDB(self, DBPath):
+        try:
+            if(not check_presence_inDB(DBPath, "Resources", "resourceID", self.resourceID)):
+                raise web_exception(400, "Resource with ID \"" + self.resourceID + "\" not found in the DB")
+
+            self.Online = self.Ping()
+            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            update_entry_inDB(DBPath, "Resources", "resourceID", self.to_dict())
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while updating resource with ID \"" + self.resourceID + "\" to the DB: " + str(e.message))
+        except Exception as e:
+            raise web_exception(400, "An error occurred while updating resource with ID \"" + self.resourceID + "\" to the DB: " + str(e))
 
     def DB_to_dict(DBPath, resource):
         try:
             query = "SELECT * FROM Resources WHERE resourceID = \"" + resource["resourceID"] + "\""
-            return DBQuery_to_dict(DBPath, query)[0]
+            data = DBQuery_to_dict(DBPath, query)[0]
+            data["Online"] = bool(data["Online"])
+            return data
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving resource with ID \"" + resource["resourceID"] + "\" from the DB: " + e)
+            raise web_exception(400, "An error occurred while retrieving resource with ID \"" + resource["resourceID"] + "\" from the DB: " + str(e))
 
     def cleanDB(DBPath): #TODO forse c'è un modo più furbo di fare questa funzione usando solo sql
         try:
@@ -61,8 +78,9 @@ class Resource:
         except web_exception as e:
             raise web_exception(400, "An error occurred while cleaning the DB from resources: " + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while cleaning the DB from resources: " + e)
+            raise web_exception(400, "An error occurred while cleaning the DB from resources: " + str(e))
 
-    def Ping(self, endPoints):
+    def Ping(self):
+        #TODO check devices that serve this resource, ping them and return True if at least one is online
         return True
         

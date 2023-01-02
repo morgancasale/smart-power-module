@@ -5,6 +5,8 @@ import json
 import re
 import datetime
 
+DBPath = "db.sqlite"
+
 def check_presence_inDB(DBPath, table, keyName, keyValue):
     try:
         query = "SELECT * FROM " + table + " WHERE " + keyName + " = \"" + keyValue + "\""
@@ -59,17 +61,19 @@ def update_entry_inDB(DBPath, table, keyName, entryData):
         conn = sq.connect(DBPath)
         query = "UPDATE " + table + " SET "
     
-        keys = "(" + list(entryData.keys()).join(", ")+")"
+        keys = "(\"" + ("\", \"").join(list(entryData.keys()))+"\")"
         query += keys + " = "
 
-        values = None
+        values = []
         for value in entryData.values():
             if(isinstance(value, list)):
                 value = str(value)
+            if(isinstance(value, bool)):
+                value = str(int(value))
             if(value == None):
                 value = "NULL"
             values.append(value)
-        values = "(" + values.join(", ") + ")"
+        values = "(\"" + ("\", \"").join(values) + "\")"
         query += values
 
         query += " WHERE " + keyName + " = \"" + entryData[keyName] + "\""
@@ -79,7 +83,7 @@ def update_entry_inDB(DBPath, table, keyName, entryData):
         conn.commit()
         conn.close()
     except Exception as e:
-        raise web_exception(400, "An error occured while updating data in DB: " + str(e))
+        raise web_exception(400, str(e))
 
 def delete_entry_fromDB(DBPath, table, keyName, keyValue):
     try:
@@ -123,3 +127,7 @@ def DBQuery_to_dict(DBPath, query):
     data = result.to_json(orient="records")
     data = json.loads(fix_jsonString(data))
     return data
+
+def Ping(DBPath, table, KeyName, KeyValue):
+    #TODO: get endpoints from DB and ping them
+    return True

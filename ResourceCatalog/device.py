@@ -5,46 +5,55 @@ from resourceClass import *
 from utility import *
 
 class Device:
-    def __init__(self, deviceData):
-        self.deviceKeys = ["deviceID", "userID", "endPoints", "Resources"]
+    def __init__(self, deviceData, newDevice = False):
+        self.deviceKeys = ["deviceID", "Name", "userID", "endPoints", "Resources"]
 
         self.endPoints = []
         self.Resources = []
 
-        self.checkKeys(deviceData)
-        self.checkValues(deviceData)
+        if(newDevice) : self.checkKeys(deviceData)
+        self.checkSaveValues(deviceData)
 
-        self.deviceID = deviceData["deviceID"]
-        self.userID = deviceData["userID"]
-        self.Online = self.Ping(self.endPoints)
-        self.lastUpdate = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if(newDevice): 
+            self.Online = self.Ping(DBPath, "Devices", "deviceID", self.deviceID)
+            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         
 
     def checkKeys(self, deviceData):
-        if(not all(key in self.deviceKeys for key in deviceData.keys())): # Check if all keys of deviceKeys are present in deviceData
+        if(not all(key in self.deviceKeys[0:2] for key in deviceData.keys())): # Check if all keys of deviceKeys are present in deviceData
             raise web_exception(400, "Missing one or more keys")
 
-    def checkValues(self, deviceData):        
-        if(not isinstance(deviceData["deviceID"], str)):
-            raise web_exception(400, "\"deviceID\" value must be string")
-
-        if(not isinstance(deviceData["userID"], str)):
-            raise web_exception(400, "\"userID\" value must be string")
-
-        for endPointData in deviceData["endPoints"]:
-            try:
-                self.endPoints.append(EndPoint(endPointData))
-            except web_exception as e:
-                raise web_exception(400, "EndPoint with ID " + endPointData["endPointID"] + " not valid: " + e.message)
-
-        for resourceData in deviceData["Resources"]:
-            try:
-                self.Resources.append(Resource(resourceData))
-            except web_exception as e:
-                raise web_exception(400, "Resource with ID " + resourceData["resourceID"] + " not valid: " + e.message)
+    def checkSaveValues(self, deviceData):
+        for key in deviceData.keys():
+            match key:
+                case ("deviceID" | "Name" | "userID"):
+                    if(not isinstance(deviceData[key], str)):
+                        raise web_exception(400, "Device's \"" + key + "\" value must be string")
+                    match key:
+                        case "deviceID":
+                            self.deviceID = deviceData["deviceID"]
+                        case "Name":
+                            self.Name = deviceData["Name"]
+                        case "userID":
+                            self.userID = deviceData["userID"]
+                    
+                case "endPoints":
+                    for endPointData in deviceData["endPoints"]:
+                        try:
+                            self.endPoints.append(EndPoint(endPointData, newEndPoint = True))
+                        except web_exception as e:
+                            raise web_exception(400, "EndPoint with ID " + endPointData["endPointID"] + " not valid: " + e.message)
+                case "Resources":
+                    for resourceData in deviceData["Resources"]:
+                        try:
+                            self.Resources.append(Resource(resourceData, newResource = True))
+                        except web_exception as e:
+                            raise web_exception(400, "Resource with ID " + resourceData["resourceID"] + " not valid: " + e.message)
+                case _:
+                    raise web_exception(400, "Unexpected key \"" + key + "\"")
 
     def to_dict(self):
-        return {"deviceID": self.deviceID, "lastUpdate": self.lastUpdate, 
+        return {"deviceID": self.deviceID, "Name": self.Name, "lastUpdate": self.lastUpdate, 
                 "Online": self.Online}
 
     def save2DB(self, DBPath):
@@ -81,15 +90,27 @@ class Device:
         except web_exception as e:
             raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + e)
+            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e))
 
-    #def updateDB()
+    def updateDB(self, DBPath):
+        try:
+            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
+                raise web_exception(400, "The device with ID \"" + self.deviceID + "\" does not exist in the database")
+
+            self.Online = Ping(DBPath, "Devices", "deviceID", self.deviceID)
+            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            
+            update_entry_inDB(DBPath, "Devices", "deviceID", self.to_dict())   
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB: " + str(e.message))
+        except Exception as e:
+            raise web_exception(400, "An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB: " + str(e))
 
     def DB_to_dict(DBPath, device):
         try:
             deviceID = device["deviceID"]
 
-            deviceData = {"deviceID": deviceID, "endPoints": [], "Resources": [], "lastUpdate": device["lastUpdate"], "Online": device["Online"]}
+            deviceData = {"deviceID": deviceID, "Name": device["Name"], "endPoints": [], "Resources": [], "lastUpdate": device["lastUpdate"], "Online": bool(device["Online"])}
             
             query = "SELECT * FROM DeviceEndP_conn WHERE deviceID = \"" + deviceID + "\""
             result = DBQuery_to_dict(DBPath, query)
@@ -103,7 +124,7 @@ class Device:
 
             return deviceData
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving device with ID \"" + deviceID + "\" from the DB: " + e)
+            raise web_exception(400, "An error occurred while retrieving device with ID \"" + deviceID + "\" from the DB: " + str(e))
 
     def deletefromDB(params, DBPath):
         try:
@@ -119,9 +140,9 @@ class Device:
         except web_exception as e:
             raise web_exception(400, "An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB: " + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB: " + e)
+            raise web_exception(400, "An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB: " + str(e))
 
-    def cleanDB(DBPath): #TODO forse c'è un modo più furba di fare questa funzione usando solo sql
+    def cleanDB(DBPath): #TODO forse c'è un modo più furbo di fare questa funzione usando solo sql
         connTables = ["UserDevice_conn"]
 
         query = "SELECT * FROM Devices"
@@ -134,9 +155,5 @@ class Device:
         except web_exception as e:
             raise web_exception(400, "An error occurred while cleaning the DB from devices: " + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while cleaning the DB from devices: " + e)
-
-    def Ping(endPoints): #TODO
-        
-        return True
+            raise web_exception(400, "An error occurred while cleaning the DB from devices: " + str(e))
     

@@ -4,10 +4,10 @@ from device import *
 import re
 
 class User:
-    def __init__(self, userData):
+    def __init__(self, userData, newUser = False):
         self.userKeys = ["userID", "Name", "Surname", "Email"]
 
-        self.checkKeys(userData)
+        if(newUser) : self.checkKeys(userData)
         self.checkValues(userData)
 
         self.userID = userData["userID"]
@@ -16,25 +16,22 @@ class User:
         self.email = userData["Email"]
     
     def checkKeys(self, userData):
-        if(not self.userKeys in userData.keys()):
+        if(not all(key in self.userKeys for key in userData.keys())):
             raise web_exception(400, "Missing one or more keys")
 
     def checkValues(self, userData):
-        if(not isinstance(userData["userID"], str)):
-            raise web_exception(400, "\"userID\" value must be a string")
+        for key in userData.keys():
+            match key:
+                case ("userID" | "Name" | "Surname" | "Email"):
+                    if(not isinstance(userData[key], str)):
+                        raise web_exception(400, "User's \"" + key + "\" value must be string")
+                case "Email":
+                    email_pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+                    if(re.match(email_pattern, userData["Email"]) == None): 
+                        raise web_exception(400, userData["Email"] +" isn't a valid email address")
+                case _:
+                    raise web_exception(400, "Unexpected key \"" + key + "\"")
         
-        if(not isinstance(userData["Name"], str)):
-            raise web_exception(400, "\"Name\" value must be a string")
-        
-        if(not isinstance(userData["Surname"], str)):
-            raise web_exception(400, "\"Surname\" value must be a string")
-        
-        if(not isinstance(userData["Email"], str)):
-            raise web_exception(400, "\"Email\" value must be a string")
-        
-        email_pattern = r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$"
-        if(not re.match(email_pattern, userData["Email"])): 
-            raise web_exception(400, userData["Email"] +" isn't a valid email address")
 
     def to_dict(self):
         return {"userID": self.userID, "Name": self.name,
