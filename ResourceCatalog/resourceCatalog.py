@@ -14,14 +14,14 @@ class ResourceCatalog:
             match cmd:
                 case "getInfo":
                     for entry in params:
-                        return self.extractByKey(self.DBPath, entry["table"], entry["keyName"], entry["keyValue"])
+                        return self.extractByKey(entry["table"], entry["keyName"], entry["keyValue"])
 
                 # case "getAllDevices":
                 #     return self.extractByKey(self.DBPath, "Devices", "deviceID", "*")
 
                 # case "getDeviceByID":
                 #     return self.extractByKey(self.DBPath, "Devices", "deviceID", params)
-                        
+
                 # case "getAllUsers":
                 #     return self.extractByKey(self.DBPath, "Users", "userID", "*")
                 
@@ -58,6 +58,41 @@ class ResourceCatalog:
                     raise web_exception(400, "The command \"" + cmd + "\" is not valid")
         except web_exception as e:
             raise web_exception(400, "An error occurred while handling the POST request: " + e.message)
+
+    def handlePutRequest(self, cmd, params):
+        try:
+            match cmd:
+                case "setDevice":
+                    for deviceData in params:
+                        entry = Device(deviceData)
+                        entry.set2DB(self.DBPath)
+                    return "Device update was successful"
+                
+                case "setUser":
+                    for userData in params:
+                        entry = User(userData)
+                        entry.set2DB(self.DBPath)
+                    return "User update was successful"
+
+                case "setResource":
+                    for resourceData in params:
+                        entry = Resource(resourceData)
+                        entry.set2DB(self.DBPath)
+                    return "Resource update was successful"
+
+                case "setEndPoint":
+                    for endPointData in params:
+                        entry = EndPoint(endPointData)
+                        entry.set2DB(self.DBPath)
+                    return "EndPoint update was successful"
+                
+                case "exit":
+                    exit()
+
+                case _:
+                    raise web_exception(400, "Unexpected invalid command")
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while handling the PUT request: " + e.message)
 
     def handlePatchRequest(self, cmd, params):
         try:
@@ -115,19 +150,19 @@ class ResourceCatalog:
         except web_exception as e:
             raise web_exception(400, "An error occurred while handling the DELETE request: " + e.message)
 
-    def reconstructJson(self, selectedData, table, DBPath):
+    def reconstructJson(self, table, selectedData):
         reconstructedData = []
         try:
             for sel in selectedData:
                 match table:
                     case "Devices":
-                        reconstructedData.append(Device.DB_to_dict(DBPath, sel))
+                        reconstructedData.append(Device.DB_to_dict(self.DBPath, sel))
                     case "Users":
-                        reconstructedData.append(User.DB_to_dict(DBPath, sel))
+                        reconstructedData.append(User.DB_to_dict(self.DBPath, sel))
                     case "Resources":
-                        reconstructedData.append(Resource.DB_to_dict(DBPath, sel))
+                        reconstructedData.append(Resource.DB_to_dict(self.DBPath, sel))
                     case "EndPoints":
-                        reconstructedData.append(EndPoint.DB_to_dict(DBPath, sel))
+                        reconstructedData.append(EndPoint.DB_to_dict(self.DBPath, sel))
                     case _:
                         raise web_exception(400, "Unexpected invalid table")
         except Exception as e:
@@ -135,7 +170,7 @@ class ResourceCatalog:
 
         return reconstructedData
 
-    def extractByKey(DBPath, table, keyName, keyValue):
+    def extractByKey(self, table, keyName, keyValue):
         selectedData = None
         if(not isinstance(keyValue, list)) : keyValue = [keyValue]
 
@@ -149,7 +184,7 @@ class ResourceCatalog:
         if(not isinstance(keyValue, list)) : keyValue = [keyValue]
 
         try:
-            conn = sq.connect(DBPath)       
+            conn = sq.connect(self.DBPath)       
             if(keyValue[0] == "*"):
                 query = "SELECT * FROM " + table
             else:
@@ -167,7 +202,7 @@ class ResourceCatalog:
 
         reconstructedData = None
         try:
-            reconstructedData = ResourceCatalog.reconstructJson(selectedData, table, DBPath) 
+            reconstructedData = ResourceCatalog.reconstructJson(self, table, selectedData) 
         except web_exception as e:
             raise web_exception(400, "An error occured while reconstructing data: " + e.message)
         except Exception as e:

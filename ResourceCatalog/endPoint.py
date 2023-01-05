@@ -4,9 +4,12 @@ class EndPoint:
     def __init__(self, endPointData, newEndPoint = False):
         self.endPointKeys = ["endPointID", "endPointName", "commProtocol", "IPAddress", "MQTTTopics"]
         self.connTables = ["DeviceEndP_conn"]
+        
 
         if(newEndPoint) : self.checkKeys(endPointData)
         self.checkSaveValues(endPointData)
+
+        self.endPointData = endPointData
 
         if(newEndPoint):
             self.Online = self.Ping()
@@ -14,10 +17,16 @@ class EndPoint:
 
 
     def to_dict(self):
-        return {"endPointID": self.endPointID, "endPointName": self.endPointName, 
-                "commProtocol": self.commProtocol, "IPAddress": self.IPAddress, 
-                "MQTTTopics": self.MQTTTopics, "Online": self.Online, 
-                "lastUpdate": self.lastUpdate}
+        result = {}
+
+        for key in self.endPointData.keys():
+            if(key in self.endPointKeys):
+                result[key] = self.endPointData[key]
+
+        result["Online"] = self.Online
+        result["lastUpdate"] = self.lastUpdate
+
+        return result
 
     def checkKeys(self, endPointData):
         if(not all(key in self.endPointKeys for key in endPointData.keys())):
@@ -117,7 +126,7 @@ class EndPoint:
             if(not check_presence_inDB(DBPath, "endPoints", "endPointID", self.endPointID)):
                 raise web_exception(400, "End-point with ID \"" + self.endPointID + "\" not found in the database")
 
-            if(self.IPAddress != None and check_presence_inDB(DBPath, "endPoints", "IPAddress", self.IPAddress)):
+            if("IPAddress" in self.endPointData.keys() and check_presence_inDB(DBPath, "endPoints", "IPAddress", self.IPAddress)):
                 raise web_exception(400, "IP Address \"" + self.IPAddress + "\" is already used by another end-point")
 
             self.Online = self.Ping()

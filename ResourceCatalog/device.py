@@ -6,7 +6,7 @@ from utility import *
 
 class Device:
     def __init__(self, deviceData, newDevice = False):
-        self.deviceKeys = ["deviceID", "Name", "userID", "endPoints", "Resources"]
+        self.deviceKeys = ["deviceID", "deviceName", "userID", "endPoints", "Resources"]
 
         self.endPoints = []
         self.Resources = []
@@ -15,25 +15,25 @@ class Device:
         self.checkSaveValues(deviceData)
 
         if(newDevice): 
-            self.Online = self.Ping(DBPath, "Devices", "deviceID", self.deviceID)
+            self.Online = self.Ping()
             self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         
 
     def checkKeys(self, deviceData):
-        if(not all(key in self.deviceKeys[0:2] for key in deviceData.keys())): # Check if all keys of deviceKeys are present in deviceData
+        if(not all(key in self.deviceKeys for key in deviceData.keys())): # Check if all keys of deviceKeys are present in deviceData
             raise web_exception(400, "Missing one or more keys")
 
     def checkSaveValues(self, deviceData):
         for key in deviceData.keys():
             match key:
-                case ("deviceID" | "Name" | "userID"):
+                case ("deviceID" | "deviceName" | "userID"):
                     if(not isinstance(deviceData[key], str)):
                         raise web_exception(400, "Device's \"" + key + "\" value must be string")
                     match key:
                         case "deviceID":
                             self.deviceID = deviceData["deviceID"]
-                        case "Name":
-                            self.Name = deviceData["Name"]
+                        case "deviceName":
+                            self.deviceName = deviceData["deviceName"]
                         case "userID":
                             self.userID = deviceData["userID"]
                     
@@ -53,7 +53,7 @@ class Device:
                     raise web_exception(400, "Unexpected key \"" + key + "\"")
 
     def to_dict(self):
-        return {"deviceID": self.deviceID, "Name": self.Name, "lastUpdate": self.lastUpdate, 
+        return {"deviceID": self.deviceID, "deviceName": self.deviceName, "lastUpdate": self.lastUpdate, 
                 "Online": self.Online}
 
     def save2DB(self, DBPath):
@@ -76,7 +76,7 @@ class Device:
                 Res_Dev_conn.append(resource.resourceID)
 
             # Save the device to the DB
-            self.Online = self.Ping(self.endPoints)
+            self.Online = self.Ping()
             save_entry2DB(DBPath, "Devices", self.to_dict())
 
             # Save the connection between the device and the user
@@ -97,7 +97,7 @@ class Device:
             if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
                 raise web_exception(400, "The device with ID \"" + self.deviceID + "\" does not exist in the database")
 
-            self.Online = Ping(DBPath, "Devices", "deviceID", self.deviceID)
+            self.Online = Ping()
             self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
             update_entry_inDB(DBPath, "Devices", "deviceID", self.to_dict())   
@@ -110,7 +110,7 @@ class Device:
         try:
             deviceID = device["deviceID"]
 
-            deviceData = {"deviceID": deviceID, "Name": device["Name"], "endPoints": [], "Resources": [], "lastUpdate": device["lastUpdate"], "Online": bool(device["Online"])}
+            deviceData = {"deviceID": deviceID, "deviceName": device["deviceName"], "endPoints": [], "Resources": [], "lastUpdate": device["lastUpdate"], "Online": bool(device["Online"])}
             
             query = "SELECT * FROM DeviceEndP_conn WHERE deviceID = \"" + deviceID + "\""
             result = DBQuery_to_dict(DBPath, query)
@@ -156,4 +156,8 @@ class Device:
             raise web_exception(400, "An error occurred while cleaning the DB from devices: " + str(e.message))
         except Exception as e:
             raise web_exception(400, "An error occurred while cleaning the DB from devices: " + str(e))
+    
+    def Ping(self):
+        #TODO check devices that use this endpoint, ping them and return True if at least one is online
+        return True
     

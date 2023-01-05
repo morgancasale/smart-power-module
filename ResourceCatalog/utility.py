@@ -6,6 +6,7 @@ import re
 import datetime
 
 DBPath = "db.sqlite"
+broker = "broker.hivemq.com"
 
 def check_presence_inDB(DBPath, table, keyName, keyValue):
     try:

@@ -2,7 +2,7 @@ from utility import *
 
 class Resource:
     def __init__(self, resourceData, newResource = False):
-        self.resourceKeys = ["resourceID", "resourceName"]
+        self.resourceKeys = ["resourceID", "resourceName", "resourceMode", "resourceType", "resourceUnit"]
 
         if(newResource) : self.checkKeys(resourceData)
         self.checkSaveValues(resourceData)
@@ -18,7 +18,7 @@ class Resource:
     def checkSaveValues(self, resourceData):
         for key in resourceData.keys():
             match key:
-                case ("resourceID" | "resourceName"):
+                case ("resourceID" | "resourceName" | "resourceMode" | "resourceType" | "resourceUnit"):
                     if(not isinstance(resourceData[key], str)):
                         raise web_exception(400, "Resource's \"" + key + "\" value must be a string")
                     match key:
@@ -26,6 +26,16 @@ class Resource:
                             self.resourceID = resourceData["resourceID"]
                         case "resourceName":
                             self.resourceName = resourceData["resourceName"]
+                        case "resourceMode":
+                            if(not("read" in resourceData[key] or "write" in resourceData[key])):
+                                raise web_exception(400, "\"resourceMode\" value must be \"read\" or \"write\"")
+                            self.resourceMode = resourceData["resourceMode"]
+                        case "resourceType":
+                            if(not("int" in resourceData[key] or "float" in resourceData[key] or "string" in resourceData[key])):
+                                raise web_exception(400, "\"resourceType\" value must be \"int\", \"float\" or \"string\"")
+                            self.resourceType = resourceData["resourceType"]
+                        case "resourceUnit":
+                            self.resourceUnit = resourceData["resourceUnit"]
                 case _:
                     raise web_exception(400, "Unexpected key \"" + key + "\"")
 
