@@ -7,6 +7,8 @@ class Resource:
         if(newResource) : self.checkKeys(resourceData)
         self.checkSaveValues(resourceData)
 
+        self.resourceData = resourceData
+
         if(newResource):
             self.Online = self.Ping()
             self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
@@ -40,12 +42,16 @@ class Resource:
                     raise web_exception(400, "Unexpected key \"" + key + "\"")
 
     def to_dict(self):
-        return {"resourceID": self.resourceID, "resourceName": self.resourceName,
-                "lastUpdate": self.lastUpdate, "Online": self.Online}
+        result = {}
+
+        for key in self.resourceData.keys():
+            if(key in self.resourceKeys): #TODO forse inutile
+                result[key] = self.resourceData[key]
+
+        return result
 
     def save2DB(self, DBPath):
         try:
-            self.Online = self.Ping()
             if(not check_presence_inDB(DBPath, "Resources", "resourceID", self.resourceID)):
                 save_entry2DB(DBPath, "Resources", self.to_dict())
         except web_exception as e:
@@ -61,6 +67,11 @@ class Resource:
             self.Online = self.Ping()
             self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             update_entry_inDB(DBPath, "Resources", "resourceID", self.to_dict())
+
+            entry = {
+                "resourceID": self.resourceID, "Online": self.Online, "lastUpdate": self.lastUpdate
+            }
+            update_entry_inDB(DBPath, "DeviceResource_conn", "resourceID", entry)
         except web_exception as e:
             raise web_exception(400, "An error occurred while updating resource with ID \"" + self.resourceID + "\" to the DB: " + str(e.message))
         except Exception as e:

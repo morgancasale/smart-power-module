@@ -20,7 +20,7 @@ class EndPoint:
         result = {}
 
         for key in self.endPointData.keys():
-            if(key in self.endPointKeys):
+            if(key in self.endPointKeys): #TODO forse inutile
                 result[key] = self.endPointData[key]
 
         result["Online"] = self.Online
@@ -132,6 +132,11 @@ class EndPoint:
             self.Online = self.Ping()
             self.lastUpdate = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             update_entry_inDB(DBPath, "endPoints", "endPointID", self.to_dict())
+
+            entry = {
+                "endPointID": self.endPointID, "Online": self.Online, "lastUpdate": self.lastUpdate
+            }
+            update_entry_inDB(DBPath, "DeviceEndP_conn", "endPointID", entry)
         except web_exception as e:
             raise web_exception(400, "An error occurred while updating end-point with ID \"" + self.endPointID + "\" in the DB: " + e.message)
         except Exception as e:

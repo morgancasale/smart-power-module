@@ -45,9 +45,12 @@ def save_entry2DB(DBPath, table, entryData):
         values = []
         for value in entryData.values():
             if(isinstance(value, list)):
-                value = values.append(str(value))
+                value = str(value)
             if(value == None):
-                value = values.append("NULL")
+                value = "NULL"
+            if(isinstance(value, bool)):
+                value = str(int(value))
+            values.append(value)
         query += "(\"" + "\", \"".join(values) + "\")"
 
         cursor = conn.cursor()

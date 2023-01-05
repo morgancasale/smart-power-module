@@ -82,11 +82,17 @@ class Device:
             # Save the connection between the device and the user
             save_entry2DB(DBPath, "UserDevice_conn", {"userID": self.userID, "deviceID": self.deviceID})
             # Save the connection between the device and the endpoints
-            for entry in EP_Dev_conn:
-                save_entry2DB(DBPath, "DeviceEndP_conn", {"deviceID": self.deviceID, "endPointID": entry})
+            for EPID in EP_Dev_conn:
+                entry = {"deviceID": self.deviceID, "endPointID": EPID, 
+                         "Online": self.Online, "lastUpdate": self.lastUpdate
+                        }
+                save_entry2DB(DBPath, "DeviceEndP_conn", entry)
             # Save the connection between the device and the resources
-            for entry in Res_Dev_conn:
-                save_entry2DB(DBPath, "DeviceResource_conn", {"deviceID": self.deviceID, "resourceID": entry})
+            for ResID in Res_Dev_conn:
+                entry = {"deviceID": self.deviceID, "resourceID": ResID, 
+                         "Online": self.Online, "lastUpdate": self.lastUpdate
+                        }
+                save_entry2DB(DBPath, "DeviceResource_conn", entry)
         except web_exception as e:
             raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e.message))
         except Exception as e:
