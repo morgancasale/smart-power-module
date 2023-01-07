@@ -130,6 +130,8 @@ def DBQuery_to_dict(DBPath, query):
 
     data = result.to_json(orient="records")
     data = json.loads(fix_jsonString(data))
+    if (len(data) == 0):
+        return [None]
     return data
 
 def Ping(DBPath, table, KeyName, KeyValue):

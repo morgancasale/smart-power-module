@@ -77,12 +77,23 @@ class Resource:
         except Exception as e:
             raise web_exception(400, "An error occurred while updating resource with ID \"" + self.resourceID + "\" to the DB: " + str(e))
 
-    def DB_to_dict(DBPath, resource):
+    def DB_to_dict(DBPath, resource, requestEntry):
         try:
             query = "SELECT * FROM Resources WHERE resourceID = \"" + resource["resourceID"] + "\""
             data = DBQuery_to_dict(DBPath, query)[0]
-            data["Online"] = bool(data["Online"])
+
+            if("deviceID" in requestEntry.keys()):
+                query = "SELECT * FROM DeviceResource_conn WHERE (deviceID, resourceID) = (\"" + requestEntry["deviceID"] + "\", \"" + resource["resourceID"] + "\")"
+                result = DBQuery_to_dict(DBPath, query)[0]
+
+                if(result == None):
+                    raise web_exception(400, "Device with ID \"" + requestEntry["deviceID"] + "\" doesn't use resource with ID \"" + resource["resourceID"] + "\"")
+                data["Online"] = bool(result["Online"])
+                data["lastUpdate"] = result["lastUpdate"]
+
             return data
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while retrieving resource with ID \"" + resource["resourceID"] + "\" from the DB: " + str(e.message))
         except Exception as e:
             raise web_exception(400, "An error occurred while retrieving resource with ID \"" + resource["resourceID"] + "\" from the DB: " + str(e))
 

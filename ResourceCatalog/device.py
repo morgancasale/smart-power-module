@@ -126,7 +126,7 @@ class Device:
             query = "SELECT * FROM DeviceResource_conn WHERE deviceID = \"" + deviceID + "\""
             result = DBQuery_to_dict(DBPath, query)
             for resource in result:
-                deviceData["Resources"].append(Resource.DB_to_dict(DBPath, resource))
+                deviceData["Resources"].append(Resource.DB_to_dict(DBPath, resource, {"deviceID": deviceID}))
 
             return deviceData
         except Exception as e:

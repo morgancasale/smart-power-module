@@ -14,7 +14,7 @@ class ResourceCatalog:
             match cmd:
                 case "getInfo":
                     for entry in params:
-                        return self.extractByKey(entry["table"], entry["keyName"], entry["keyValue"])
+                        return self.extractByKey(entry)
 
                 # case "getAllDevices":
                 #     return self.extractByKey(self.DBPath, "Devices", "deviceID", "*")
@@ -150,7 +150,7 @@ class ResourceCatalog:
         except web_exception as e:
             raise web_exception(400, "An error occurred while handling the DELETE request: " + e.message)
 
-    def reconstructJson(self, table, selectedData):
+    def reconstructJson(self, table, selectedData, requestEntry):
         reconstructedData = []
         try:
             for sel in selectedData:
@@ -160,18 +160,25 @@ class ResourceCatalog:
                     case "Users":
                         reconstructedData.append(User.DB_to_dict(self.DBPath, sel))
                     case "Resources":
-                        reconstructedData.append(Resource.DB_to_dict(self.DBPath, sel))
+                        reconstructedData.append(Resource.DB_to_dict(self.DBPath, sel, requestEntry))
                     case "EndPoints":
                         reconstructedData.append(EndPoint.DB_to_dict(self.DBPath, sel))
                     case _:
                         raise web_exception(400, "Unexpected invalid table")
+        except web_exception as e:
+            raise web_exception(400, e.message)
         except Exception as e:
             raise web_exception(400, e)
 
         return reconstructedData
 
-    def extractByKey(self, table, keyName, keyValue):
+    def extractByKey(self, entry):
+        table = entry["table"]
+        keyName = entry["keyName"]
+        keyValue = entry["keyValue"]            
+
         selectedData = None
+
         if(not isinstance(keyValue, list)) : keyValue = [keyValue]
 
         if(not isinstance(keyName, str)):
@@ -202,7 +209,7 @@ class ResourceCatalog:
 
         reconstructedData = None
         try:
-            reconstructedData = ResourceCatalog.reconstructJson(self, table, selectedData) 
+            reconstructedData = ResourceCatalog.reconstructJson(self, table, selectedData, entry) 
         except web_exception as e:
             raise web_exception(400, "An error occured while reconstructing data: " + e.message)
         except Exception as e:
