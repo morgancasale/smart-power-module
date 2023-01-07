@@ -6,7 +6,7 @@ from utility import *
 
 class Device:
     def __init__(self, deviceData, newDevice = False):
-        self.deviceKeys = ["deviceID", "deviceName", "userID", "endPoints", "Resources"]
+        self.deviceKeys = ["deviceID", "deviceName", "endPoints", "Resources"]
 
         self.endPoints = []
         self.Resources = []
@@ -59,7 +59,6 @@ class Device:
     def save2DB(self, DBPath):
         EP_Dev_conn = []
         Res_Dev_conn = []
-        
         try:
             if(not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
                 raise web_exception(400, "The user with ID \"" + self.userID + "\" does not exist in the database")
@@ -80,11 +79,11 @@ class Device:
             save_entry2DB(DBPath, "Devices", self.to_dict())
 
             # Save the connection between the device and the user
-            save_entry2DB(DBPath, "UserDevice_conn", {"userID": self.userID, "deviceID": self.deviceID})
+            #save_entry2DB(DBPath, "UserDevice_conn", {"userID": self.userID, "deviceID": self.deviceID})
             # Save the connection between the device and the endpoints
             for EPID in EP_Dev_conn:
-                entry = {"deviceID": self.deviceID, "endPointID": EPID, 
-                         "Online": self.Online, "lastUpdate": self.lastUpdate
+                entry = {"deviceID": self.deviceID, "endPointID": EPID,
+                         "lastUpdate": self.lastUpdate
                         }
                 save_entry2DB(DBPath, "DeviceEndP_conn", entry)
             # Save the connection between the device and the resources
@@ -132,7 +131,7 @@ class Device:
         except Exception as e:
             raise web_exception(400, "An error occurred while retrieving device with ID \"" + deviceID + "\" from the DB: " + str(e))
 
-    def deletefromDB(params, DBPath):
+    def deleteFromDB(DBPath, params):
         try:
             if(not check_presence_inDB(DBPath, "Devices", "deviceID", params["deviceID"])):
                 raise web_exception(400, "The device with ID \"" + params["deviceID"] + "\" does not exist in the database")
@@ -157,7 +156,7 @@ class Device:
 
             for entry in data:
                 if(not check_presence_inConnectionTables(DBPath, connTables, "deviceID", entry["deviceID"])):
-                    Device.deletefromDB({"deviceID": entry["deviceID"]}, DBPath)
+                    Device.deleteFromDB(DBPath, {"deviceID": entry["deviceID"]})
         except web_exception as e:
             raise web_exception(400, "An error occurred while cleaning the DB from devices: " + str(e.message))
         except Exception as e:

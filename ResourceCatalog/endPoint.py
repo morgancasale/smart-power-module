@@ -134,7 +134,7 @@ class EndPoint:
             update_entry_inDB(DBPath, "endPoints", "endPointID", self.to_dict())
 
             entry = {
-                "endPointID": self.endPointID, "Online": self.Online, "lastUpdate": self.lastUpdate
+                "endPointID": self.endPointID, "lastUpdate": self.lastUpdate
             }
             update_entry_inDB(DBPath, "DeviceEndP_conn", "endPointID", entry)
         except web_exception as e:
@@ -162,6 +162,18 @@ class EndPoint:
         for entry in data:
             if(not check_presence_inConnectionTables(DBPath, connTables, "endPointID", entry["endPointID"])):
                 delete_entry_fromDB(DBPath, "EndPoints", "endPointID", entry["endPointID"])
+
+    def deleteFromDB(DBPath, entry):
+        try:
+            if(not check_presence_inDB(DBPath, "EndPoints", "endPointID", entry["endPointID"])):
+                raise web_exception(400, "End-point with ID \"" + entry["endPointID"] + "\" not found in the database")
+
+            delete_entry_fromDB(DBPath, "DeviceEndP_conn", "endPointID", entry["endPointID"])
+            delete_entry_fromDB(DBPath, "EndPoints", "endPointID", entry["endPointID"])
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB: " + e.message)
+        except Exception as e:
+            raise web_exception(400, "An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB: " + str(e))
 
     def Ping(self):
         #TODO check devices that use this endpoint, ping them and return True if at least one is online

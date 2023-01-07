@@ -111,6 +111,18 @@ class Resource:
             raise web_exception(400, "An error occurred while cleaning the DB from resources: " + str(e.message))
         except Exception as e:
             raise web_exception(400, "An error occurred while cleaning the DB from resources: " + str(e))
+    
+    def deleteFromDB(DBPath, entry):
+        try:
+            if(not check_presence_inDB(DBPath, "Resources", "resourceID", entry["resourceID"])):
+                raise web_exception(400, "Resource with ID \"" + entry["resourceID"] + "\" not found in the DB")
+
+            delete_entry_fromDB(DBPath, "DeviceResource_conn", "resourceID", entry["resourceID"])
+            delete_entry_fromDB(DBPath, "Resources", "resourceID", entry["resourceID"])
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while deleting resource with ID \"" + entry["resourceID"] + "\" from the DB: " + str(e.message))
+        except Exception as e:
+            raise web_exception(400, "An error occurred while deleting resource with ID \"" + entry["resourceID"] + "\" from the DB: " + str(e))
 
     def Ping(self):
         #TODO check devices that serve this resource, ping them and return True if at least one is online

@@ -8,20 +8,31 @@ import datetime
 DBPath = "db.sqlite"
 broker = "broker.hivemq.com"
 
-def check_presence_inDB(DBPath, table, keyName, keyValue):
+def check_presence_inDB(DBPath, table, keyNames, keyValues):
     try:
-        query = "SELECT * FROM " + table + " WHERE " + keyName + " = \"" + keyValue + "\""
-        selectedData = DBQuery_to_dict(DBPath, query)
+        if(not isinstance(keyNames, list)) : keyNames = [keyNames]
+        if(not isinstance(keyValues, list)) : keyValues = [keyValues]
 
-        return (len(selectedData) != 0) #True if the keyValue is present in the DB
+        keyNames = "(" + ", ".join(keyNames) + ")"
+        keyValues = "(\"" + "\", \"".join(keyValues) + "\")"
+
+        query = "SELECT COUNT(*)>0 as result FROM " + table + " WHERE " + keyNames + " = " + keyValues
+        return bool(DBQuery_to_dict(DBPath, query)[0]["result"]) #True if the keyValue is present in the DB
     except Exception as e:
         raise web_exception(400, "An error occured while extracting data from DB: " + str(e))
     
 
 def check_presence_ofColumnInDB(DBPath, table, columnName):
     try:
-        query = "SELECT COUNT(*) AS cnt FROM pragma_table_info(\"" + table + "\") WHERE name=\"" + columnName + "\""
-        return bool(DBQuery_to_dict(DBPath, query)[0]["cnt"])
+        query = "SELECT COUNT(*)>0 AS result FROM pragma_table_info(\"" + table + "\") WHERE name=\"" + columnName + "\""
+        return bool(DBQuery_to_dict(DBPath, query)[0]["result"])
+    except Exception as e:
+        raise web_exception(400, "An error occured while extracting data from DB: " + str(e))
+
+def check_presence_ofTableInDB(DBPath, table):
+    try:
+        query = "SELECT COUNT(*)>0 AS result FROM sqlite_master WHERE (type, name) = (\"table\", \"" + table + "\")"
+        return bool(DBQuery_to_dict(DBPath, query)[0]["result"])
     except Exception as e:
         raise web_exception(400, "An error occured while extracting data from DB: " + str(e))
 
@@ -89,10 +100,16 @@ def update_entry_inDB(DBPath, table, keyName, entryData):
     except Exception as e:
         raise web_exception(400, str(e))
 
-def delete_entry_fromDB(DBPath, table, keyName, keyValue):
+def delete_entry_fromDB(DBPath, table, keyNames, keyValues):
     try:
+        if(not isinstance(keyNames, list)) : keyNames = [keyNames]
+        if(not isinstance(keyValues, list)) : keyValues = [keyValues]
+
         conn = sq.connect(DBPath)
-        query = "DELETE FROM " + table + " WHERE " + keyName + " = \"" + keyValue + "\""
+
+        keyNames = "(" + ", ".join(keyNames) + ")"
+        keyValues = "(\"" + "\", \"".join(keyValues) + "\")"
+        query = "DELETE FROM " + table + " WHERE " + keyNames + " = " + keyValues
         cursor = conn.cursor()
         cursor.execute(query)
         conn.commit()
