@@ -101,6 +101,8 @@ class User:
             raise web_exception(400, "An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB: " + e.message)
         except Exception as e:
             raise web_exception(400, "An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB: " + str(e))
+            
+        return None
 
     def DB_to_dict(DBPath, user):
         try:

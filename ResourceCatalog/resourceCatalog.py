@@ -3,6 +3,7 @@ import pandas as pd
 import sqlite3 as sq
 
 from house import *
+from devCluster import DevCluster
 
 class ResourceCatalog:
     def __init__(self, DBPath):
@@ -43,6 +44,12 @@ class ResourceCatalog:
                         entry = Device(deviceData, newDevice = True)
                         entry.save2DB(self.DBPath)
                     return "Device registration was successful"
+
+                case "regDevCluster":
+                    for devClusterData in params:
+                        entry = DevCluster(devClusterData, newDevCluster = True)
+                        entry.save2DB(self.DBPath)
+                    return "Device Cluster registration was successful"
                     
                 case "exit":
                     exit()
@@ -136,11 +143,6 @@ class ResourceCatalog:
     def handleDeleteRequest(self, cmd, params):
         try:
             match cmd:
-                case "delDevice":
-                    for entry in params:
-                        Device.deleteFromDB(self.DBPath, entry)
-                    return "Device deletion was successful"
-
                 case "delHouse":
                     for entry in params:
                         House.deleteFromDB(self.DBPath, entry)
@@ -150,6 +152,16 @@ class ResourceCatalog:
                     for entry in params:
                         User.deleteFromDB(self.DBPath, entry)
                     return "User deletion was successful"
+
+                case "delDevice":
+                    for entry in params:
+                        Device.deleteFromDB(self.DBPath, entry)
+                    return "Device deletion was successful"
+
+                case "delDevCluster":
+                    for entry in params:
+                        DevCluster.deleteFromDB(self.DBPath, entry)
+                    return "Device Cluster deletion was successful"
 
                 case "delResource":
                     for entry in params:

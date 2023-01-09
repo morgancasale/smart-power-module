@@ -174,6 +174,8 @@ class EndPoint:
             raise web_exception(400, "An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB: " + e.message)
         except Exception as e:
             raise web_exception(400, "An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB: " + str(e))
+        
+        return None
 
     def Ping(self):
         #TODO check devices that use this endpoint, ping them and return True if at least one is online

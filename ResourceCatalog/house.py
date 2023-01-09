@@ -83,8 +83,8 @@ class House:
 
     def updateDB(self, DBPath):
         try:
-            if(not check_presence_inDB(DBPath, "Houses", "houseID", self.userID)):
-                raise web_exception(400, "An house with ID \"" + self.userID + "\" does not exist in the database")
+            if(not check_presence_inDB(DBPath, "Houses", "houseID", self.houseID)):
+                raise web_exception(400, "An house with ID \"" + self.houseID + "\" does not exist in the database")
             
             self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
@@ -109,6 +109,8 @@ class House:
             raise web_exception(400, "An error occurred while deleting house with ID \"" + params["houseID"] + "\" from the DB: " + e.message)
         except Exception as e:
             raise web_exception(400, "An error occurred while deleting house with ID \"" + params["houseID"] + "\" from the DB: " + str(e))
+        
+        return None
 
     def DB_to_dict(DBPath, house):
         try:
