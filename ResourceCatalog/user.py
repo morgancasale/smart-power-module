@@ -24,7 +24,7 @@ class User:
             match key:
                 case ("userID" | "Name" | "Surname" | "Email"):
                     if(not isinstance(userData[key], str)):
-                        raise web_exception(400, "User's \"" + key + "\" value must be string")
+                        raise web_exception(400, "User's \"" + key + "\"'s value must be a string")
                     match key:
                         case "userID":
                             self.userID = userData["userID"]
@@ -62,12 +62,13 @@ class User:
             if(check_presence_inDB(DBPath, "Users", "userID", self.userID)):
                 raise web_exception(400, "A user with ID \"" + self.userID + "\" already exists in the database")
             
-            for deviceID in self.deviceID:
-                if(not check_presence_inDB(DBPath, "Devices", "deviceID", deviceID)):
-                    raise web_exception(400, "A device with ID \"" + deviceID + "\" does not exist in the database")
+            if("deviceID" in self.userData.keys()):
+                for deviceID in self.deviceID:
+                    if(not check_presence_inDB(DBPath, "Devices", "deviceID", deviceID)):
+                        raise web_exception(400, "A device with ID \"" + deviceID + "\" does not exist in the database")
 
-                self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-                save_entry2DB(DBPath, "UserDevice_conn", {"userID": self.userID, "deviceID": deviceID, "lastUpdate": self.lastUpdate})
+                    self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    save_entry2DB(DBPath, "UserDevice_conn", {"userID": self.userID, "deviceID": deviceID, "lastUpdate": self.lastUpdate})
 
             save_entry2DB(DBPath, "Users", self.to_dict())
         except web_exception as e:
@@ -106,12 +107,13 @@ class User:
             userID = user["userID"]
             userData = {"userID": userID, "Name": user["Name"], "Surname": user["Surname"], "Email": user["Email"], "Devices": []}
 
-            query = "SELECT * FROM UserDevice_conn WHERE userID = \"" + userID + "\""
-            users = DBQuery_to_dict(DBPath, query)
-            
-            UsersIDs = "(\"" + "\", \"".join([user["deviceID"] for user in users]) + "\")"
-            query = "SELECT * FROM Devices WHERE deviceID in " + UsersIDs
-            devices = DBQuery_to_dict(DBPath, query)
+            if(check_presence_inDB(DBPath, "UserDevice_conn", "userID", userID)):
+                query = "SELECT * FROM UserDevice_conn WHERE userID = \"" + userID + "\""
+                users = DBQuery_to_dict(DBPath, query)
+                
+                usersIDs = "(\"" + "\", \"".join([user["deviceID"] for user in users]) + "\")"
+                query = "SELECT * FROM Devices WHERE deviceID in " + usersIDs
+                devices = DBQuery_to_dict(DBPath, query)
 
             for device in devices:
                 userData["Devices"].append(Device.DB_to_dict(DBPath, device))

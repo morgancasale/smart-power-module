@@ -2,8 +2,7 @@ import json
 import pandas as pd
 import sqlite3 as sq
 
-from device import *
-from user import *
+from house import *
 
 class ResourceCatalog:
     def __init__(self, DBPath):
@@ -15,19 +14,7 @@ class ResourceCatalog:
                 case "getInfo":
                     for entry in params:
                         return self.extractByKey(entry)
-
-                # case "getAllDevices":
-                #     return self.extractByKey(self.DBPath, "Devices", "deviceID", "*")
-
-                # case "getDeviceByID":
-                #     return self.extractByKey(self.DBPath, "Devices", "deviceID", params)
-
-                # case "getAllUsers":
-                #     return self.extractByKey(self.DBPath, "Users", "userID", "*")
-                
-                # case "getUserByID":
-                #     return self.extractByKey(self.DBPath, "Users", "userID", params)
-                    
+                     
                 case "exit":
                     return self.exit(self.filename)
 
@@ -39,17 +26,23 @@ class ResourceCatalog:
     def handlePostRequest(self, cmd, params):
         try:
             match cmd:            
-                case "regDevice":
-                    for deviceData in params:
-                        entry = Device(deviceData, newDevice = True)
+                case "regHouse":
+                    for houseData in params:
+                        entry = House(houseData, newHouse = True)
                         entry.save2DB(self.DBPath)
-                    return "Device registration was successful"
+                    return "House registration was successful"
 
                 case "regUser":
                     for userData in params:
                         entry = User(userData, newUser = True)
                         entry.save2DB(self.DBPath)
                     return "User registration was successful"
+
+                case "regDevice":
+                    for deviceData in params:
+                        entry = Device(deviceData, newDevice = True)
+                        entry.save2DB(self.DBPath)
+                    return "Device registration was successful"
                     
                 case "exit":
                     exit()
@@ -96,19 +89,25 @@ class ResourceCatalog:
 
     def handlePatchRequest(self, cmd, params):
         try:
-            match cmd:
-                case "updateDevice":
-                    for deviceData in params:
-                        entry = Device(deviceData)
+            match cmd:                
+                case "updateHouse":
+                    for houseData in params:
+                        entry = House(houseData)
                         entry.updateDB(self.DBPath)
-                    return "Device update was successful"
-                
+                    return "House update was successful"
+
                 case "updateUser":
                     for userData in params:
                         entry = User(userData)
                         entry.updateDB(self.DBPath)
                     return "User update was successful"
 
+                case "updateDevice":
+                    for deviceData in params:
+                        entry = Device(deviceData)
+                        entry.updateDB(self.DBPath)
+                    return "Device update was successful"
+                
                 case "updateResource":
                     for resourceData in params:
                         entry = Resource(resourceData)
@@ -123,7 +122,7 @@ class ResourceCatalog:
 
                 case "updateConn":
                     for connData in params:
-                        self.UpdateConn(connData)
+                        self.updateConn(connData)
                     return "Connection update was successful"                        
                 
                 case "exit":
@@ -141,6 +140,11 @@ class ResourceCatalog:
                     for entry in params:
                         Device.deleteFromDB(self.DBPath, entry)
                     return "Device deletion was successful"
+
+                case "delHouse":
+                    for entry in params:
+                        House.deleteFromDB(self.DBPath, entry)
+                    return "House deletion was successful"
 
                 case "delUser":
                     for entry in params:
@@ -165,7 +169,7 @@ class ResourceCatalog:
         except web_exception as e:
             raise web_exception(400, "An error occurred while handling the DELETE request: " + e.message)
 
-    def UpdateConn(self, connData): #TODO check integrity of request
+    def updateConn(self, connData): #TODO check integrity of request
         try:
             if(not check_presence_ofTableInDB(self.DBPath, connData["table"])): 
                 raise web_exception(400, "The table \"" + connData["table"] + "\" does not exist")
