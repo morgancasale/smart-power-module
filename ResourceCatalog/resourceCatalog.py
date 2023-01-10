@@ -114,6 +114,12 @@ class ResourceCatalog:
                         entry = Device(deviceData)
                         entry.updateDB(self.DBPath)
                     return "Device update was successful"
+
+                case "updateDevCluster":
+                    for devClustData in params:
+                        entry = DevCluster(devClustData)
+                        entry.updateDB(self.DBPath)
+                    return "Device Cluster update was successful"
                 
                 case "updateResource":
                     for resourceData in params:
@@ -216,10 +222,14 @@ class ResourceCatalog:
         try:
             for sel in selectedData:
                 match table:
-                    case "Devices":
-                        reconstructedData.append(Device.DB_to_dict(self.DBPath, sel))
+                    case "Houses":
+                        reconstructedData.append(House.DB_to_dict(self.DBPath, sel))
+                    case "DevClusters":
+                        reconstructedData.append(DevCluster.DB_to_dict(self.DBPath, sel))
                     case "Users":
                         reconstructedData.append(User.DB_to_dict(self.DBPath, sel))
+                    case "Devices":
+                        reconstructedData.append(Device.DB_to_dict(self.DBPath, sel))
                     case "Resources":
                         reconstructedData.append(Resource.DB_to_dict(self.DBPath, sel, requestEntry))
                     case "EndPoints":

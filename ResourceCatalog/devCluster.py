@@ -100,7 +100,7 @@ class DevCluster:
             raise web_exception(400, "An error occurred while deleting Device Cluster with ID \"" + params["devClustID"] + "\" from the DB: " + e.message)
         except Exception as e:
             raise web_exception(400, "An error occurred while deleting Device Cluster with ID \"" + params["devClustID"] + "\" from the DB: " + str(e))
-        return None
+        return True
 
     def DB_to_dict(DBPath, devCluster):
         try:
@@ -112,14 +112,15 @@ class DevCluster:
 
             
             if(check_presence_inDB(DBPath, connTables[0], "devClustID", devClustID)):
-                query = "SELECT * FROM " + "DevClusterUser_conn" + " WHERE devClustID = \"" + devClustID + "\""
-                devClusters = DBQuery_to_dict(DBPath, query)
+                query = "SELECT * FROM " + connTables[0] + " WHERE devClustID = \"" + devClustID + "\""
+                Cluster_dev_conns = DBQuery_to_dict(DBPath, query)
                 
-                devClustersIDs = "(\"" + "\", \"".join([devCluster["devClustID"] for devCluster in devClusters]) + "\")"
-                query = "SELECT * FROM " + tablesNames[0] + " WHERE " + varsIDs[0] + " in " + devClustersIDs
-                result = DBQuery_to_dict(DBPath, query)
-
-                devClusterData["Devices"].append(Device.DB_to_dict(DBPath, result))
+                deviceIDs = "(\"" + "\", \"".join([Cluster_dev_conn[varsIDs[0]] for Cluster_dev_conn in Cluster_dev_conns]) + "\")"
+                query = "SELECT * FROM " + tablesNames[0] + " WHERE " + varsIDs[0] + " in " + deviceIDs
+                results = DBQuery_to_dict(DBPath, query)
+                
+                for result in results:
+                    devClusterData["Devices"].append(Device.DB_to_dict(DBPath, result))
 
             return devClusterData
         except web_exception as e:

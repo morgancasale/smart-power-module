@@ -110,30 +110,31 @@ class House:
         except Exception as e:
             raise web_exception(400, "An error occurred while deleting house with ID \"" + params["houseID"] + "\" from the DB: " + str(e))
         
-        return None
+        return True
 
     def DB_to_dict(DBPath, house):
         try:
             connTables = ["HouseUser_conn", "HouseDev_conn"]
             tablesNames = ["Users", "Devices"]
             varsIDs = ["userID", "deviceID"]
+
             houseID = house["houseID"]
-            houseData = {"houseID": houseID, "Name": house["Name"], "users": [], "Devices": []}
+            houseData = {"houseID": houseID, "Name": house["Name"], "Users": [], "Devices": []}
 
             for i in range(len(connTables)):
                 if(check_presence_inDB(DBPath, connTables[i], "houseID", houseID)):
-                    query = "SELECT * FROM " + "HouseUser_conn" + " WHERE houseID = \"" + houseID + "\""
-                    houses = DBQuery_to_dict(DBPath, query)
+                    query = "SELECT * FROM " + connTables[i] + " WHERE houseID = \"" + houseID + "\""
+                    house_entry_conns = DBQuery_to_dict(DBPath, query)
                     
-                    housesIDs = "(\"" + "\", \"".join([house["houseID"] for house in houses]) + "\")"
-                    query = "SELECT * FROM " + tablesNames[i] + " WHERE " + varsIDs[i] + " in " + housesIDs
+                    entryIDs = "(\"" + "\", \"".join([house_entry_conn[varsIDs[i]] for house_entry_conn in house_entry_conns]) + "\")"
+                    query = "SELECT * FROM " + tablesNames[i] + " WHERE " + varsIDs[i] + " in " + entryIDs
                     results = DBQuery_to_dict(DBPath, query)
 
                     for result in results:
                         if(i == 0):
-                            houseData["Users"].append(User.DB_to_dict(DBPath, result))
+                            houseData["Users"].append(User.DB_to_dict(DBPath, result, verbose = False))
                         else:
-                            houseData["Devices"].append(Device.DB_to_dict(DBPath, result))
+                            houseData["Devices"].append(Device.DB_to_dict(DBPath, result, verbose = False))
 
             return houseData
         except web_exception as e:

@@ -102,23 +102,25 @@ class User:
         except Exception as e:
             raise web_exception(400, "An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB: " + str(e))
             
-        return None
+        return True
 
-    def DB_to_dict(DBPath, user):
+    def DB_to_dict(DBPath, user, verbose = True):
         try:
             userID = user["userID"]
-            userData = {"userID": userID, "Name": user["Name"], "Surname": user["Surname"], "Email": user["Email"], "Devices": []}
+            userData = {"userID": userID, "Name": user["Name"], "Surname": user["Surname"], "Email": user["Email"]}
 
-            if(check_presence_inDB(DBPath, "UserDevice_conn", "userID", userID)):
-                query = "SELECT * FROM UserDevice_conn WHERE userID = \"" + userID + "\""
-                users = DBQuery_to_dict(DBPath, query)
-                
-                usersIDs = "(\"" + "\", \"".join([user["deviceID"] for user in users]) + "\")"
-                query = "SELECT * FROM Devices WHERE deviceID in " + usersIDs
-                devices = DBQuery_to_dict(DBPath, query)
+            if(verbose):
+                userData["Devices"] = []
+                if(check_presence_inDB(DBPath, "UserDevice_conn", "userID", userID)):
+                    query = "SELECT * FROM UserDevice_conn WHERE userID = \"" + userID + "\""
+                    user_dev_conns = DBQuery_to_dict(DBPath, query)
+                    
+                    devicesIDs = "(\"" + "\", \"".join([user_dev_conn["deviceID"] for user_dev_conn in user_dev_conns]) + "\")"
+                    query = "SELECT * FROM Devices WHERE deviceID in " + devicesIDs
+                    devices = DBQuery_to_dict(DBPath, query)
 
-            for device in devices:
-                userData["Devices"].append(Device.DB_to_dict(DBPath, device))
+                for device in devices:
+                    userData["Devices"].append(Device.DB_to_dict(DBPath, device))
 
             return userData
         except web_exception as e:

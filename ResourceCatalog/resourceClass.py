@@ -124,7 +124,7 @@ class Resource:
         except Exception as e:
             raise web_exception(400, "An error occurred while deleting resource with ID \"" + entry["resourceID"] + "\" from the DB: " + str(e))
 
-        return None
+        return True
 
     def Ping(self):
         #TODO check devices that serve this resource, ping them and return True if at least one is online

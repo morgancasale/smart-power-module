@@ -111,21 +111,23 @@ class Device:
         except Exception as e:
             raise web_exception(400, "An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB: " + str(e))
 
-    def DB_to_dict(DBPath, device):
+    def DB_to_dict(DBPath, device, verbose = True):
         try:
             deviceID = device["deviceID"]
 
-            deviceData = {"deviceID": deviceID, "deviceName": device["deviceName"], "endPoints": [], "Resources": [], "lastUpdate": device["lastUpdate"], "Online": bool(device["Online"])}
-            
-            query = "SELECT * FROM DeviceEndP_conn WHERE deviceID = \"" + deviceID + "\""
-            result = DBQuery_to_dict(DBPath, query)
-            for EP in result:
-                deviceData["endPoints"].append(EndPoint.DB_to_dict(DBPath, EP))
+            deviceData = {"deviceID": deviceID, "deviceName": device["deviceName"], "lastUpdate": device["lastUpdate"], "Online": bool(device["Online"])}
 
-            query = "SELECT * FROM DeviceResource_conn WHERE deviceID = \"" + deviceID + "\""
-            result = DBQuery_to_dict(DBPath, query)
-            for resource in result:
-                deviceData["Resources"].append(Resource.DB_to_dict(DBPath, resource, {"deviceID": deviceID}))
+            if(verbose):  
+                deviceData = {"deviceID": deviceID, "deviceName": device["deviceName"], "endPoints": [], "Resources": [], "lastUpdate": device["lastUpdate"], "Online": bool(device["Online"])}
+                query = "SELECT * FROM DeviceEndP_conn WHERE deviceID = \"" + deviceID + "\""
+                result = DBQuery_to_dict(DBPath, query)
+                for EP in result:
+                    deviceData["endPoints"].append(EndPoint.DB_to_dict(DBPath, EP))
+
+                query = "SELECT * FROM DeviceResource_conn WHERE deviceID = \"" + deviceID + "\""
+                result = DBQuery_to_dict(DBPath, query)
+                for resource in result:
+                    deviceData["Resources"].append(Resource.DB_to_dict(DBPath, resource, {"deviceID": deviceID}))
 
             return deviceData
         except Exception as e:
@@ -147,7 +149,7 @@ class Device:
         except Exception as e:
             raise web_exception(400, "An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB: " + str(e))
         
-        return None
+        return True
 
     def cleanDB(DBPath): #TODO forse c'è un modo più furbo di fare questa funzione usando solo sql
         connTables = ["UserDevice_conn"]
