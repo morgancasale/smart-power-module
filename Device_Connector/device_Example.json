@@ -1,0 +1,94 @@
+{
+  "deviceID" : "D11",
+  "deviceName" : "smart-power-module1",
+  "Resources" : [
+    {
+      "resourceID" : "RVOLT",
+      "resourceName" : "Voltage",
+      "resourceMode" : "read",
+      "resourceType" : "float",
+      "resourceUnit" : "V"
+    },
+    {
+      "resourceID" : "RCURR",
+      "resourceName" : "Current",
+      "resourceMode" : "read",
+      "resourceType" : "float",
+      "resourceUnit" : "A"
+    },
+    {
+      "resourceID" : "RPOW",
+      "resourceName" : "Power",
+      "resourceMode" : "read",
+      "resourceType" : "float",
+      "resourceUnit" : "W"
+    },
+    {
+      "resourceID" : "RPOWH",
+      "resourceName" : "PowerH",
+      "resourceMode" : "read",
+      "resourceType" : "float",
+      "resourceUnit" : "Wh"
+    },
+    {
+      "resourceID" : "RSW1",
+      "resourceName" : "Switch1",
+      "resourceMode" : "write",
+      "resourceType" : "int",
+      "resourceUnit" : "bool"
+    },
+    {
+      "resourceID" : "RSW2",
+      "resourceName" : "Switch2",
+      "resourceMode" : "write",
+      "resourceType" : "int",
+      "resourceUnit" : "bool"
+    },
+    {
+      "resourceID" : "RSW3",
+      "resourceName" : "Switch3",
+      "resourceMode" : "write",
+      "resourceType" : "int",
+      "resourceUnit" : "bool"
+    }
+  ],
+  "endPoints" : [
+    {
+      "endPointID" : "E45",
+      "endPointName" : "D1_End",
+      "commProtocol" : ["REST", "MQTT"],
+      "IPAddress" : "localhost:9911/E45",
+      "MQTTTopics" : {
+        "send" : {
+          "current" : "devices/D1/E45/status/current",
+          "voltage" : "devices/D1/E45/status/voltage",
+          "power" : "devices/D1/E45/status/power",
+          "powerH" : "devices/D1/E45/status/powerH",
+          "statusSWs" : [
+              "devices/D1/E45/status/SW1",
+              "devices/D1/E45/status/SW2",
+              "devices/D1/E45/status/SW3"
+          ]
+        },
+        "receive" : {
+          "switches" : [
+            "devices/D1/E45/control/SW1",
+            "devices/D1/E45/control/SW2",
+            "devices/D1/E45/control/SW3"
+          ]
+        }
+      }
+    }
+  ],
+  "Data" : {
+        "Passive" : {
+          "Voltage" : 123,
+          "Current" : 10,
+          "Power" : 1230,
+          "PowerH" : 10000
+        },
+        "Active" : {
+          "Switches" : [1, 0, 1]
+        }
+    }
+}
