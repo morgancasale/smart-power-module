@@ -43,12 +43,12 @@ def start_webpage():
             'request.dispatch' : cherrypy.dispatch.MethodDispatcher(),
             'tools.sessions.on' : True,
             "tools.json_in.on": True,
-            "request.methods_with_bodies": ("GET", "POST", "PATCH", "DELETE")
-            #'server.socket_port': 8099
+            "request.methods_with_bodies": ("GET", "POST", "PATCH", "DELETE"),
         }
     }
     webService = ResourceCatalog_server("db.sqlite")
     cherrypy.tree.mount(webService,'/',conf)
+    cherrypy.config.update({'server.socket_port': 8099})
     cherrypy.engine.start()
     cherrypy.engine.block()
 
