@@ -52,7 +52,7 @@ class ResourceCatalog:
                         entry.save2DB(self.DBPath)
                     return "Device Cluster registration was successful"
                 
-                case "resService":
+                case "regService":
                     for serviceData in params:
                         entry = Resource(serviceData, newService = True)
                         entry.save2DB(self.DBPath)
