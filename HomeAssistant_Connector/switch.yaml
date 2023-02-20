@@ -1,0 +1,39 @@
+switch:
+    - unique_id : test_switch1
+      name : Test Switch 1
+      state_topic : "/home/ts"
+      command_topic : "/home/ts/1/set"
+      #"availability_topic" : "home/bedroom/bedroom_socket_switch/available",
+      payload_on : "ON"
+      payload_off : "OFF"
+      state_on : "ON"
+      state_off : "OFF"
+      optimistic : false
+      qos : 0
+      retain : true
+    
+    - unique_id : test_switch2
+      name : Test Switch 2
+      state_topic : "/home/ts"
+      command_topic : "/home/ts/2/set"
+      #"availability_topic" : "home/bedroom/bedroom_socket_switch/available",
+      payload_on : "ON"
+      payload_off : "OFF"
+      state_on : "ON"
+      state_off : "OFF"
+      optimistic : false
+      qos : 0
+      retain : true
+    
+    - unique_id : test_switch3
+      name : Test Switch 3
+      state_topic : "/home/ts"
+      command_topic : "/home/ts/3/set"
+      #"availability_topic" : "home/bedroom/bedroom_socket_switch/available",
+      payload_on : "ON"
+      payload_off : "OFF"
+      state_on : "ON"
+      state_off : "OFF"
+      optimistic : false
+      qos : 0
+      retain : true
