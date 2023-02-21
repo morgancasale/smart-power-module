@@ -15,7 +15,7 @@ class Device:
         self.checkSaveValues(deviceData)
 
         if(newDevice): 
-            self.Online = self.Ping()
+            self.Online = True
             self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         
 
@@ -102,7 +102,7 @@ class Device:
             if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
                 raise web_exception(400, "The device with ID \"" + self.deviceID + "\" does not exist in the database")
 
-            self.Online = Ping()
+            self.Online = True
             self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
             update_entry_inDB(DBPath, "Devices", "deviceID", self.to_dict())   
@@ -165,6 +165,37 @@ class Device:
             raise web_exception(400, "An error occurred while cleaning the DB from devices: " + str(e.message))
         except Exception as e:
             raise web_exception(400, "An error occurred while cleaning the DB from devices: " + str(e))
+
+    def set2DB(self, DBPath):
+        try:
+            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
+                self.save2DB(DBPath)
+            else:
+                self.updateDB(DBPath)
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e.message))
+        except Exception as e:
+            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e))
+
+    def setOnlineStatus(entries):
+        newDeviceIDs = []
+        newEndPointIDs = []
+        newResourceIDs = []
+
+        for entry in entries:
+            newDeviceIDs.append(entry.deviceID)
+            newEndPointIDs.extend([e.endPointID for e in entry.endPoints])
+            newResourceIDs.extend([r.resourceID for r in entry.Resources])
+
+        allDeviceIDs = getIDs_fromDB(DBPath, "Devices", "deviceID")
+
+        missingDeviceIDs = list(set(allDeviceIDs) - set(newDeviceIDs))
+
+        entry = {"deviceID": missingDeviceIDs, "Online": False, "lastUpdate": datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+
+        update_entry_inDB(DBPath, "Devices", "deviceID", entry)
+        EndPoint.setOnlineStatus(newEndPointIDs)
+        Resource.setOnlineStatus(newResourceIDs)
     
     def Ping(self):
         #TODO check devices that use this endpoint, ping them and return True if at least one is online

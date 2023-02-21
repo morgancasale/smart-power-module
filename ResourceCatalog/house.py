@@ -119,7 +119,7 @@ class House:
             varsIDs = ["userID", "deviceID"]
 
             houseID = house["houseID"]
-            houseData = {"houseID": houseID, "Name": house["Name"], "Users": [], "Devices": []}
+            houseData = {"houseID": houseID, "Name": house["Name"]}
 
             for i in range(len(connTables)):
                 if(check_presence_inDB(DBPath, connTables[i], "houseID", houseID)):

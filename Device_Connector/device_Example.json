@@ -1,4 +1,5 @@
-{
+[
+  {
   "deviceID" : "D11",
   "deviceName" : "smart-power-module1",
   "Resources" : [
@@ -60,21 +61,21 @@
       "IPAddress" : "localhost:9911/E45",
       "MQTTTopics" : {
         "send" : {
-          "current" : "devices/D1/E45/status/current",
-          "voltage" : "devices/D1/E45/status/voltage",
-          "power" : "devices/D1/E45/status/power",
-          "powerH" : "devices/D1/E45/status/powerH",
+          "current" : "entities/D1/E45/status/current",
+          "voltage" : "entities/D1/E45/status/voltage",
+          "power" : "entities/D1/E45/status/power",
+          "powerH" : "entities/D1/E45/status/powerH",
           "statusSWs" : [
-              "devices/D1/E45/status/SW1",
-              "devices/D1/E45/status/SW2",
-              "devices/D1/E45/status/SW3"
+              "entities/D1/E45/status/SW1",
+              "entities/D1/E45/status/SW2",
+              "entities/D1/E45/status/SW3"
           ]
         },
         "receive" : {
           "switches" : [
-            "devices/D1/E45/control/SW1",
-            "devices/D1/E45/control/SW2",
-            "devices/D1/E45/control/SW3"
+            "entities/D1/E45/control/SW1",
+            "entities/D1/E45/control/SW2",
+            "entities/D1/E45/control/SW3"
           ]
         }
       }
@@ -91,4 +92,5 @@
           "Switches" : [1, 0, 1]
         }
     }
-}
+  }
+]
