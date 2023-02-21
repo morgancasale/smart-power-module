@@ -43,6 +43,7 @@ class ResourceCatalog:
                 case "regDevice":
                     for deviceData in params:
                         entry = Device(deviceData, newDevice = True)
+
                         entry.save2DB(self.DBPath)
                     return "Device registration was successful"
 
@@ -70,9 +71,14 @@ class ResourceCatalog:
         try:
             match cmd:
                 case "setDevice":
+                    entries = []
+
                     for deviceData in params:
-                        entry = Device(deviceData)
+                        entry = Device(deviceData, newDevice = True)
+                        entries.append(entry)
                         entry.set2DB(self.DBPath)
+                    
+                    Device.setOnlineStatus(entries)
                     return "Device update was successful"
                 
                 case "setUser":

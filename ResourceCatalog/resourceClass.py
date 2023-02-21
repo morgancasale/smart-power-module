@@ -126,6 +126,14 @@ class Resource:
 
         return True
 
+    def setOnlineStatus(newResIDs):
+        allResIDs = getIDs_fromDB(DBPath, "DeviceResource_conn", "resourceID")
+        missingResIDs = list(set(allResIDs) - set(newResIDs))
+
+        entry = {"resourceID": missingResIDs, "Online": False, "lastUpdate": datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+
+        update_entry_inDB(DBPath, "DeviceResource_conn", "resourceID", entry)
+
     def Ping(self):
         #TODO check devices that serve this resource, ping them and return True if at least one is online
         return True

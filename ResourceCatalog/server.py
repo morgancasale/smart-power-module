@@ -22,6 +22,12 @@ class ResourceCatalog_server(object):
             return self.resourceCatalog.handlePostRequest(path[0], cherrypy.request.json)
         except web_exception as e:
             raise cherrypy.HTTPError(e.code, e.message)
+
+    def PUT(self, *path):
+        try:
+            return self.resourceCatalog.handlePutRequest(path[0], cherrypy.request.json)
+        except web_exception as e:
+            raise cherrypy.HTTPError(e.code, e.message)
     
     def PATCH(self, *path):
         try:
@@ -43,7 +49,7 @@ def start_webpage():
             'request.dispatch' : cherrypy.dispatch.MethodDispatcher(),
             'tools.sessions.on' : True,
             "tools.json_in.on": True,
-            "request.methods_with_bodies": ("POST", "PATCH", "DELETE"),
+            "request.methods_with_bodies": ("POST", "PUT", "PATCH", "DELETE"),
         }
     }
     webService = ResourceCatalog_server("db.sqlite")
