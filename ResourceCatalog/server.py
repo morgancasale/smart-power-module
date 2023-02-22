@@ -11,15 +11,21 @@ class ResourceCatalog_server(object):
 
     exposed=True
 
-    def GET(self, *uri):
+    def GET(self, *uri, **params):
         try:
-            return self.resourceCatalog.handleGetRequest(uri[0], cherrypy.request.json)
+            return self.resourceCatalog.handleGetRequest(uri[0], [params])
         except web_exception as e:
             raise cherrypy.HTTPError(e.code, e.message)
 
     def POST(self, *path):
         try:
             return self.resourceCatalog.handlePostRequest(path[0], cherrypy.request.json)
+        except web_exception as e:
+            raise cherrypy.HTTPError(e.code, e.message)
+
+    def PUT(self, *path):
+        try:
+            return self.resourceCatalog.handlePutRequest(path[0], cherrypy.request.json)
         except web_exception as e:
             raise cherrypy.HTTPError(e.code, e.message)
     
@@ -43,12 +49,12 @@ def start_webpage():
             'request.dispatch' : cherrypy.dispatch.MethodDispatcher(),
             'tools.sessions.on' : True,
             "tools.json_in.on": True,
-            "request.methods_with_bodies": ("GET", "POST", "PATCH", "DELETE")
-            #'server.socket_port': 8099
+            "request.methods_with_bodies": ("POST", "PUT", "PATCH", "DELETE"),
         }
     }
     webService = ResourceCatalog_server("db.sqlite")
     cherrypy.tree.mount(webService,'/',conf)
+    cherrypy.config.update({'server.socket_port': 8099})
     cherrypy.engine.start()
     cherrypy.engine.block()
 

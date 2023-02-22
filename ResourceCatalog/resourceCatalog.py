@@ -4,6 +4,7 @@ import sqlite3 as sq
 
 from house import *
 from devCluster import DevCluster
+from service import Service
 
 class ResourceCatalog:
     def __init__(self, DBPath):
@@ -42,6 +43,7 @@ class ResourceCatalog:
                 case "regDevice":
                     for deviceData in params:
                         entry = Device(deviceData, newDevice = True)
+
                         entry.save2DB(self.DBPath)
                     return "Device registration was successful"
 
@@ -50,6 +52,12 @@ class ResourceCatalog:
                         entry = DevCluster(devClusterData, newDevCluster = True)
                         entry.save2DB(self.DBPath)
                     return "Device Cluster registration was successful"
+                
+                case "regService":
+                    for serviceData in params:
+                        entry = Resource(serviceData, newService = True)
+                        entry.save2DB(self.DBPath)
+                    return "Service registration was successful"
                     
                 case "exit":
                     exit()
@@ -63,9 +71,14 @@ class ResourceCatalog:
         try:
             match cmd:
                 case "setDevice":
+                    entries = []
+
                     for deviceData in params:
-                        entry = Device(deviceData)
+                        entry = Device(deviceData, newDevice = True)
+                        entries.append(entry)
                         entry.set2DB(self.DBPath)
+                    
+                    Device.setOnlineStatus(entries)
                     return "Device update was successful"
                 
                 case "setUser":
@@ -120,6 +133,12 @@ class ResourceCatalog:
                         entry = DevCluster(devClustData)
                         entry.updateDB(self.DBPath)
                     return "Device Cluster update was successful"
+
+                case "updateService":
+                    for serviceData in params:
+                        entry = Service(serviceData)
+                        entry.updateDB(self.DBPath)
+                    return "Service update was successful"
                 
                 case "updateResource":
                     for resourceData in params:
@@ -168,6 +187,11 @@ class ResourceCatalog:
                     for entry in params:
                         DevCluster.deleteFromDB(self.DBPath, entry)
                     return "Device Cluster deletion was successful"
+
+                case "delService":
+                    for entry in params:
+                        Service.deleteFromDB(self.DBPath, entry)
+                    return "Service deletion was successful"
 
                 case "delResource":
                     for entry in params:
@@ -226,6 +250,8 @@ class ResourceCatalog:
                         reconstructedData.append(House.DB_to_dict(self.DBPath, sel))
                     case "DevClusters":
                         reconstructedData.append(DevCluster.DB_to_dict(self.DBPath, sel))
+                    case "Services":
+                        reconstructedData.append(Service.DB_to_dict(self.DBPath, sel))
                     case "Users":
                         reconstructedData.append(User.DB_to_dict(self.DBPath, sel))
                     case "Devices":

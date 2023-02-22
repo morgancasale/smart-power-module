@@ -177,6 +177,15 @@ class EndPoint:
         
         return True
 
+    def setOnlineStatus(newEPIDs):
+        allEPIDs = getIDs_fromDB(DBPath, "EndPoints", "endPointID")
+
+        missingEPIDs = list(set(allEPIDs) - set(newEPIDs))
+
+        entry = {"endPointID": missingEPIDs, "Online": False, "lastUpdate": datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+
+        update_entry_inDB(DBPath, "EndPoints", "endPointID", entry)
+
     def Ping(self):
         #TODO check devices that use this endpoint, ping them and return True if at least one is online
         return True

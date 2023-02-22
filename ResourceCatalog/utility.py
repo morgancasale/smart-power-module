@@ -75,23 +75,31 @@ def update_entry_inDB(DBPath, table, keyName, entryData):
     try:
         conn = sq.connect(DBPath)
         query = "UPDATE " + table + " SET "
-    
-        keys = "(\"" + ("\", \"").join(list(entryData.keys()))+"\")"
+
+        keys = []
+        edatas = []
+        for key, value in entryData.items():
+            if key != keyName:
+                keys.append(key)
+                if(isinstance(value, list)):
+                    value = str(value)
+                if(isinstance(value, bool)):
+                    value = str(int(value))
+                if(value == None):
+                    value = "NULL"
+                edatas.append(value)
+        keys = "(\"" + ("\", \"").join(keys)+"\")"
+        edatas = "(\"" + ("\", \"").join(edatas) + "\")"
+
         query += keys + " = "
+        query += edatas
 
-        values = []
-        for value in entryData.values():
-            if(isinstance(value, list)):
-                value = str(value)
-            if(isinstance(value, bool)):
-                value = str(int(value))
-            if(value == None):
-                value = "NULL"
-            values.append(value)
-        values = "(\"" + ("\", \"").join(values) + "\")"
-        query += values
+        query += " WHERE " + keyName + " IN " 
 
-        query += " WHERE " + keyName + " = \"" + entryData[keyName] + "\""
+        keyNames = entryData[keyName]
+        if(not isinstance(keyNames, list)) : keyNames = [keyNames]
+        keys = "(\"" + ("\", \"").join(keyNames) + "\")"
+        query += keys
 
         cursor = conn.cursor()
         cursor.execute(query)
@@ -150,6 +158,11 @@ def DBQuery_to_dict(DBPath, query):
     if (len(data) == 0):
         return [None]
     return data
+
+def getIDs_fromDB(DBPath, table, keyName):
+    query = "SELECT " + keyName + " FROM " + table
+    result = [e[keyName] for e in DBQuery_to_dict(DBPath, query)]
+    return result
 
 def Ping(DBPath, table, KeyName, KeyValue):
     #TODO: get endpoints from DB and ping them
