@@ -104,6 +104,17 @@ class User:
             
         return True
 
+    def set2DB(self, DBPath):
+        try:
+            if(not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
+                self.save2DB(DBPath)
+            else:
+                self.updateDB(DBPath)
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB: " + str(e.message))
+        except Exception as e:
+            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB: " + str(e))
+
     def DB_to_dict(DBPath, user, verbose = True):
         try:
             userID = user["userID"]

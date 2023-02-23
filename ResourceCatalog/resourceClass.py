@@ -126,13 +126,24 @@ class Resource:
 
         return True
 
-    def setOnlineStatus(newResIDs):
-        allResIDs = getIDs_fromDB(DBPath, "DeviceResource_conn", "resourceID")
+    def set2DB(self, DBPath):
+        try:
+            if(not check_presence_inDB(DBPath, "Resources", "resourceID", self.resourceID)):
+                self.save2DB(DBPath)
+            else:
+                self.updateDB(DBPath)
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while saving resource with ID \"" + self.resourceID + "\" to the DB: " + str(e.message))
+        except Exception as e:
+            raise web_exception(400, "An error occurred while saving device with ID \"" + self.resourceID + "\" to the DB: " + str(e))
+
+    def setOnlineStatus(newResIDs, connTable):
+        allResIDs = getIDs_fromDB(DBPath, connTable, "resourceID")
         missingResIDs = list(set(allResIDs) - set(newResIDs))
 
         entry = {"resourceID": missingResIDs, "Online": False, "lastUpdate": datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
 
-        update_entry_inDB(DBPath, "DeviceResource_conn", "resourceID", entry)
+        update_entry_inDB(DBPath, connTable, "resourceID", entry)
 
     def Ping(self):
         #TODO check devices that serve this resource, ping them and return True if at least one is online

@@ -195,7 +195,7 @@ class Device:
 
         update_entry_inDB(DBPath, "Devices", "deviceID", entry)
         EndPoint.setOnlineStatus(newEndPointIDs)
-        Resource.setOnlineStatus(newResourceIDs)
+        Resource.setOnlineStatus(newResourceIDs, "DeviceResource_conn")
     
     def Ping(self):
         #TODO check devices that use this endpoint, ping them and return True if at least one is online

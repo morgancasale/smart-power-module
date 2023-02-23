@@ -148,6 +148,17 @@ class Service:
         
         return True
 
+    def set2DB(self, DBPath):
+        try:
+            if(not check_presence_inDB(DBPath, "Services", "serviceID", self.serviceID)):
+                self.save2DB(DBPath)
+            else:
+                self.updateDB(DBPath)
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB: " + str(e.message))
+        except Exception as e:
+            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB: " + str(e))
+
     def DB_to_dict(DBPath, service):
         try:
             connTables = ["ServiceHouse_conn", "ServiceUser_conn", "ServiceCluster_conn", "ServiceRes_conn", "ServiceEndP_conn"]
@@ -188,3 +199,24 @@ class Service:
             raise web_exception(400, "An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB: " + e.message)
         except Exception as e:
             raise web_exception(400, "An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB: " + str(e))
+
+    def setOnlineStatus(entries):
+        newServiceIDs = []
+        newEndPointIDs = []
+        newResourceIDs = []
+
+        for entry in entries:
+            newServiceIDs.append(entry.serviceID)
+            newEndPointIDs.extend([e.endPointID for e in entry.endPoints])
+            newResourceIDs.extend([r.resourceID for r in entry.Resources])
+
+        allServiceIDs = getIDs_fromDB(DBPath, "Services", "serviceID")
+
+        missingServiceIDs = list(set(allServiceIDs) - set(newServiceIDs))
+
+        entry = {"serviceID": missingServiceIDs, "Online": False, "lastUpdate": datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+
+        update_entry_inDB(DBPath, "Services", "serviceID", entry)
+        EndPoint.setOnlineStatus(newEndPointIDs)
+        Resource.setOnlineStatus(newResourceIDs, "ServiceRes_conn")
+    
