@@ -70,6 +70,24 @@ class ResourceCatalog:
     def handlePutRequest(self, cmd, params):
         try:
             match cmd:
+                case "setHouse":
+                    for houseData in params:
+                        entry = House(houseData)
+                        entry.set2DB(self.DBPath)
+                    return "House update was successful"
+
+                case "setUser":
+                    for userData in params:
+                        entry = User(userData)
+                        entry.set2DB(self.DBPath)
+                    return "User update was successful"
+                
+                case "setDevCluster":
+                    for devClustData in params:
+                        entry = DevCluster(devClustData)
+                        entry.set2DB(self.DBPath)
+                    return "Device Cluster update was successful"
+
                 case "setDevice":
                     entries = []
 
@@ -81,11 +99,11 @@ class ResourceCatalog:
                     Device.setOnlineStatus(entries)
                     return "Device update was successful"
                 
-                case "setUser":
-                    for userData in params:
-                        entry = User(userData)
+                case "setService":
+                    for serviceData in params:
+                        entry = Service(serviceData)
                         entry.set2DB(self.DBPath)
-                    return "User update was successful"
+                    return "Service update was successful"
 
                 case "setResource":
                     for resourceData in params:
@@ -98,6 +116,17 @@ class ResourceCatalog:
                         entry = EndPoint(endPointData)
                         entry.set2DB(self.DBPath)
                     return "EndPoint update was successful"
+
+                case "setService":
+                    entries = []
+
+                    for serviceData in params:
+                        entry = Service(serviceData, newService = True)
+                        entries.append(entry)
+                        entry.set2DB(self.DBPath)
+                    
+                    Service.setOnlineStatus(entries)
+                    return "Device update was successful"
                 
                 case "exit":
                     exit()
@@ -122,17 +151,17 @@ class ResourceCatalog:
                         entry.updateDB(self.DBPath)
                     return "User update was successful"
 
-                case "updateDevice":
-                    for deviceData in params:
-                        entry = Device(deviceData)
-                        entry.updateDB(self.DBPath)
-                    return "Device update was successful"
-
                 case "updateDevCluster":
                     for devClustData in params:
                         entry = DevCluster(devClustData)
                         entry.updateDB(self.DBPath)
                     return "Device Cluster update was successful"
+
+                case "updateDevice":
+                    for deviceData in params:
+                        entry = Device(deviceData)
+                        entry.updateDB(self.DBPath)
+                    return "Device update was successful"
 
                 case "updateService":
                     for serviceData in params:
