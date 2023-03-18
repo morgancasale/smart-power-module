@@ -58,7 +58,9 @@
       "endPointID" : "E45",
       "endPointName" : "D1_End",
       "commProtocol" : ["REST", "MQTT"],
-      "IPAddress" : "localhost:9911/E45",
+      "IPAddress" : "localhost",
+      "RESTPort" : "9911",
+      "MQTTPort" : "1845",
       "MQTTTopics" : {
         "send" : {
           "current" : "entities/D1/E45/status/current",
