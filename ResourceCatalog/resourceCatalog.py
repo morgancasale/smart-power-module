@@ -6,6 +6,8 @@ from house import *
 from devCluster import DevCluster
 from service import Service
 
+from devSettings import *
+
 class ResourceCatalog:
     def __init__(self, DBPath):
         self.DBPath = DBPath
@@ -128,6 +130,18 @@ class ResourceCatalog:
                     Service.setOnlineStatus(entries)
                     return "Device update was successful"
                 
+                case "setDeviceSettings":
+                    for DeviceSettingsData in params:
+                        entry = DeviceSettings(DeviceSettingsData, newSettings = True)
+                        entry.set2DB(self.DBPath)
+                    return "Device settings update was successful"
+                
+                case "setDeviceSchedule":
+                    for deviceScheduleData in params:
+                        entry = DeviceSchedule(deviceScheduleData, newSchedule = True)
+                        entry.set2DB(self.DBPath)
+                    return "Device schedule update was successful"
+                
                 case "exit":
                     exit()
 
@@ -231,6 +245,16 @@ class ResourceCatalog:
                     for entry in params:
                         EndPoint.deleteFromDB(self.DBPath, entry)
                     return "EndPoint deletion was successful"
+                
+                case "delDevSettings":
+                    for entry in params:
+                        DeviceSettings.deleteFromDB(self.DBPath, entry)
+                    return "Device Settings deletion was successful"
+                
+                case "delDevSchedule":
+                    for entry in params:
+                        DeviceSchedule.deleteFromDB(self.DBPath, entry)
+                    return "Device Schedule deletion was successful"
 
                 case "exit":
                     exit()
@@ -289,6 +313,10 @@ class ResourceCatalog:
                         reconstructedData.append(Resource.DB_to_dict(self.DBPath, sel, requestEntry))
                     case "EndPoints":
                         reconstructedData.append(EndPoint.DB_to_dict(self.DBPath, sel))
+                    case "DeviceSettings":
+                        reconstructedData.append(DeviceSettings.DB_to_dict(self.DBPath, sel))
+                    case "DeviceScheduling":
+                        reconstructedData.append(DeviceSchedule.DB_to_dict(self.DBPath, sel))
                     case _:
                         raise web_exception(400, "Unexpected invalid table")
         except web_exception as e:

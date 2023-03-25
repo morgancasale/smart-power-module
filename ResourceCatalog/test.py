@@ -1,6 +1,5 @@
-a = ["a", "b"]
-b = ["c", "d"]
+from utility import *
 
-e = dict(zip(a, b))
+a = "23/03/2023 thtkj23:59"
 
-print(e)
+print(isinstance(a, datetime))

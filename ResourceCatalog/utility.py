@@ -3,7 +3,8 @@ import pandas as pd
 import sqlite3 as sq
 import json
 import re
-import datetime
+import time
+from datetime import datetime
 
 DBPath = "db.sqlite"
 broker = "broker.hivemq.com"
@@ -167,3 +168,11 @@ def getIDs_fromDB(DBPath, table, keyName):
 def Ping(DBPath, table, KeyName, KeyValue):
     #TODO: get endpoints from DB and ping them
     return True
+
+
+def istimeinstance(obj):
+    try:
+        datetime.strptime(obj, "%d/%m/%Y %H:%M")
+        return True
+    except ValueError:
+        return False

@@ -1,4 +1,5 @@
 import cherrypy
+import cherrypy_cors
 import os
 from resourceCatalog import *
 
@@ -54,7 +55,12 @@ def start_webpage():
     }
     webService = ResourceCatalog_server("db.sqlite")
     cherrypy.tree.mount(webService,'/',conf)
-    cherrypy.config.update({'server.socket_port': 8099})
+    cherrypy_cors.install()
+    cherrypy.config.update({
+        'server.socket_host' : '192.168.2.145',
+        'server.socket_port': 8099,
+        'cors.expose.on': True
+        })
     cherrypy.engine.start()
     cherrypy.engine.block()
 

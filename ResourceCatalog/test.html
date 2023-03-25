@@ -1,0 +1,20 @@
+<script>
+    var url = "http://192.168.2.145:8099/getInfo?";
+    var params = {
+        table : "DeviceSettings",
+        keyName : "deviceID",
+        keyValue : "D7"
+    };
+    params = new URLSearchParams(params);
+
+    fetch(url + params)
+    .then((response) => response.json())
+    .then((data) => {
+        console.log(data);
+    })
+    .catch(error => {
+        console.error(error); // if there's an error, it will be logged to the console
+    });
+</script>
+
+<div> Ciao </div>

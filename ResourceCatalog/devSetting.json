@@ -1,0 +1,44 @@
+{
+    "deviceID" : null,
+    "deviceName" : null,
+    "HPMode" : false,
+    "scheduling" : [
+        {
+            "socketID" : 0,
+            "startSchedule" : "DD:MM:YYYY HH:MM",
+            "enableEndSchedule" : false,
+            "endSchedule" : "DD:MM:YYYY HH:MM",
+            "repeat" : 0
+        },
+        {
+            "socketID" : 1,
+            "startSchedule" : "DD:MM:YYYY HH:MM",
+            "enableEndSchedule" : false,
+            "endSchedule" : "DD:MM:YYYY HH:MM",
+            "repeat" : 0
+        },
+        {
+            "socketID" : 2,
+            "startSchedule" : "DD:MM:YYYY HH:MM",
+            "enableEndSchedule" : false,
+            "endSchedule" : "DD:MM:YYYY HH:MM",
+            "repeat" : 0
+        }
+    ],
+    "maxPowerControl" : {
+        "MPControl" : false,
+        "maxPower" : 0,
+        "MPMode" : "Notify"
+    },
+    "faultControl" : false,
+    "parasiticControl" : {
+        "parControl" : false,
+        "parThreshold" : 0,
+        "parMode" : "Manual"
+    },
+    "applianceType" : "None",
+    "faultyBehControl" : {
+        "FBControl" : false,
+        "FBMode" : ""
+    }
+}

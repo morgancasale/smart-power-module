@@ -30,12 +30,9 @@ class Device:
                     if(not isinstance(deviceData[key], str)):
                         raise web_exception(400, "Device's \"" + key + "\" value must be string")
                     match key:
-                        case "deviceID":
-                            self.deviceID = deviceData["deviceID"]
-                        case "deviceName":
-                            self.deviceName = deviceData["deviceName"]
-                        case "userID":
-                            self.userID = deviceData["userID"]
+                        case "deviceID": self.deviceID = deviceData["deviceID"]
+                        case "deviceName": self.deviceName = deviceData["deviceName"]
+                        case "userID": self.userID = deviceData["userID"]
                     
                 case "endPoints":
                     for endPointData in deviceData["endPoints"]:
@@ -111,6 +108,17 @@ class Device:
         except Exception as e:
             raise web_exception(400, "An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB: " + str(e))
 
+    def set2DB(self, DBPath):
+        try:
+            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
+                self.save2DB(DBPath)
+            else:
+                self.updateDB(DBPath)
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e.message))
+        except Exception as e:
+            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e))
+    
     def DB_to_dict(DBPath, device, verbose = True):
         try:
             deviceID = device["deviceID"]
@@ -165,17 +173,6 @@ class Device:
             raise web_exception(400, "An error occurred while cleaning the DB from devices: " + str(e.message))
         except Exception as e:
             raise web_exception(400, "An error occurred while cleaning the DB from devices: " + str(e))
-
-    def set2DB(self, DBPath):
-        try:
-            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
-                self.save2DB(DBPath)
-            else:
-                self.updateDB(DBPath)
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e.message))
-        except Exception as e:
-            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e))
 
     def setOnlineStatus(entries):
         newDeviceIDs = []
