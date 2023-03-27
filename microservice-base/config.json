@@ -1,34 +1,35 @@
 {
     "CONFIG":{
-        "serviceName": "string",
-        "serviceID": "string"
+        "service_Name":"string",
+        "service_ID":"string",
+        "activatedMethod":{ "MQTT": "bool", "REST": "bool"}
     },
 
     "REST":{
-        "active": "bool",
-        "port": "int",
-        "crud": {
+        "Address": "string",
+        "Port": "int",
+        "Crud":{
             "GET": "bool",
             "POST": "bool",
             "PUT": "bool",
             "DELETE": "bool"
+
         }
     },
 
     "MQTT":{
-        "active": "bool",
-        "subPub": { "sub": "bool", "pub": "bool" },
-        "cliendID": "string",
-        "brokerAddress": "string",
-        "brokerPort": "int",
-        "subTopic": "string",
-        "pubTopic": "string",
+        "SubPub": {"sub": "bool", "pub": "bool"},
+        "Client_ID": "string",
+        "Broker_Address": "string",
+        "Broker_Port": "int",
+        "Sub_Topic": "string",
+        "Pub_Topic": "string",
         "QoS": "int"
+       
     },
-
     "REGISTRATION":{
-        "catalogue_Address": "string",
-        "catalogue_Port": "int",
+        "Catalogue_Address": "string",
+        "Catalogue_Port": "int",
         "T_Registration": "int"
     }
 }
