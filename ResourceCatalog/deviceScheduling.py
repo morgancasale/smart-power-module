@@ -1,7 +1,7 @@
 from utility import *
 class DeviceSchedule:
     def __init__(self, schedulingData, newSchedule = False):
-        self.schedulingKeys = ["deviceID", "socketID", "startSchedule", "enableEndSchedule", "endSchedule", "repeat"]
+        self.schedulingKeys = ["deviceID", "socketID", "mode", "startSchedule", "enableEndSchedule", "endSchedule", "repeat"]
 
         if(newSchedule) : self.checkKeys(schedulingData)
         self.checkSaveValues(schedulingData)
@@ -13,27 +13,44 @@ class DeviceSchedule:
     def checkSaveValues(self, schedulingData):
         for key in schedulingData.keys():
             match key:
-                case ("deviceID" | "socketID"):
+                case ("deviceID" | "socketID" | "mode"):
                     if(not isinstance(schedulingData[key], str)):
                         raise web_exception(400, "Scheduling's \"" + key + "\" value must be a string")
                     match key:
                         case "deviceID": self.deviceID = schedulingData["deviceID"]
                         case "socketID": self.socketID = schedulingData["socketID"]
+                        case "mode":
+                            if(not schedulingData["mode"] in ["ON", "OFF"]):
+                                raise web_exception(400, "Scheduling's \"" + key + "\" value must be \"ON\" or \"OFF\"") 
+                            self.mode = schedulingData["mode"]
 
                 case "enableEndSchedule":
                     if(not isinstance(schedulingData[key], bool)):
                         raise web_exception(400, "Scheduling's \"" + key + "\" value must be a boolean")
                     self.enableEndSchedule = schedulingData["enableEndSchedule"]
                 
-                case ("startSchedule" | "endSchedule"):
+                case ("startSchedule"):
                     if(not istimeinstance(schedulingData[key])):
                         raise web_exception(400, "Scheduling's \"" + key + "\" value must be feasible timestamp")
                     
-                    timestamp = datetime.strptime(schedulingData[key], "%d/%m/%Y %H:%M")
+                    if(len(schedulingData[key].split("/")[0])<4):
+                        timestamp = datetime.strptime(schedulingData[key], "%d-%m-%Y %H:%M")
+                    else:
+                        timestamp = datetime.strptime(schedulingData[key], "%Y-%m-%d %H:%M")
                     timestamp = time.mktime(timestamp.timetuple())
-                    match key:
-                        case "startSchedule": self.startSchedule = timestamp
-                        case "endSchedule": self.endSchedule = timestamp
+                    self.startSchedule = timestamp
+
+                case "endSchedule":
+                    if(self.enableEndSchedule):
+                        if(not istimeinstance(schedulingData[key])):
+                            raise web_exception(400, "Scheduling's \"" + key + "\" value must be feasible timestamp")
+                        
+                        if(len(schedulingData[key].split("/")[0])<4):
+                            timestamp = datetime.strptime(schedulingData[key], "%d/%m/%Y %H:%M")
+                        else:
+                            timestamp = datetime.strptime(schedulingData[key], "%Y/%m/%d %H:%M")
+                        timestamp = time.mktime(timestamp.timetuple())
+                        self.endSchedule = timestamp
                     
                 case "repeat":
                     if(not isinstance(schedulingData[key], int) or schedulingData[key] < 0):
@@ -44,8 +61,8 @@ class DeviceSchedule:
                     raise web_exception(400, "Unexpected key \"" + key + "\"")
                 
     def to_dict(self):
-        return { "deviceID": self.deviceID, "socketID": self.socketID, "startSchedule": self.startSchedule,
-                 "enableEndSchedule": self.enableEndSchedule, "endSchedule": self.endSchedule, "repeat": self.repeat }
+        return { "deviceID": self.deviceID, "socketID": self.socketID, "mode": self.mode,
+                 "startSchedule": self.startSchedule, "enableEndSchedule": self.enableEndSchedule, "endSchedule": self.endSchedule, "repeat": self.repeat }
     
     def save2DB(self, DBPath):
         try: 

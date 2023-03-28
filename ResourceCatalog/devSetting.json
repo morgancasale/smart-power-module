@@ -2,9 +2,20 @@
     "deviceID" : null,
     "deviceName" : null,
     "HPMode" : false,
+    "MPControl" : false,
+    "maxPower" : 0,
+    "MPMode" : "Notify",
+    "faultControl" : false,
+    "parControl" : false,
+    "parThreshold" : 0,
+    "parMode" : "Manual",
+    "applianceType" : "None",
+    "FBControl" : false,
+    "FBMode" : "",
     "scheduling" : [
         {
             "socketID" : 0,
+            "mode" : "OFF",
             "startSchedule" : "DD:MM:YYYY HH:MM",
             "enableEndSchedule" : false,
             "endSchedule" : "DD:MM:YYYY HH:MM",
@@ -12,6 +23,7 @@
         },
         {
             "socketID" : 1,
+            "mode" : "OFF",
             "startSchedule" : "DD:MM:YYYY HH:MM",
             "enableEndSchedule" : false,
             "endSchedule" : "DD:MM:YYYY HH:MM",
@@ -19,26 +31,11 @@
         },
         {
             "socketID" : 2,
+            "mode" : "OFF",
             "startSchedule" : "DD:MM:YYYY HH:MM",
             "enableEndSchedule" : false,
             "endSchedule" : "DD:MM:YYYY HH:MM",
             "repeat" : 0
         }
-    ],
-    "maxPowerControl" : {
-        "MPControl" : false,
-        "maxPower" : 0,
-        "MPMode" : "Notify"
-    },
-    "faultControl" : false,
-    "parasiticControl" : {
-        "parControl" : false,
-        "parThreshold" : 0,
-        "parMode" : "Manual"
-    },
-    "applianceType" : "None",
-    "faultyBehControl" : {
-        "FBControl" : false,
-        "FBMode" : ""
-    }
+    ]
 }
