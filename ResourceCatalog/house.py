@@ -77,9 +77,9 @@ class House:
 
             save_entry2DB(DBPath, "Houses", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving house with ID \"" + self.houseID + "\" to the DB: " + e.message)
+            raise web_exception(400, "An error occurred while saving house with ID \"" + self.houseID + "\" to the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving house with ID \"" + self.houseID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving house with ID \"" + self.houseID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
         try:
@@ -90,9 +90,9 @@ class House:
             
             update_entry_inDB(DBPath, "Houses", "houseID", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while updating house with ID \"" + self.houseID + "\" in the DB: " + e.message)
+            raise web_exception(400, "An error occurred while updating house with ID \"" + self.houseID + "\" in the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating house with ID \"" + self.houseID + "\" in the DB: " + str(e))
+            raise web_exception(400, "An error occurred while updating house with ID \"" + self.houseID + "\" in the DB:\n\t" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
@@ -106,9 +106,9 @@ class House:
 
             delete_entry_fromDB(DBPath, "Houses", "houseID", params["houseID"])
         except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting house with ID \"" + params["houseID"] + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while deleting house with ID \"" + params["houseID"] + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting house with ID \"" + params["houseID"] + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while deleting house with ID \"" + params["houseID"] + "\" from the DB:\n\t" + str(e))
         
         return True
 
@@ -119,9 +119,9 @@ class House:
             else:
                 self.updateDB(DBPath)
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving house with ID \"" + self.deviceID + "\" to the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while saving house with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving house with ID \"" + self.deviceID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving house with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
 
     def DB_to_dict(DBPath, house):
         try:
@@ -149,6 +149,6 @@ class House:
 
             return houseData
         except web_exception as e:
-            raise web_exception(400, "An error occurred while retrieving house with ID \"" + houseID + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while retrieving house with ID \"" + houseID + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving house with ID \"" + houseID + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while retrieving house with ID \"" + houseID + "\" from the DB:\n\t" + str(e))

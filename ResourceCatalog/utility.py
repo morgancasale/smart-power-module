@@ -20,7 +20,7 @@ def check_presence_inDB(DBPath, table, keyNames, keyValues):
         query = "SELECT COUNT(*)>0 as result FROM " + table + " WHERE " + keyNames + " = " + keyValues
         return bool(DBQuery_to_dict(DBPath, query)[0]["result"]) #True if the keyValue is present in the DB
     except Exception as e:
-        raise web_exception(400, "An error occured while extracting data from DB: " + str(e))
+        raise web_exception(400, "An error occured while extracting data from DB:\n\t" + str(e))
     
 
 def check_presence_ofColumnInDB(DBPath, table, columnName):
@@ -28,14 +28,14 @@ def check_presence_ofColumnInDB(DBPath, table, columnName):
         query = "SELECT COUNT(*)>0 AS result FROM pragma_table_info(\"" + table + "\") WHERE name=\"" + columnName + "\""
         return bool(DBQuery_to_dict(DBPath, query)[0]["result"])
     except Exception as e:
-        raise web_exception(400, "An error occured while extracting data from DB: " + str(e))
+        raise web_exception(400, "An error occured while extracting data from DB:\n\t" + str(e))
 
 def check_presence_ofTableInDB(DBPath, table):
     try:
         query = "SELECT COUNT(*)>0 AS result FROM sqlite_master WHERE (type, name) = (\"table\", \"" + table + "\")"
         return bool(DBQuery_to_dict(DBPath, query)[0]["result"])
     except Exception as e:
-        raise web_exception(400, "An error occured while extracting data from DB: " + str(e))
+        raise web_exception(400, "An error occured while extracting data from DB:\n\t" + str(e))
 
 def check_presence_inConnectionTables(DBPath, tables, keyName, keyValue):
     try:
@@ -46,7 +46,7 @@ def check_presence_inConnectionTables(DBPath, tables, keyName, keyValue):
         
         return result               
     except Exception as e:
-        raise web_exception(400, "An error occured while extracting data from DB: " + str(e))
+        raise web_exception(400, "An error occured while extracting data from DB:\n\t" + str(e))
 
 def save_entry2DB(DBPath, table, entryData):
     try:
@@ -70,7 +70,7 @@ def save_entry2DB(DBPath, table, entryData):
         conn.commit()
         conn.close()
     except Exception as e:
-        raise web_exception(400, "An error occured while saving data to DB: " + str(e))
+        raise web_exception(400, "An error occured while saving data to DB:\n\t" + str(e))
 
 def update_entry_inDB(DBPath, table, keyName, entryData):
     try:
@@ -82,12 +82,11 @@ def update_entry_inDB(DBPath, table, keyName, entryData):
         for key, value in entryData.items():
             if key != keyName:
                 keys.append(key)
-                if(isinstance(value, list)):
-                    value = str(value)
                 if(isinstance(value, bool)):
-                    value = str(int(value))
+                    value = int(value)
                 if(value == None):
                     value = "NULL"
+                value = str(value)
                 edatas.append(value)
         keys = "(\"" + ("\", \"").join(keys)+"\")"
         edatas = "(\"" + ("\", \"").join(edatas) + "\")"
@@ -124,7 +123,7 @@ def delete_entry_fromDB(DBPath, table, keyNames, keyValues):
         conn.commit()
         conn.close()
     except Exception as e:
-        raise web_exception(400, "An error occured while deleting data from DB: " + str(e))
+        raise web_exception(400, "An error occured while deleting data from DB:\n\t" + str(e))
 
 def nested_dict_pairs_iterator(dict_obj):
     ''' This function accepts a nested dictionary as argument

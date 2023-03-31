@@ -11,6 +11,10 @@ class ResourceCatalog_server(object):
         self.resourceCatalog = ResourceCatalog(DBPath)
 
     exposed=True
+    
+    @cherrypy_cors.tools.preflight(allowed_methods=["GET", "DELETE", "POST", "PUT", "PATCH"])
+    def OPTIONS(self, *uri, **params):
+        pass
 
     def GET(self, *uri, **params):
         try:
@@ -23,7 +27,9 @@ class ResourceCatalog_server(object):
             return self.resourceCatalog.handlePostRequest(path[0], cherrypy.request.json)
         except web_exception as e:
             raise cherrypy.HTTPError(e.code, e.message)
-
+    
+    @cherrypy_cors.tools.preflight(allowed_methods=["GET", "DELETE", "POST", "PUT", "PATCH"])
+    @cherrypy_cors.tools.expose_public()
     def PUT(self, *path):
         try:
             return self.resourceCatalog.handlePutRequest(path[0], cherrypy.request.json)
@@ -48,21 +54,29 @@ def start_webpage():
     conf={
         '/':{
             'request.dispatch' : cherrypy.dispatch.MethodDispatcher(),
-            'tools.sessions.on' : True,
+            #"request.methods_with_bodies": ("POST", "PUT", "PATCH", "DELETE"),
+
+            'tools.sessions.on' : True,            
             "tools.json_in.on": True,
-            "request.methods_with_bodies": ("POST", "PUT", "PATCH", "DELETE"),
+
+            'tools.response_headers.on': True,
+            'tools.response_headers.headers': [('Access-Control-Allow-Origin', '*')],
+            'cors.expose.on': True
         }
     }
     webService = ResourceCatalog_server("db.sqlite")
-    cherrypy.tree.mount(webService,'/',conf)
     cherrypy_cors.install()
+
     cherrypy.config.update({
         'server.socket_host' : '192.168.2.145',
         'server.socket_port': 8099,
+        #'tools.staticdir.on': True,
         'cors.expose.on': True
-        })
-    cherrypy.engine.start()
-    cherrypy.engine.block()
+    })
+
+    cherrypy.quickstart(webService,'/',conf)
+    #cherrypy.engine.start()
+    #cherrypy.engine.block()
 
 if __name__ == "__main__":
     start_webpage()

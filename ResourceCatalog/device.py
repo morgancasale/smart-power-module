@@ -39,13 +39,13 @@ class Device:
                         try:
                             self.endPoints.append(EndPoint(endPointData, newEndPoint = True))
                         except web_exception as e:
-                            raise web_exception(400, "EndPoint with ID " + endPointData["endPointID"] + " not valid: " + e.message)
+                            raise web_exception(400, "EndPoint with ID " + endPointData["endPointID"] + " not valid:\n\t" + e.message)
                 case "Resources":
                     for resourceData in deviceData["Resources"]:
                         try:
                             self.Resources.append(Resource(resourceData, newResource = True))
                         except web_exception as e:
-                            raise web_exception(400, "Resource with ID " + resourceData["resourceID"] + " not valid: " + e.message)
+                            raise web_exception(400, "Resource with ID " + resourceData["resourceID"] + " not valid:\n\t" + e.message)
                 case _:
                     raise web_exception(400, "Unexpected key \"" + key + "\"")
 
@@ -90,9 +90,9 @@ class Device:
                         }
                 save_entry2DB(DBPath, "DeviceResource_conn", entry)
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
         try:
@@ -104,9 +104,9 @@ class Device:
             
             update_entry_inDB(DBPath, "Devices", "deviceID", self.to_dict())   
         except web_exception as e:
-            raise web_exception(400, "An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB: " + str(e))
+            raise web_exception(400, "An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB:\n\t" + str(e))
 
     def set2DB(self, DBPath):
         try:
@@ -115,9 +115,9 @@ class Device:
             else:
                 self.updateDB(DBPath)
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
     
     def DB_to_dict(DBPath, device, verbose = True):
         try:
@@ -139,7 +139,7 @@ class Device:
 
             return deviceData
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving device with ID \"" + deviceID + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while retrieving device with ID \"" + deviceID + "\" from the DB:\n\t" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
@@ -153,9 +153,9 @@ class Device:
             Resource.cleanDB(DBPath)
             delete_entry_fromDB(DBPath, "Devices", "deviceID", params["deviceID"])
         except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e))
         
         return True
 
@@ -170,9 +170,9 @@ class Device:
                 if(not check_presence_inConnectionTables(DBPath, connTables, "deviceID", entry["deviceID"])):
                     Device.deleteFromDB(DBPath, {"deviceID": entry["deviceID"]})
         except web_exception as e:
-            raise web_exception(400, "An error occurred while cleaning the DB from devices: " + str(e.message))
+            raise web_exception(400, "An error occurred while cleaning the DB from devices:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while cleaning the DB from devices: " + str(e))
+            raise web_exception(400, "An error occurred while cleaning the DB from devices:\n\t" + str(e))
 
     def setOnlineStatus(entries):
         newDeviceIDs = []

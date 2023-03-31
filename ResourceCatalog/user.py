@@ -72,9 +72,9 @@ class User:
 
             save_entry2DB(DBPath, "Users", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB: " + e.message)
+            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
         try:
@@ -85,9 +85,9 @@ class User:
             
             update_entry_inDB(DBPath, "Users", "userID", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while updating user with ID \"" + self.userID + "\" in the DB: " + e.message)
+            raise web_exception(400, "An error occurred while updating user with ID \"" + self.userID + "\" in the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating user with ID \"" + self.userID + "\" in the DB: " + str(e))
+            raise web_exception(400, "An error occurred while updating user with ID \"" + self.userID + "\" in the DB:\n\t" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
@@ -98,9 +98,9 @@ class User:
             Device.cleanDB(DBPath)
             delete_entry_fromDB(DBPath, "Users", "userID", params["userID"])
         except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB:\n\t" + str(e))
             
         return True
 
@@ -111,9 +111,9 @@ class User:
             else:
                 self.updateDB(DBPath)
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e))
 
     def DB_to_dict(DBPath, user, verbose = True):
         try:
@@ -135,6 +135,6 @@ class User:
 
             return userData
         except web_exception as e:
-            raise web_exception(400, "An error occurred while retrieving user with ID \"" + userID + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while retrieving user with ID \"" + userID + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving user with ID \"" + userID + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while retrieving user with ID \"" + userID + "\" from the DB:\n\t" + str(e))

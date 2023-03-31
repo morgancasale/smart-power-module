@@ -73,9 +73,9 @@ class DeviceSchedule:
                 save_entry2DB(DBPath, "DeviceSettings", self.to_dict())
 
         except web_exception as e:
-            raise web_exception(400, "An error occured while saving device settings to DB: " + str(e.message))
+            raise web_exception(400, "An error occured while saving device settings to DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occured while saving device settings to DB: " + str(e))
+            raise web_exception(400, "An error occured while saving device settings to DB:\n\t" + str(e))
         
     def update2DB(self, DBPath):
         self.save2DB(DBPath)
@@ -90,9 +90,9 @@ class DeviceSchedule:
             delete_entry_fromDB(DBPath, "DeviceSettings", params.keys(), params.values())
         
         except web_exception as e:
-            raise web_exception(400, "An error occured while deleting device settings from DB: " + str(e.message))
+            raise web_exception(400, "An error occured while deleting device settings from DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occured while deleting device settings from DB: " + str(e))
+            raise web_exception(400, "An error occured while deleting device settings from DB:\n\t" + str(e))
         
         return True   
 
@@ -106,9 +106,9 @@ class DeviceSchedule:
                     DeviceSchedule.deleteFromDB(DBPath, {"deviceID": entry["deviceID"]})
 
         except web_exception as e:
-            raise web_exception(400, "An error occurred while cleaning the DB from devices: " + str(e.message))
+            raise web_exception(400, "An error occurred while cleaning the DB from devices:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while cleaning the DB from devices: " + str(e))
+            raise web_exception(400, "An error occurred while cleaning the DB from devices:\n\t" + str(e))
     
     def DB_to_dict(DBPath, deviceID, verbose = True):
         query = "SELECT * FROM DeviceScheduling WHERE deviceID = '" + deviceID + "'"
@@ -124,9 +124,9 @@ class DeviceSchedule:
             if(verbose): return data
 
         except web_exception as e:
-            raise web_exception(400, "An error occurred while getting device scheduling from DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while getting device scheduling from DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while getting device scheduling from DB: " + str(e))
+            raise web_exception(400, "An error occurred while getting device scheduling from DB:\n\t" + str(e))
 
 
         

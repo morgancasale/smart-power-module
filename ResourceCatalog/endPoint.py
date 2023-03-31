@@ -121,9 +121,9 @@ class EndPoint:
                 
             return result
         except web_exception as e:
-            raise web_exception(400, "An error occurred while checking the consistency of the end-point with ID \"" + self.endPointID + "\" in the database: " + e.message)
+            raise web_exception(400, "An error occurred while checking the consistency of the end-point with ID \"" + self.endPointID + "\" in the database:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while checking the consistency of the end-point with ID \"" + self.endPointID + "\" in the database: " + str(e))
+            raise web_exception(400, "An error occurred while checking the consistency of the end-point with ID \"" + self.endPointID + "\" in the database:\n\t" + str(e))
 
     def save2DB(self, DBPath): # TODO Check if all error cases are covered
         try:
@@ -139,9 +139,9 @@ class EndPoint:
                 self.Online = self.Ping()
                 save_entry2DB(DBPath, "endPoints", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving end-point with ID \"" + self.endPointID + "\" to the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while saving end-point with ID \"" + self.endPointID + "\" to the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving end-point with ID \"" + self.endPointID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving end-point with ID \"" + self.endPointID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
         try:
@@ -160,9 +160,9 @@ class EndPoint:
             }
             update_entry_inDB(DBPath, "DeviceEndP_conn", "endPointID", entry)
         except web_exception as e:
-            raise web_exception(400, "An error occurred while updating end-point with ID \"" + self.endPointID + "\" in the DB: " + e.message)
+            raise web_exception(400, "An error occurred while updating end-point with ID \"" + self.endPointID + "\" in the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating end-point with ID \"" + self.endPointID + "\" in the DB: " + str(e))
+            raise web_exception(400, "An error occurred while updating end-point with ID \"" + self.endPointID + "\" in the DB:\n\t" + str(e))
 
     def set2DB(self, DBPath):
         try:
@@ -171,9 +171,9 @@ class EndPoint:
             else:
                 self.updateDB(DBPath)
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving endPoint with ID \"" + self.deviceID + "\" to the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while saving endPoint with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving endPoint with ID \"" + self.deviceID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving endPoint with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
     
     def DB_to_dict(DBPath, EP):
         try:
@@ -182,7 +182,7 @@ class EndPoint:
             data["Online"] = bool(data["Online"])
             return data
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving end-point with ID \"" + EP["endPointID"] + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while retrieving end-point with ID \"" + EP["endPointID"] + "\" from the DB:\n\t" + str(e))
 
     def cleanDB(DBPath): #TODO forse c'è un modo più furbo di fare questa funzione usando solo sql
         connTables = ["DeviceEndP_conn"]
@@ -204,9 +204,9 @@ class EndPoint:
             delete_entry_fromDB(DBPath, "DeviceEndP_conn", "endPointID", entry["endPointID"])
             delete_entry_fromDB(DBPath, "EndPoints", "endPointID", entry["endPointID"])
         except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB:\n\t" + str(e))
         
         return True
 

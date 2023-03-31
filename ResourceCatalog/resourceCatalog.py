@@ -25,7 +25,7 @@ class ResourceCatalog:
                 case _:
                     raise web_exception(400, "Unexpected invalid command")
         except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the GET request: " + e.message)
+            raise web_exception(400, "An error occurred while handling the GET request:\n\t" + e.message)
 
     def handlePostRequest(self, cmd, params):
         try:
@@ -67,7 +67,7 @@ class ResourceCatalog:
                 case _:
                     raise web_exception(400, "The command \"" + cmd + "\" is not valid")
         except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the POST request: " + e.message)
+            raise web_exception(400, "An error occurred while handling the POST request:\n\t" + e.message)
 
     def handlePutRequest(self, cmd, params):
         try:
@@ -148,7 +148,7 @@ class ResourceCatalog:
                 case _:
                     raise web_exception(400, "Unexpected invalid command")
         except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the PUT request: " + e.message)
+            raise web_exception(400, "An error occurred while handling the PUT request:\n\t" + e.message)
 
     def handlePatchRequest(self, cmd, params):
         try:
@@ -206,7 +206,7 @@ class ResourceCatalog:
                 case _:
                     raise web_exception(400, "Unexpected invalid command")
         except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the PATCH request: " + e.message)
+            raise web_exception(400, "An error occurred while handling the PATCH request:\n\t" + e.message)
 
     def handleDeleteRequest(self, cmd, params):
         try:
@@ -262,7 +262,7 @@ class ResourceCatalog:
                 case _:
                     raise web_exception(400, "Unexpected invalid command")
         except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the DELETE request: " + e.message)
+            raise web_exception(400, "An error occurred while handling the DELETE request:\n\t" + e.message)
 
     def updateConn(self, connData): #TODO check integrity of request
         try:
@@ -289,9 +289,9 @@ class ResourceCatalog:
                     delete_entry_fromDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])
 
         except web_exception as e:
-            raise web_exception(400, "An error occurred while updating a connection: " + e.message)
+            raise web_exception(400, "An error occurred while updating a connection:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating a connection: " + str(e))
+            raise web_exception(400, "An error occurred while updating a connection:\n\t" + str(e))
         
 
     def reconstructJson(self, table, selectedData, requestEntry):
@@ -354,7 +354,7 @@ class ResourceCatalog:
             selectedData = pd.read_sql_query(query, conn).to_dict(orient="records")
             conn.close()
         except Exception as e:
-            raise web_exception(400, "An error occured while extracting data from DB: " + str(e))
+            raise web_exception(400, "An error occured while extracting data from DB:\n\t" + str(e))
 
         if len(selectedData) == 0:
             msg = "No entry found in table \"" + table
@@ -365,9 +365,9 @@ class ResourceCatalog:
         try:
             reconstructedData = ResourceCatalog.reconstructJson(self, table, selectedData, entry) 
         except web_exception as e:
-            raise web_exception(400, "An error occured while reconstructing data: " + e.message)
+            raise web_exception(400, "An error occured while reconstructing data:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occured while reconstructing data: " + str(e))
+            raise web_exception(400, "An error occured while reconstructing data:\n\t" + str(e))
         
         return json.dumps(reconstructedData)
         

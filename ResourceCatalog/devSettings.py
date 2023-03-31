@@ -35,6 +35,8 @@ class DeviceSettings:
                         case "deviceName": self.deviceName = settingsData["deviceName"]
                     
                 case ("HPMode" | "MPControl" | "faultControl" | "parControl" | "FBControl"):
+                    if(isinstance(settingsData[key], int)):
+                        settingsData[key] = bool(settingsData[key])
                     if(not isinstance(settingsData[key], bool)):
                         raise web_exception(400, "Device settings' \"" + key + "\" value must be boolean")
                     match key:
@@ -45,7 +47,7 @@ class DeviceSettings:
                         case "FBControl": self.FBControl = settingsData["FBControl"]
                     
                 case ("maxPower" | "parThreshold"):
-                    if(not isinstance(settingsData[key], float) or settingsData[key] < 0):
+                    if(not isinstance(settingsData[key], (int, float)) or settingsData[key] < 0):
                         raise web_exception(400, "Device settings' \"" + key + "\" value must be a positive float")
                     match key:
                         case "maxPower": self.maxPower = settingsData["maxPower"]
@@ -64,18 +66,19 @@ class DeviceSettings:
                     self.parMode = settingsData["parMode"]
                     
                 case "applianceType":
-                    if(not isinstance(settingsData[key], str) or self.checkAppl(settingsData[key])):
+                    if((not isinstance(settingsData[key], str)) or (not self.checkAppl(settingsData[key]))):
                         raise web_exception(400, "Device settings' \"" + key + "\" value must be a valid appliance type")
                     self.applianceType = settingsData["applianceType"]
 
                 case "scheduling":
-                    if(not isinstance(settingsData[key], list)):
-                        raise web_exception(400, "Device settings' \"" + key + "\" value must be a list")
-                    for sched in settingsData[key]:
-                        if(not isinstance(sched, dict)):
-                            raise web_exception(400, "Device settings' \"" + key + "\" list must contain only dictionaries")
-                    
-                        self.scheduling.append(DeviceSchedule(sched, newScheduling=True))
+                    if(settingsData[key] is not None):
+                        if(not isinstance(settingsData[key], list)):
+                            raise web_exception(400, "Device settings' \"" + key + "\" value must be a list")
+                        for sched in settingsData[key]:
+                            if(not isinstance(sched, dict)):
+                                raise web_exception(400, "Device settings' \"" + key + "\" list must contain only dictionaries")
+                        
+                            self.scheduling.append(DeviceSchedule(sched, newScheduling=True))
 
                 case _:
                     raise web_exception(400, "Unexpected key \"" + key + "\"")
@@ -83,7 +86,7 @@ class DeviceSettings:
     def to_dict(self):
         result = {}
         for key in self.settingsKeys:
-            result[key] = getattr(self, key)
+            if(key != "scheduling") : result[key] = getattr(self, key)
 
         return result
 
@@ -95,12 +98,12 @@ class DeviceSettings:
             for sched in self.scheduling:
                 sched.save2DB(DBPath, self.deviceID)
 
-            update_entry_inDB(DBPath, "DeviceSettings", self.to_dict())
+            update_entry_inDB(DBPath, "DeviceSettings", "deviceID", self.to_dict())
 
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(500, "An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB: " + str(e))
+            raise web_exception(500, "An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
         
     def updateDB(self, DBPath):
         self.save2DB(DBPath)
@@ -115,9 +118,9 @@ class DeviceSettings:
 
             delete_entry_fromDB(DBPath, "DeviceSettings", params["deviceID"])
         except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting device settings for device with ID \"" + params["deviceID"] + "\" from the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while deleting device settings for device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(500, "An error occurred while deleting device settings for device with ID \"" + params["deviceID"] + "\" from the DB: " + str(e))
+            raise web_exception(500, "An error occurred while deleting device settings for device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e))
         
     def cleanDB(DBPath):
         query = "SELECT * FROM DeviceSettings"
@@ -128,9 +131,9 @@ class DeviceSettings:
                 if(not check_presence_inDB(DBPath, "Devices", "deviceID", entry["deviceID"])):
                     DeviceSettings.deleteFromDB(DBPath, {"deviceID": entry["deviceID"]})
         except web_exception as e:
-            raise web_exception(400, "An error occurred while cleaning device settings table: " + str(e.message))
+            raise web_exception(400, "An error occurred while cleaning device settings table:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while cleaning device settings table: " + str(e))
+            raise web_exception(400, "An error occurred while cleaning device settings table:\n\t" + str(e))
         
     
     def DB_to_dict(DBPath, device, verbose = True):
@@ -144,9 +147,9 @@ class DeviceSettings:
 
             return devSettings
         except web_exception as e:
-            raise web_exception(400, "An error occurred while retrieving device settings for device with ID \"" + deviceID + "\" from the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while retrieving device settings for device with ID \"" + deviceID + "\" from the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(500, "An error occurred while retrieving device settings for device with ID \"" + deviceID + "\" from the DB: " + str(e))
+            raise web_exception(500, "An error occurred while retrieving device settings for device with ID \"" + deviceID + "\" from the DB:\n\t" + str(e))
 
 
 

@@ -113,9 +113,9 @@ class Service:
 
             save_entry2DB(DBPath, "Services", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB: " + e.message)
+            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
         try:
@@ -126,9 +126,9 @@ class Service:
             
             update_entry_inDB(DBPath, "Services", "serviceID", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB: " + e.message)
+            raise web_exception(400, "An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB: " + str(e))
+            raise web_exception(400, "An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB:\n\t" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
@@ -142,9 +142,9 @@ class Service:
 
             delete_entry_fromDB(DBPath, "Services", "serviceID", params["serviceID"])
         except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB:\n\t" + str(e))
         
         return True
 
@@ -155,9 +155,9 @@ class Service:
             else:
                 self.updateDB(DBPath)
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + str(e))
 
     def DB_to_dict(DBPath, service):
         try:
@@ -196,9 +196,9 @@ class Service:
 
             return serviceData
         except web_exception as e:
-            raise web_exception(400, "An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB:\n\t" + str(e))
 
     def setOnlineStatus(entries):
         newServiceIDs = []
