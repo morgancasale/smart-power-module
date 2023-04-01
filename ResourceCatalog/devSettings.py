@@ -65,8 +65,8 @@ class DeviceSettings:
                         case "parThreshold": self.parThreshold = settingsData["parThreshold"]
                     
                 case ("MPMode" | "FBMode"):
-                    if(not isinstance(settingsData[key], str) or settingsData[key] not in ["null", "Notify", "TurnOff"]):
-                        raise web_exception(400, "Device settings' \"" + key + "\" value must be \"null\", \"Notify\" or \"TurnOff\"")
+                    if(not isinstance(settingsData[key], str) or settingsData[key] not in ["null", "Notify", "Turn OFF"]):
+                        raise web_exception(400, "Device settings' \"" + key + "\" value must be \"null\", \"Notify\" or \"Turn OFF\"")
                     match key:
                         case "MPMode": self.MPMode = settingsData["MPMode"]
                         case "FBMode": self.FBMode = settingsData["FBMode"]
@@ -99,7 +99,6 @@ class DeviceSettings:
         for key in self.settingsKeys:
             if(key != "scheduling") : result[key] = getattr(self, key)
             
-
         return result
 
     def save2DB(self, DBPath):

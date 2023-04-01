@@ -7,6 +7,7 @@ from devCluster import DevCluster
 from service import Service
 
 from devSettings import *
+from appliance import *
 
 class ResourceCatalog:
     def __init__(self, DBPath):
@@ -60,6 +61,12 @@ class ResourceCatalog:
                         entry = Resource(serviceData, newService = True)
                         entry.save2DB(self.DBPath)
                     return "Service registration was successful"
+                
+                case "regAppliancesInfo":
+                    for applianceData in params:
+                        entry = Appliance(applianceData, newAppliance = True)
+                        entry.save2DB(self.DBPath)
+                    return "Appliance registration was successful"
                     
                 case "exit":
                     exit()
@@ -142,6 +149,12 @@ class ResourceCatalog:
                         entry.set2DB(self.DBPath)
                     return "Device schedule update was successful"
                 
+                case "setAppliancesInfo":
+                    for applianceData in params:
+                        entry = Appliance(applianceData, newAppliance = True)
+                        entry.set2DB(self.DBPath)
+                    return "Appliance update was successful"
+                
                 case "exit":
                     exit()
 
@@ -198,7 +211,7 @@ class ResourceCatalog:
                 case "updateConn":
                     for connData in params:
                         self.updateConn(connData)
-                    return "Connection update was successful"                        
+                    return "Connection update was successful"
                 
                 case "exit":
                     exit()
@@ -255,6 +268,11 @@ class ResourceCatalog:
                     for entry in params:
                         DeviceSchedule.deleteFromDB(self.DBPath, entry)
                     return "Device Schedule deletion was successful"
+                
+                case "delAppliancesInfo":
+                    for entry in params:
+                        Appliance.deleteFromDB(self.DBPath, entry)
+                    return "Appliance deletion was successful"
 
                 case "exit":
                     exit()
@@ -317,6 +335,8 @@ class ResourceCatalog:
                         reconstructedData.append(DeviceSettings.DB_to_dict(self.DBPath, sel))
                     case "DeviceScheduling":
                         reconstructedData.append(DeviceSchedule.DB_to_dict(self.DBPath, sel))
+                    case "AppliancesInfo":
+                        reconstructedData.append(Appliance.DB_to_dict(self.DBPath, sel))
                     case _:
                         raise web_exception(400, "Unexpected invalid table")
         except web_exception as e:
