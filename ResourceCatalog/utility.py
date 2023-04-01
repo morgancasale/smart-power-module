@@ -14,6 +14,8 @@ def check_presence_inDB(DBPath, table, keyNames, keyValues):
         if(not isinstance(keyNames, list)) : keyNames = [keyNames]
         if(not isinstance(keyValues, list)) : keyValues = [keyValues]
 
+        keyValues = [str(value) for value in keyValues]
+
         keyNames = "(" + ", ".join(keyNames) + ")"
         keyValues = "(\"" + "\", \"".join(keyValues) + "\")"
 
@@ -57,11 +59,13 @@ def save_entry2DB(DBPath, table, entryData):
         values = []
         for value in entryData.values():
             if(isinstance(value, list)):
-                value = str(value)
+                if(isinstance(value[0], int)):
+                    value = [str(v) for v in value]
             if(value == None):
                 value = "NULL"
             if(isinstance(value, bool)):
                 value = str(int(value))
+
             values.append(value)
         query += "(\"" + "\", \"".join(values) + "\")"
 
@@ -82,6 +86,11 @@ def update_entry_inDB(DBPath, table, keyName, entryData):
         for key, value in entryData.items():
             if key != keyName:
                 keys.append(key)
+                if(isinstance(value, list)):
+                    if(isinstance(value[0], int)):
+                        value = [str(v) for v in value]
+                if(value == None):
+                    value = "NULL"
                 if(isinstance(value, bool)):
                     value = int(value)
                 if(value == None):
@@ -112,6 +121,8 @@ def delete_entry_fromDB(DBPath, table, keyNames, keyValues):
     try:
         if(not isinstance(keyNames, list)) : keyNames = [keyNames]
         if(not isinstance(keyValues, list)) : keyValues = [keyValues]
+
+        keyValues = [str(value) for value in keyValues]
 
         conn = sq.connect(DBPath)
 

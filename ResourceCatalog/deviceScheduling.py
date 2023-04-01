@@ -69,8 +69,8 @@ class DeviceSchedule:
             if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
                 raise web_exception(400, "Device with ID \"" + self.deviceID + "\" does not exist")
             
-            if(not check_presence_inDB(DBPath, "DeviceSettings", self.schedulingKeys, self.to_dict().values())): # Check if scheduling already exists
-                save_entry2DB(DBPath, "DeviceSettings", self.to_dict())
+            if(not check_presence_inDB(DBPath, "DeviceScheduling", self.schedulingKeys, self.to_dict().values())): # Check if scheduling already exists
+                save_entry2DB(DBPath, "DeviceScheduling", self.to_dict())
 
         except web_exception as e:
             raise web_exception(400, "An error occured while saving device settings to DB:\n\t" + str(e.message))
@@ -85,9 +85,9 @@ class DeviceSchedule:
 
     def deleteFromDB(DBPath, params):
         try:
-            if(not check_presence_inDB(DBPath, "DeviceSettings", params.keys(), params.values())): # Check if scheduling already exists
+            if(not check_presence_inDB(DBPath, "DeviceScheduling", list(params.keys()), list(params.values()))): # Check if scheduling already exists
                 raise web_exception(400, "Scheduling does not exist")
-            delete_entry_fromDB(DBPath, "DeviceSettings", params.keys(), params.values())
+            delete_entry_fromDB(DBPath, "DeviceScheduling", list(params.keys()), list(params.values()))
         
         except web_exception as e:
             raise web_exception(400, "An error occured while deleting device settings from DB:\n\t" + str(e.message))
@@ -97,7 +97,7 @@ class DeviceSchedule:
         return True   
 
     def cleanDB(DBPath):
-        query = "SELECT * FROM DeviceSettings"
+        query = "SELECT * FROM DeviceScheduling"
         try:
             data = DBQuery_to_dict(DBPath, query)
 
@@ -115,11 +115,14 @@ class DeviceSchedule:
         try:
             data = DBQuery_to_dict(DBPath, query)
 
-            for d in data:
-                if(d["startSchedule"] != None):
-                    d["startSchedule"] = datetime.fromtimestamp(d["startSchedule"]).strftime("%d/%m/%Y %H:%M")
-                if(d["endSchedule"] != None):
-                    d["endSchedule"] = datetime.fromtimestamp(d["endSchedule"]).strftime("%d/%m/%Y %H:%M")
+            if(data != [None]):
+                for d in data:
+                    if(d["startSchedule"] != None):
+                        d["startSchedule"] = datetime.fromtimestamp(d["startSchedule"]).strftime("%d/%m/%Y %H:%M")
+                    if(d["endSchedule"] != None):
+                        d["endSchedule"] = datetime.fromtimestamp(d["endSchedule"]).strftime("%d/%m/%Y %H:%M")
+            else:
+                data = None
 
             if(verbose): return data
 

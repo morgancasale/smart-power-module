@@ -7,9 +7,11 @@ from deviceScheduling import *
 
 class DeviceSettings:
     def __init__(self, settingsData, newSettings = False):
-        self.settingsKeys = ["deviceID", "deviceName", "HPMode", "MPControl", "maxPower", "MPMode", "faultControl",
-                             "parControl", "parThreshold", "parMode", "applianceType", "FBControl", "FBMode",
-                             "scheduling"]
+        self.settingsKeys = [
+            "deviceID", "deviceName", "enabledSockets", "HPMode", "MPControl", "maxPower", "MPMode", "faultControl",
+            "parControl", "parThreshold", "parMode", "applianceType", "FBControl", "FBMode",
+            "scheduling"
+        ]
 
         self.scheduling = []
 
@@ -33,6 +35,15 @@ class DeviceSettings:
                     match key:
                         case "deviceID": self.deviceID = settingsData["deviceID"]
                         case "deviceName": self.deviceName = settingsData["deviceName"]
+
+                case "enabledSockets":
+                    if(not isinstance(settingsData[key], list) or len(settingsData[key]) != 3):
+                        raise web_exception(400, "Device settings' \"" + key + "\" value must be a list of 3 values")
+                    for socket in settingsData[key]:
+                        if(not isinstance(socket, int) or socket not in [0, 1]):
+                            raise web_exception(400, "Device settings' \"" + key + "\" value must be a list of booleans")
+                    self.enabledSockets = settingsData["enabledSockets"]
+                        
                     
                 case ("HPMode" | "MPControl" | "faultControl" | "parControl" | "FBControl"):
                     if(isinstance(settingsData[key], int)):
@@ -87,6 +98,7 @@ class DeviceSettings:
         result = {}
         for key in self.settingsKeys:
             if(key != "scheduling") : result[key] = getattr(self, key)
+            
 
         return result
 
@@ -99,6 +111,7 @@ class DeviceSettings:
                 sched.save2DB(DBPath, self.deviceID)
 
             update_entry_inDB(DBPath, "DeviceSettings", "deviceID", self.to_dict())
+            update_entry_inDB(DBPath, "Devices", "deviceID", {"deviceID": self.deviceID, "deviceName": self.deviceName})
 
         except web_exception as e:
             raise web_exception(400, "An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e.message))
