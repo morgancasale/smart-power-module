@@ -2,52 +2,70 @@ from REST import *
 from MQTT import *
 from register import *
 
+from Error_Handler import *
+
 
 class ServiceBase(object):
-    def __init__(self,config_address=None, init_rest_func=None,init_MQTT_func = None, GET=None, POST=None, PUT=None, DELETE=None, PATCH=None,Notifier=None, SubTopics=None):
-        self.methods = ["MQTT", "REST"]
-        self.RESTserver = None
-        self.MQTTserver = None
-    
-    def check_and_loadConfigs(self): # TODO chek if file exists, check if all needed configs are there
-        
-        try:
-            configs = json.load(open(self.config_file, 'r'))
+    def __init__(self, config_file=None, init_REST_func=None, init_MQTT_func = None, GET=None, POST=None, PUT=None, DELETE=None, PATCH=None, Notifier=None, SubTopics=None):
+        try: 
+            self.clientErrorHandler = Client_Error_Handler()
+            self.serverErrorHandler = Server_Error_Handler()
+            self.config_file = config_file
 
-            self.configs = configs["CONFIG"]
+            self.check_and_loadConfigs()
+
+            if(self.generalConfigs["REGISTRATION"]["enabled"]):
+                self.registerService = Register(1, "RegThread", self.generalConfigs["REGISTRATION"])
+                self.registerService.start()
+
+            if(self.configs["activatedMethod"]["REST"]):
+                self.REST = RESTServer(2, "RESTThread", self.generalConfigs["REST"], init_REST_func, GET, POST, PUT, DELETE, PATCH)
+                self.REST.start()
+            
+            if(self.configs["activatedMethod"]["MQTT"]):
+                self.MQTT = MQTTServer(3, "MQTTThread", self.generalConfigs["MQTT"], init_MQTT_func, Notifier, SubTopics)
+                self.MQTT.start()
+    
+        except web_exception as e:
+            raise web_exception(e.code, "An error occurred while enabling servers: \n\t" + e.message)
+
+
+        
+    
+    def check_and_loadConfigs(self):
+        try:
+            self.generalConfigs = json.load(open(self.config_file, 'r'))
+
+            self.configs = self.generalConfigs["CONFIG"]
             self.checkParams()
             self.validateParams()
-
-
-
+        
+        except web_exception as e:
+            raise web_exception(e.code, "An error occurred while loading configs: \n\t" + e.message)
         except Exception as e:
-            print(e)    
+            raise self.serverErrorHandler.InternalServerError("An error occurred while loading configs: \n\t" + str(e))
+        
     
     
     def checkParams(self):
-        config_params = ["serviceName", "serviceID", "activatedMethod"]
+        config_params = ["activatedMethod"]
         if(not all(key in config_params for key in self.configs.keys())):
-            raise self.errorHandler.MissingDataError("Misssing parameters in config file")
+            raise self.clientErrorHandler.BadRequest("Missing parameters in config file")
    
     def validateParams(self):
-        if(not isinstance(self.configs["serviceName"], str)):
-            raise self.errorHandler.MissingDataError("serviceName parameter must be a string")
+        methods = ["REST", "MQTT"]
         
-        if(not isinstance(self.configs["serviceID"], str)):
-            raise self.errorHandler.MissingDataError("serviceID parameter must be a string")
-            
-        for method in self.methods:
-            if (method in self.configs["activatedMethod"].keys()):
-                if (not isinstance(self.configs["activatedMethod"][method], bool)):
-                    raise self.errorHandler.MissingDataError(
-                        method + " parameter must be a boolean")
+        if (not all(key in methods for key in self.configs["activatedMethod"].keys())):
+            raise self.clientErrorHandler.BadRequest("Missing methods in activatedMethod parameter")
+
+        err_cond = not isinstance(self.configs["activatedMethod"]["REST"], bool)
+        err_cond = err_cond or not isinstance(self.configs["activatedMethod"]["MQTT"], bool)
+        if(err_cond):
+            raise self.clientErrorHandler.BadRequest("activatedMethod parameters must be boolean")
+        
+
 
 if __name__ == "__main__":
     Service = ServiceBase()
-    if(Service.configs["activatedMethod"]["REST"]):
-        Service.RESTserver = RESTServer(Service.configs["REST"], Service.initREST, Service.GET, Service.POST, Service.PUT, Service.DELETE, Service.PATCH)
-        Service.RESTserver.openRESTServer(Service.RESTserver)
-    if (Service.configs["activatedMethod"]["MQTT"]):
-        Service.MQTTserver = MQTTServer(Service.configs["MQTT"], Service.initMQTT, Service.SubTopics, Service.Notifier)
-        Service.MQTTserver.openMQTTServer(Service.MQTTserver)
+    
        

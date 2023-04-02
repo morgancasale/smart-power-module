@@ -39,7 +39,6 @@ class Client_Error_Handler:
         return web_exception(429, msg)
 
 class Server_Error_Handler:
-    
     def __init__(self):
         pass
     def InternalServerError(msg):

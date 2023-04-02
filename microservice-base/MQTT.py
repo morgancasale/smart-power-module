@@ -3,9 +3,10 @@ import Error_Handler
 import time
 import paho.mqtt.client as MQTT
 
+from threading import Thread
 
 class MyMQTT():
-    def __init__(self, clientID, broker, brokerPort, subNotifier=None):
+    def __init__(self, threadID, threadName, configs, clientID, broker, brokerPort, subNotifier=None):
         self.broker = broker
         self.brokerPort = brokerPort
         self.subNotifier = subNotifier
@@ -48,10 +49,9 @@ class MyMQTT():
             self.Client.disconnect()
 
 
-class MQTTServer(object):
-
+class MQTTServer(Thread):
     def __init__(self, config_file, init_func=None, Notifier=None, SubTopics=None):
-
+        Thread.__init__(self)
         
         self.SubPub = ["sub", "pub"]
         try:
@@ -143,5 +143,5 @@ class MQTTServer(object):
             print(e)
    
 
-    def openRESTServer(s):
+    #def openRESTServer(s):
         

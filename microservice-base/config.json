@@ -1,35 +1,36 @@
 {
     "CONFIG":{
-        "service_Name":"string",
-        "service_ID":"string",
-        "activatedMethod":{ "MQTT": "bool", "REST": "bool"}
+        "activatedMethod": { "MQTT": false , "REST": true}
     },
 
     "REST":{
-        "Address": "string",
-        "Port": "int",
-        "Crud":{
-            "GET": "bool",
-            "POST": "bool",
-            "PUT": "bool",
-            "DELETE": "bool"
-
+        "address" : "192.168.2.145",
+        "port" : 8095,
+        "crud" : {
+            "GET": true,
+            "POST": false,
+            "PUT": true,
+            "DELETE": false
         }
     },
 
     "MQTT":{
-        "SubPub": {"sub": "bool", "pub": "bool"},
-        "Client_ID": "string",
-        "Broker_Address": "string",
-        "Broker_Port": "int",
-        "Sub_Topic": "string",
-        "Pub_Topic": "string",
-        "QoS": "int"
+        "subPub" : {"sub": false, "pub": false},
+        "clientID" : "string",
+        "brokerAddress" : "string",
+        "brokerPort" : 2300,
+        "subTopic" : "string",
+        "pubTopic" : "string",
+        "QoS" : 0
        
     },
-    "REGISTRATION":{
-        "Catalogue_Address": "string",
-        "Catalogue_Port": "int",
-        "T_Registration": "int"
+
+    "REGISTRATION" : {
+        "enabled" : true,     
+        "serviceName" : "Papa",
+        "serviceID" : "S46",
+        "catalogAddress" : "http://192.168.2.145",
+        "catalogPort" : 8099,
+        "T_Registration" : 0.1
     }
 }
