@@ -15,20 +15,21 @@ class ResourceCatalog_server(object):
     @cherrypy_cors.tools.preflight(allowed_methods=["GET", "DELETE", "POST", "PUT", "PATCH"])
     def OPTIONS(self, *uri, **params):
         pass
-
+    
+    @cherrypy_cors.tools.expose_public()
     def GET(self, *uri, **params):
         try:
             return self.resourceCatalog.handleGetRequest(uri[0], [params])
         except web_exception as e:
             raise cherrypy.HTTPError(e.code, e.message)
 
+    @cherrypy_cors.tools.expose_public()
     def POST(self, *path):
         try:
             return self.resourceCatalog.handlePostRequest(path[0], cherrypy.request.json)
         except web_exception as e:
             raise cherrypy.HTTPError(e.code, e.message)
     
-    @cherrypy_cors.tools.preflight(allowed_methods=["GET", "DELETE", "POST", "PUT", "PATCH"])
     @cherrypy_cors.tools.expose_public()
     def PUT(self, *path):
         try:
@@ -36,12 +37,14 @@ class ResourceCatalog_server(object):
         except web_exception as e:
             raise cherrypy.HTTPError(e.code, e.message)
     
+    @cherrypy_cors.tools.expose_public()
     def PATCH(self, *path):
         try:
             return self.resourceCatalog.handlePatchRequest(path[0], cherrypy.request.json)
         except web_exception as e:
             raise cherrypy.HTTPError(e.code, e.message)
 
+    @cherrypy_cors.tools.expose_public()
     def DELETE(self, *path):
         try:
             self.resourceCatalog.handleDeleteRequest(path[0], cherrypy.request.json)
