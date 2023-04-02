@@ -12,7 +12,7 @@ class House:
         self.houseData = houseData
 
         if(newHouse):
-            self.lastUpdate = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     def checkKeys(self, houseData):
         if(not all(key in houseData.keys() for key in self.houseKeys)):
@@ -59,7 +59,7 @@ class House:
             if(check_presence_inDB(DBPath, "Houses", "houseID", self.houseID)):
                 raise web_exception(400, "An house with ID \"" + self.houseID + "\" already exists in the database")
             
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
             if("userID" in self.houseData.keys()):
                 for userID in self.userID:
@@ -86,7 +86,7 @@ class House:
             if(not check_presence_inDB(DBPath, "Houses", "houseID", self.houseID)):
                 raise web_exception(400, "An house with ID \"" + self.houseID + "\" does not exist in the database")
             
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
             update_entry_inDB(DBPath, "Houses", "houseID", self.to_dict())
         except web_exception as e:

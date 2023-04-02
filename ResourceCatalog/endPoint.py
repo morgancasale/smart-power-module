@@ -13,7 +13,7 @@ class EndPoint:
 
         if(newEndPoint):
             self.Online = self.Ping()
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
 
     def to_dict(self):
@@ -152,7 +152,7 @@ class EndPoint:
                 raise web_exception(400, "IP Address \"" + self.IPAddress + "\" is already used by another end-point")
 
             self.Online = self.Ping()
-            self.lastUpdate = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             update_entry_inDB(DBPath, "endPoints", "endPointID", self.to_dict())
 
             entry = {
@@ -215,7 +215,7 @@ class EndPoint:
 
         missingEPIDs = list(set(allEPIDs) - set(newEPIDs))
 
-        entry = {"endPointID": missingEPIDs, "Online": False, "lastUpdate": datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+        entry = {"endPointID": missingEPIDs, "Online": False, "lastUpdate": datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
 
         update_entry_inDB(DBPath, "EndPoints", "endPointID", entry)
 

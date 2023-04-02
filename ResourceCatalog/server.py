@@ -30,7 +30,7 @@ class ResourceCatalog_server(object):
         except web_exception as e:
             raise cherrypy.HTTPError(e.code, e.message)
     
-    @cherrypy_cors.tools.expose_public()
+    #@cherrypy_cors.tools.expose_public()
     def PUT(self, *path):
         try:
             return self.resourceCatalog.handlePutRequest(path[0], cherrypy.request.json)
@@ -53,18 +53,13 @@ class ResourceCatalog_server(object):
 
 
 def start_webpage():
-    #Standard configuration to serve the url "localhost:8080"
     conf={
         '/':{
             'request.dispatch' : cherrypy.dispatch.MethodDispatcher(),
             "request.methods_with_bodies": ("POST", "PUT", "PATCH", "DELETE"),
 
             'tools.sessions.on' : True,            
-            "tools.json_in.on": True,
-
-            'tools.response_headers.on': True,
-            'tools.response_headers.headers': [('Access-Control-Allow-Origin', '*')],
-            'cors.expose.on': True
+            "tools.json_in.on": True
         }
     }
     webService = ResourceCatalog_server("db.sqlite")
@@ -73,13 +68,10 @@ def start_webpage():
     cherrypy.config.update({
         'server.socket_host' : '192.168.2.145',
         'server.socket_port': 8099,
-        #'tools.staticdir.on': True,
         'cors.expose.on': True
     })
 
     cherrypy.quickstart(webService,'/',conf)
-    #cherrypy.engine.start()
-    #cherrypy.engine.block()
 
 if __name__ == "__main__":
     start_webpage()

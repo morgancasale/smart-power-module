@@ -67,7 +67,7 @@ class User:
                     if(not check_presence_inDB(DBPath, "Devices", "deviceID", deviceID)):
                         raise web_exception(400, "A device with ID \"" + deviceID + "\" does not exist in the database")
 
-                    self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
                     save_entry2DB(DBPath, "UserDevice_conn", {"userID": self.userID, "deviceID": deviceID, "lastUpdate": self.lastUpdate})
 
             save_entry2DB(DBPath, "Users", self.to_dict())
@@ -81,7 +81,7 @@ class User:
             if(not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
                 raise web_exception(400, "A user with ID \"" + self.userID + "\" does not exist in the database")
             
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
             update_entry_inDB(DBPath, "Users", "userID", self.to_dict())
         except web_exception as e:

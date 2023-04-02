@@ -16,7 +16,7 @@ class Device:
 
         if(newDevice): 
             self.Online = True
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         
 
     def checkKeys(self, deviceData):
@@ -100,7 +100,7 @@ class Device:
                 raise web_exception(400, "The device with ID \"" + self.deviceID + "\" does not exist in the database")
 
             self.Online = True
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
             update_entry_inDB(DBPath, "Devices", "deviceID", self.to_dict())   
         except web_exception as e:
@@ -188,7 +188,7 @@ class Device:
 
         missingDeviceIDs = list(set(allDeviceIDs) - set(newDeviceIDs))
 
-        entry = {"deviceID": missingDeviceIDs, "Online": False, "lastUpdate": datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+        entry = {"deviceID": missingDeviceIDs, "Online": False, "lastUpdate": datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
 
         update_entry_inDB(DBPath, "Devices", "deviceID", entry)
         EndPoint.setOnlineStatus(newEndPointIDs)

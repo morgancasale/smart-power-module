@@ -11,7 +11,7 @@ class Resource:
 
         if(newResource):
             self.Online = self.Ping()
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
     def checkKeys(self, resourceData):
         if(not all(key in self.resourceKeys for key in resourceData.keys())):
@@ -65,7 +65,7 @@ class Resource:
                 raise web_exception(400, "Resource with ID \"" + self.resourceID + "\" not found in the DB")
 
             self.Online = self.Ping()
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             update_entry_inDB(DBPath, "Resources", "resourceID", self.to_dict())
 
             entry = {
@@ -141,7 +141,7 @@ class Resource:
         allResIDs = getIDs_fromDB(DBPath, connTable, "resourceID")
         missingResIDs = list(set(allResIDs) - set(newResIDs))
 
-        entry = {"resourceID": missingResIDs, "Online": False, "lastUpdate": datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+        entry = {"resourceID": missingResIDs, "Online": False, "lastUpdate": datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
 
         update_entry_inDB(DBPath, connTable, "resourceID", entry)
 

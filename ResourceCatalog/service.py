@@ -5,7 +5,7 @@ from devCluster import *
 
 class Service:
     def __init__(self, serviceData, newService = False):
-        self.serviceKeys = ["serviceID", "Name"]
+        self.serviceKeys = ["serviceID", "serviceName"]
         self.connTables = ["ServiceHouse_conn", "ServiceUser_conn", "ServiceCluster_conn", "ServiceRes_conn", "ServiceEndP_conn"]
 
         if(newService) : self.checkKeys(serviceData)
@@ -15,7 +15,7 @@ class Service:
 
         if(newService):
             self.Online = True
-            self.lastUpdate = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     def checkKeys(self, serviceData):
         if(not all(key in serviceData.keys() for key in self.serviceKeys)):
@@ -24,14 +24,14 @@ class Service:
     def checkSaveValues(self, serviceData):
         for key in serviceData.keys():
             match key:
-                case ("serviceID" | "Name"):
+                case ("serviceID" | "serviceName"):
                     if(not isinstance(serviceData[key], str)):
                         raise web_exception(400, "Service's \"" + key + "\" parameter must be a string")
                     match key:
                         case "serviceID":
                             self.serviceID = serviceData["serviceID"]
-                        case "Name":
-                            self.name = serviceData["Name"]
+                        case "serviceName":
+                            self.name = serviceData["serviceName"]
                 case ("houseID" | "userID" | "clusterID" | "resourceID" | "endPointID"):
                     if(not all(isinstance(entryID, str) for entryID in serviceData[key])):
                         raise web_exception(400, "Service's \"" + key + "\" parameter must be a list of strings")
@@ -55,9 +55,10 @@ class Service:
 
         for key in self.serviceData.keys():
             match key:
-                case ("serviceID" | "Name"):
+                case ("serviceID" | "serviceName"):
                     result[key] = self.serviceData[key]
-
+        
+        result["Online"] = self.Online
         result["lastUpdate"] = self.lastUpdate
 
         return result
@@ -67,7 +68,7 @@ class Service:
             if(check_presence_inDB(DBPath, "Services", "serviceID", self.serviceID)):
                 raise web_exception(400, "An service with ID \"" + self.serviceID + "\" already exists in the database")
             
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
             if("houseID" in self.serviceData.keys()):
                 for houseID in self.houseID:
@@ -122,7 +123,7 @@ class Service:
             if(not check_presence_inDB(DBPath, "Services", "serviceID", self.serviceID)):
                 raise web_exception(400, "An service with ID \"" + self.serviceID + "\" does not exist in the database")
             
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
             update_entry_inDB(DBPath, "Services", "serviceID", self.to_dict())
         except web_exception as e:
@@ -150,6 +151,7 @@ class Service:
 
     def set2DB(self, DBPath):
         try:
+            self.Online = True
             if(not check_presence_inDB(DBPath, "Services", "serviceID", self.serviceID)):
                 self.save2DB(DBPath)
             else:
@@ -166,7 +168,7 @@ class Service:
             varsIDs = ["houseID", "userID", "clusterID", "deviceID", "resourceID", "endPointID"]
 
             serviceID = service["serviceID"]
-            serviceData = {"serviceID": serviceID, "Name": service["Name"]}
+            serviceData = {"serviceID": serviceID, "serviceName": service["serviceName"]}
 
             for i in range(len(connTables)):
                 if(check_presence_inDB(DBPath, connTables[i], "serviceID", serviceID)):
@@ -214,7 +216,7 @@ class Service:
 
         missingServiceIDs = list(set(allServiceIDs) - set(newServiceIDs))
 
-        entry = {"serviceID": missingServiceIDs, "Online": False, "lastUpdate": datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+        entry = {"serviceID": missingServiceIDs, "Online": False, "lastUpdate": datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
 
         update_entry_inDB(DBPath, "Services", "serviceID", entry)
         EndPoint.setOnlineStatus(newEndPointIDs)

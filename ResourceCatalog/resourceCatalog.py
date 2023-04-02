@@ -19,6 +19,10 @@ class ResourceCatalog:
                 case "getInfo":
                     for entry in params:
                         return self.extractByKey(entry)
+                    
+                case "checkPresence":
+                    for entry in params:
+                        return self.checkPresence(entry)
                      
                 case "exit":
                     return self.exit(self.filename)
@@ -294,7 +298,7 @@ class ResourceCatalog:
             for conn in connData["conns"]:               
                 if(conn["new_status"]):
                     entry = dict(zip(connData["keyNames"], conn["keyValues"]))
-                    entry["lastUpdate"] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    entry["lastUpdate"] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
                     if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])):
                         save_entry2DB(self.DBPath, connData["table"], entry)
                 
@@ -345,6 +349,16 @@ class ResourceCatalog:
             raise web_exception(400, e)
 
         return reconstructedData
+    
+    def checkPresence(self, entry): # check if an entry is present in the DB
+        try:
+            table = entry["table"]
+            keyNames = entry["keyNames"]
+            keyValues = entry["keyValues"]
+            
+            return json.dumps({"result" : check_presence_inDB(self.DBPath, table, keyNames, keyValues)})
+        except Exception as e:
+            raise web_exception(400, "An error occurred while checking the presence of an entry in the DB:\n\t" + str(e))            
 
     def extractByKey(self, entry):
         table = entry["table"]

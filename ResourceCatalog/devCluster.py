@@ -12,7 +12,7 @@ class DevCluster:
         self.devClusterData = devClusterData
 
         if(newDevCluster):
-            self.lastUpdate = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     def checkKeys(self, devClusterData):
         if(not all(key in devClusterData.keys() for key in self.devClusterKeys)):
@@ -56,7 +56,7 @@ class DevCluster:
                 raise web_exception(400, "An devCluster with ID \"" + self.devClustID + "\" already exists in the database")
             
             self.Online = True
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
             if("deviceID" in self.devClusterData.keys()):
                 for deviceID in self.deviceID:
@@ -77,7 +77,7 @@ class DevCluster:
                 raise web_exception(400, "Device Cluster with ID \"" + self.devClustID + "\" does not exist in the database")
             
 
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
             update_entry_inDB(DBPath, "DevClusters", "devClustID", self.to_dict())
         except web_exception as e:
