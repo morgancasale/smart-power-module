@@ -4,7 +4,7 @@ import json
 
 from threading import Thread
 
-from Error_Handler import *
+from .Error_Handler import *
 
 class RESTServer(Thread):
     def __init__(self, threadID, threadName, configs, init_func=None, GETHandler=None, POSTHandler=None, PUTHandler=None, DELETEHandler=None, PATCHHandler=None):
@@ -40,7 +40,7 @@ class RESTServer(Thread):
 
     exposed = True    
 
-    @cherrypy_cors.tools.preflight(allowed_methods=["GET", "DELETE", "POST", "PUT", "PATCH"])
+    @cherrypy_cors.tools.preflight(allowed_methods=["GET", "DELETE", "POST", "PUT", "PATCH"]) # check allowed methods from configs
     def OPTIONS(self, *uri, **params):
         pass
 

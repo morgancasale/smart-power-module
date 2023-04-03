@@ -1,4 +1,6 @@
 /ResourceCatalog/__pycache__
+/ResourceCatalog/test.py
+
 /microserviceBase/__pycache__
-/ResourceCatalog/party.json
+/microserviceBase/test.py
 test.py

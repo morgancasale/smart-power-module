@@ -1,8 +1,8 @@
-from REST import *
-from MQTT import *
-from register import *
+from .REST import *
+from .MQTT import *
+from .register import *
 
-from Error_Handler import *
+from .Error_Handler import *
 
 
 class ServiceBase(object):

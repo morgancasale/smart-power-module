@@ -1,12 +1,16 @@
 import json
-import Error_Handler
+from .Error_Handler import *
 import time
 import paho.mqtt.client as MQTT
 
 from threading import Thread
 
-class MyMQTT():
+class MyMQTT(Thread):
     def __init__(self, threadID, threadName, configs, clientID, broker, brokerPort, subNotifier=None):
+        Thread.__init__(self)
+        self.threadID = threadID
+        self.name = threadName
+
         self.broker = broker
         self.brokerPort = brokerPort
         self.subNotifier = subNotifier

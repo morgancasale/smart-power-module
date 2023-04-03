@@ -4,16 +4,17 @@ import json
 
 from threading import Thread
 
-from utility import *
-from Error_Handler import *
+from .utility import *
+from .Error_Handler import *
 
 class Register(Thread):
-    def __init__(self, threadID, threadName, configs):
+    def __init__(self, threadID, threadName, configs, config_file):
         Thread.__init__(self)
         self.threadID = threadID
         self.name = threadName
         
         self.configs = configs
+        self.config_file = config_file
         self.clientErrorHandler = Client_Error_Handler()
         self.serverErrorHandler = Server_Error_Handler()
 
@@ -57,6 +58,12 @@ class Register(Thread):
                     if(not isinstance(self.configs["T_Registration"], (int, float)) or self.configs["T_Registration"] < 0):
                         raise self.clientErrorHandler.BadRequest("T_Registration parameter must be a positive number")
     
+    def updateConfigFile(self, keys, value):
+        with open(self.config_file, "w+") as file:
+            configs = json.load(file)
+            configs[keys[0]][keys[1]] = value
+            json.dump(configs, file, indent=4)
+
     def generateServiceID(self):
         existence = True
         while(existence):
@@ -74,6 +81,8 @@ class Register(Thread):
                 raise web_exception(response.status_code, str(response.content))
             
             existence = json.loads(response.content)["result"]
+
+        self.updateConfigFile(["REGISTRATION", "serviceID"], newID)
 
         return newID
 

@@ -1,34 +1,43 @@
 {
-    "CONFIG":{
-        "service_Name":"string",
-        "service_ID":"string",
-        "activatedMethod":{ "MQTT": "bool", "REST": "bool"}
+    "CONFIG" : {
+        "activatedMethod": { "MQTT": false , "REST": true},
+        "houseID": ["H1", "H2"],
+        "userID": ["U1", "U2"],
+        "resourceID" : null
     },
 
-    "REST":{
-        "Address": "string",
-        "Port": "int",
-        "Crud":{
-            "GET": "bool",
-            "POST": "bool",
-            "PUT": "bool",
-            "DELETE": "bool"
+    "EndPoint" : {
+        "endPointID" : null,
+        "REST" : {
+            "address" : "192.168.2.145",
+            "port" : 8099,
+            "crud" : {
+                "GET": true,
+                "POST": true,
+                "PUT": true,
+                "DELETE": true,
+                "PATCH": true
+            }
+        },
+
+        "MQTT":{
+            "subPub" : {"sub": false, "pub": false},
+            "clientID" : "string",
+            "brokerAddress" : "string",
+            "brokerPort" : 2300,
+            "subTopic" : "string",
+            "pubTopic" : "string",
+            "QoS" : 0
+        
         }
     },
 
-    "MQTT":{
-        "SubPub": {"sub": "bool", "pub": "bool"},
-        "Client_ID": "string",
-        "Broker_Address": "string",
-        "Broker_Port": "int",
-        "Sub_Topic": "string",
-        "Pub_Topic": "string",
-        "QoS": "int"
-       
-    },
-    "REGISTRATION":{
-        "Catalogue_Address": "string",
-        "Catalogue_Port": "int",
-        "T_Registration": "int"
+    "REGISTRATION" : {
+        "enabled" : false,     
+        "serviceName" : "ResourceCatalog",
+        "serviceID" : "S1",
+        "catalogAddress" : "http://192.168.2.145",
+        "catalogPort" : 8099,
+        "T_Registration" : 0.1
     }
 }
