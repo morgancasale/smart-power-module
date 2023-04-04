@@ -2,10 +2,9 @@ from utility import *
 
 class EndPoint:
     def __init__(self, endPointData, newEndPoint = False):
-        self.endPointKeys = ["endPointID", "endPointName", "commProtocol", "IPAddress", "RESTPort", "MQTTPort", "MQTTTopics"]
+        self.endPointKeys = ["endPointID", "endPointName", "protocols", "IPAddress", "port", "clientID", "CRUDMethods", "MQTTTopics"]
         self.connTables = ["DeviceEndP_conn"]
         
-
         if(newEndPoint) : self.checkKeys(endPointData)
         self.checkSaveValues(endPointData)
 
@@ -19,9 +18,8 @@ class EndPoint:
     def to_dict(self):
         result = {}
 
-        for key in self.endPointData.keys():
-            if(key in self.endPointKeys): #TODO forse inutile
-                result[key] = self.endPointData[key]
+        for key in self.endPointKeys:
+            result[key] = self.endPointData[key]
 
         result["Online"] = self.Online
         result["lastUpdate"] = self.lastUpdate
@@ -43,59 +41,73 @@ class EndPoint:
                             self.endPointID = endPointData["endPointID"]
                         case "endPointName":
                             self.endPointName = endPointData["endPointName"]
-                case "commProtocol":
+
+                case "protocols":
                     if(not("MQTT" in endPointData[key] or "REST" in endPointData[key])):
-                        raise web_exception(400, "\"commProtocol\" must be MQTT and/or REST")
+                        raise web_exception(400, "\"protocols\" must be MQTT and/or REST")
 
                     if(not all(isinstance(prtcl, str) for prtcl in endPointData[key])):
-                        raise web_exception(400, "\"commProtocol\" value must be a list of strings")
+                        raise web_exception(400, "\"protocols\" value must be a list of strings")
 
                     if("REST" in endPointData[key] and endPointData["IPAddress"] == None):
-                        raise web_exception(400, "\"IPAddress\" must not be null if commProtocol is REST")
+                        raise web_exception(400, "\"IPAddress\" must not be null if protocols is REST")
                     if("REST" in endPointData[key] and not("MQTT" in endPointData[key]) and endPointData["MQTTTopics"] != None):
-                        raise web_exception(400, "\"MQTTTopics\" must be null if commProtocol is REST")
+                        raise web_exception(400, "\"MQTTTopics\" must be null if protocols is REST")
 
                     if("MQTT" in endPointData[key] and endPointData["MQTTTopics"] == None):
-                        raise web_exception(400, "\"MQTTTopics\" parameter must not be null if commProtocol is MQTT")
+                        raise web_exception(400, "\"MQTTTopics\" parameter must not be null if protocols is MQTT")
                     if("MQTT" in endPointData[key] and not("REST" in endPointData[key]) and endPointData["IPAddress"] != None):
-                        raise web_exception(400, "\"IPAddress\" must be null if commProtocol is MQTT")
+                        raise web_exception(400, "\"IPAddress\" must be null if protocols is MQTT")
                     
-                    if(not isinstance(endPointData["commProtocol"], list)) : endPointData["commProtocol"] = [endPointData["commProtocol"]]
-                    self.commProtocol = endPointData["commProtocol"]
+                    if(not isinstance(endPointData["protocols"], list)) : endPointData["protocols"] = [endPointData["protocols"]]
+                    self.protocols = endPointData["protocols"]
+
                 case "IPAddress":
                     if(endPointData[key] != None and not isinstance(endPointData[key], str)): # TODO Check if IP address is valid
                         raise web_exception(400, "\"IPAddress\" value must be string")
                     self.IPAddress = endPointData["IPAddress"]
-                case "RESTPort":
+
+                case "port":
                     if(endPointData[key] != None and not isinstance(endPointData[key], int)): # TODO Check if port is valid
-                        raise web_exception(400, "\"RESTPort\" value must be integer")
+                        raise web_exception(400, "\"port\" value must be integer")
                     
-                    if(endPointData[key] == None and "REST" in endPointData["commProtocol"]):
-                        raise web_exception(400, "\"RESTPort\" must not be null if commProtocol is REST")
-                    if(endPointData[key] != None and not "REST" in endPointData["commProtocol"]):
-                        raise web_exception(400, "\"RESTPort\" must be null if commProtocol is not REST")
-                    
-                    if(endPointData["MQTTPort"] == endPointData[key]):
-                        raise web_exception(400, "\"RESTPort\" and \"MQTTPort\" must be different")
-                case "MQTTPort":
-                    if(endPointData[key] != None and not isinstance(endPointData[key], int)): # TODO Check if port is valid
-                        raise web_exception(400, "\"MQTTPort\" value must be integer")
-                    
-                    if(endPointData[key] == None and "MQTT" in endPointData["commProtocol"]):
-                        raise web_exception(400, "\"MQTTPort\" must not be null if commProtocol is MQTT")
-                    if(endPointData[key] != None and not "MQTT" in endPointData["commProtocol"]):
-                        raise web_exception(400, "\"MQTTPort\" must be null if commProtocol is not MQTT")
-                    
-                    if(endPointData["RESTPort"] == endPointData[key]):
-                        raise web_exception(400, "\"RESTPort\" and \"MQTTPort\" must be different")
+                    self.RESTPort = endPointData["port"]
+
+                case "clientID":
+                    if(not("MQTT" in endPointData["protocols"]) and endPointData[key] == None):
+                        raise web_exception(400, "\"clientID\" must not be null if protocols is MQTT")
+                    if(not isinstance(endPointData[key], str)):
+                        raise web_exception(400, "\"clientID\" value must be string")
+                    self.clientID = endPointData["clientID"]
+
+                case "CRUDMethods":
+                    methods = endPointData[key]
+                    if(not isinstance(methods, list)):
+                        raise web_exception(400, "\"CRUDMethods\" value must be a list")
+                    if(not all(isinstance(method, str) for method in methods)):
+                        raise web_exception(400, "\"CRUDMethods\" value must be a list of strings")
+                    if(not all(method in ["GET", "POST", "PUT", "DELETE", "PATCH"] for method in methods)):
+                        raise web_exception(400, "Unexpected method in \"" + key +"\".")
+
                 case "MQTTTopics":
-                    cond = endPointData[key] != None and len(endPointData[key]) == 0
-                    cond &= not all(isinstance(topic, str) for topic in endPointData[key])
-                    if(cond): 
-                        raise web_exception(400, "\"MQTTTopics\" must be a list of strings not empty")
+                    topics = endPointData[key]
+                    if(not isinstance(topics, dict)):
+                        raise web_exception(400, "\"" + key + "\" must be a dictionary")
+                    if(not all(key in ["pub", "sub"] for key in topics.keys())):
+                        raise web_exception(400, "\"" + key + "\" must have parameters \"pub\" and \"sub\"")
                     
-                    if(not isinstance(endPointData["MQTTTopics"], list)) : endPointData["MQTTTopics"] = [endPointData["MQTTTopics"]]
-                    self.MQTTTopics = endPointData["MQTTTopics"]
+                    if(not isinstance(topics["sub"], list)):
+                        raise web_exception(400, "Subscription \"" + key + "\" must be a list")
+                    if(not all(isinstance(topic, str) for topic in topics["sub"])):
+                        raise web_exception(400, "Subscription \"" + key + "\" must be a list of strings")
+                    
+                    if(not isinstance(topics["pub"], list)):
+                        raise web_exception(400, "Publication \"" + key + "\" must be a list")
+                    if(not all(isinstance(topic, str) for topic in topics["pub"])):
+                        raise web_exception(400, "Publication \"" + key + "\" must be a list of strings")
+                    
+                    self.MQTTTopics = endPointData[key]
+                    
                 case _:
                     raise web_exception(400, "Unexpected key \"" + key + "\"")
 
@@ -112,7 +124,7 @@ class EndPoint:
                 data["MQTTTopics"] = [data["MQTTTopics"]]
             
             result = True
-            if(not all(prtc in data["commProtocol"] for prtc in self.commProtocol)):  
+            if(not all(prtcl in data["protocols"] for prtcl in self.protocols)):  
                 result = False
             if(data["IPAddress"] != self.IPAddress):
                 result = False

@@ -12,7 +12,9 @@ class RESTServer(Thread):
         self.threadID = threadID
         self.name = threadName
         
-        self.crud_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
+        self.configParams = ["endPointID", "endPointName", "IPAddress", "port", "CRUDMethods"]
+        self.CRUDMethods_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
+        
         try:
             self.clientErrorHandler = Client_Error_Handler()
             self.serverErrorHandler = Server_Error_Handler()
@@ -20,11 +22,11 @@ class RESTServer(Thread):
 
             self.check_and_loadConfigs()
 
-            if("GET" in self.configs["crud"] and self.configs["crud"]["GET"]) : self.GETHandler = GETHandler
-            if("POST" in self.configs["crud"] and self.configs["crud"]["POST"]) : self.POSTHandler = POSTHandler
-            if("PUT" in self.configs["crud"] and self.configs["crud"]["PUT"]) : self.PUTHandler = PUTHandler
-            if("DELETE" in self.configs["crud"] and self.configs["crud"]["DELETE"]) : self.DELETEHandler = DELETEHandler
-            if("PATCH" in self.configs["crud"] and self.configs["crud"]["PATCH"]) : self.PATCHHandler = PATCHHandler
+            if("GET" in self.configs["CRUDMethods"] and self.configs["CRUDMethods"]["GET"]) : self.GETHandler = GETHandler
+            if("POST" in self.configs["CRUDMethods"] and self.configs["CRUDMethods"]["POST"]) : self.POSTHandler = POSTHandler
+            if("PUT" in self.configs["CRUDMethods"] and self.configs["CRUDMethods"]["PUT"]) : self.PUTHandler = PUTHandler
+            if("DELETE" in self.configs["CRUDMethods"] and self.configs["CRUDMethods"]["DELETE"]) : self.DELETEHandler = DELETEHandler
+            if("PATCH" in self.configs["CRUDMethods"] and self.configs["CRUDMethods"]["PATCH"]) : self.PATCHHandler = PATCHHandler
 
             if(init_func != None): init_func()
 
@@ -80,26 +82,25 @@ class RESTServer(Thread):
             raise self.clientErrorHandler.MethodNotAllowed("PATCH method is not allowed")
 
     def checkParams(self):
-        config_params = ["address", "port", "crud"]
-
-        if(not all(key in config_params for key in self.configs.keys())):
-            raise self.clientErrorHandler.BadRequest("Misssing parameters in config file")
-        
-        if(not any(key in self.crud_methods for key in self.configs["crud"].keys())):
-            raise self.clientErrorHandler.BadRequest("At least one CRUD method must be specified")
+        if(not all(key in self.configParams for key in self.configs.keys())):
+            raise self.clientErrorHandler.BadRequest("Missing parameters in config file")
         
     def validateParams(self):
-        if(not isinstance(self.configs["address"], str)):
-            raise self.clientErrorHandler.BadRequest("Address parameter must be a string")
-        
-        if(not isinstance(self.configs["port"], int)):
-            raise self.clientErrorHandler.BadRequest("Port parameter must be a integer")
-        
-        for method in self.crud_methods:
-            if(method in self.configs["crud"].keys()):
-                if(not isinstance(self.configs["crud"][method], bool)):
-                    raise self.clientErrorHandler.BadRequest(method + " parameter value must be a boolean")
-        
+        for key in self.configParams:
+            match key:
+                case ("endPointID", "endPointName", "IPAddress"):
+                    if(not isinstance(self.configs[key], str)):
+                        raise self.clientErrorHandler.BadRequest(key + " parameter must be a string")
+                case "port":
+                    if(not isinstance(self.configs[key], int)):
+                        raise self.clientErrorHandler.BadRequest(key + " parameter must be a integer")
+                case "CRUDMethods":
+                    if(not any(key in self.CRUDMethods_methods for key in self.configs["CRUDMethods"].keys())):
+                        raise self.clientErrorHandler.BadRequest("At least one CRUD method must be specified")
+                    for method in self.CRUDMethods_methods:
+                        if(method in self.configs["CRUDMethods"].keys()):
+                            if(not isinstance(self.configs["CRUDMethods"][method], bool)):
+                                raise self.clientErrorHandler.BadRequest(method + " parameter value must be a boolean")        
 
     def check_and_loadConfigs(self):        
         try:
@@ -128,7 +129,7 @@ class RESTServer(Thread):
         cherrypy_cors.install()
         
         cherrypy.config.update({
-            'server.socket_host': webServices.configs["address"],
+            'server.socket_host': webServices.configs["IPAddress"],
             'server.socket_port': webServices.configs["port"],
             'cors.expose.on': True
         })

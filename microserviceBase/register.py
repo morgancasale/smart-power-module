@@ -8,17 +8,30 @@ from .utility import *
 from .Error_Handler import *
 
 class Register(Thread):
-    def __init__(self, threadID, threadName, configs, config_file):
+    def __init__(self, threadID, threadName, generalConfigs, config_file):
         Thread.__init__(self)
         self.threadID = threadID
         self.name = threadName
         
-        self.configs = configs
+        self.configs = generalConfigs["REGISTRATION"]
+        self.generalConfigs = generalConfigs
         self.config_file = config_file
+
         self.clientErrorHandler = Client_Error_Handler()
         self.serverErrorHandler = Server_Error_Handler()
 
         self.check_and_loadConfigs()
+
+        self.endPoints = []
+        if(self.generalConfigs["CONFIG"]["activatedMethod"]["REST"]) : self.generateRESTEndPoint()
+        if(self.generalConfigs["CONFIG"]["activatedMethod"]["MQTT"]) : self.generateMQTTEndPoint()
+        
+        
+        cond = (self.generalConfigs["REST"]["endPointID"] == None and self.generalConfigs["MQTT"]["topicID"] == None)
+        cond |= (self.generalConfigs["REST"]["endPointID"] == self.generalConfigs["MQTT"]["endPointID"])
+        cond &= self.generalConfigs["CONFIG"]["activatedMethod"]["REST"] and self.generalConfigs["CONFIG"]["activatedMethod"]["MQTT"]
+        if(cond):
+            self.joinEndPoints()
 
         if(self.configs["serviceID"] == None):
             self.configs["serviceID"] = self.generateServiceID()
@@ -59,7 +72,7 @@ class Register(Thread):
                         raise self.clientErrorHandler.BadRequest("T_Registration parameter must be a positive number")
     
     def updateConfigFile(self, keys, value):
-        with open(self.config_file, "w+") as file:
+        with open(self.config_file, "r+") as file:
             configs = json.load(file)
             configs[keys[0]][keys[1]] = value
             json.dump(configs, file, indent=4)
@@ -85,6 +98,64 @@ class Register(Thread):
         self.updateConfigFile(["REGISTRATION", "serviceID"], newID)
 
         return newID
+    
+    def generateEndPointID(self):
+        existence = True
+        while(existence):
+            newID = "E" + randomB64String(6)
+
+            url = self.configs["catalogAddress"] + ":" + str(self.configs["catalogPort"])+ "/checkPresence"
+            params = {
+                "table" : "Services",
+                "keyNames" : "endPointID",
+                "keyValues" : newID
+            }
+
+            response = get(url, params=params)
+            if(response.status_code != 200):
+                raise web_exception(response.status_code, str(response.content))
+            
+            existence = json.loads(response.content)["result"]
+
+        return newID
+    
+    def generateRESTEndPoint(self):
+        if(self.generalConfigs["REST"]["endPointID"] == None):
+            self.generalConfigs["REST"]["endPointID"] = self.generateEndPointID()
+            self.updateConfigFile(["REST", "endPointID"], self.generalConfigs["REST"]["endPointID"])
+        
+        self.endPoints.append({
+            "endPointID" : self.generalConfigs["REST"]["endPointID"],
+            "endPointName" : self.generalConfigs["REST"]["endPointName"],
+            "protocols" : ["REST"],
+            "IPAddress" : self.generalConfigs["REST"]["IPAddress"],
+            "port" : self.generalConfigs["REST"]["port"], 
+            "CRUDMethods" : {}
+        })
+
+        for key, value in self.generalConfigs["REST"]["CRUDMethods"].items():
+            if(value):
+                self.endPoints[0]["CRUDMethods"].update({key : value})
+
+    def generateMQTTEndPoint(self):         
+        if(self.generalConfigs["MQTT"]["endPointID"] == None):
+            self.generalConfigs["MQTT"]["endPointID"] = self.generateEndPointID()
+            self.updateConfigFile(["MQTT", "endPointID"], self.generalConfigs["MQTT"]["endPointID"])
+        
+        self.endPoints.append({
+            "endPointID" : self.generalConfigs["MQTT"]["endPointID"],
+            "endPointName" : self.generalConfigs["MQTT"]["endPointName"],
+            "protocols" : ["MQTT"],
+            "clientID" : self.generalConfigs["MQTT"]["clientID"],
+            "MQTTTopics" : self.generalConfigs["MQTT"]["MQTTTopics"]
+        })
+
+    def joinEndPoints(self):
+        self.endPoints[0]["clientID"] = self.generalConfigs["MQTT"]["clientID"]
+        self.endPoints[0]["protocols"].append("MQTT")        
+        self.endPoints[0]["MQTTTopics"] = self.generalConfigs["MQTT"]["MQTTTopics"]
+        del self.endPoints[1]
+        self.updateConfigFile(["MQTT", "endPointID"], self.endPoints[0]["endPointID"])
 
     def KeepAlive(self):
         serverErrorHandler = Server_Error_Handler()
@@ -95,6 +166,18 @@ class Register(Thread):
                     "serviceID" : self.configs["serviceID"],
                     "serviceName" : self.configs["serviceName"]
                 }
+
+                if(self.generalConfigs["CONFIG"]["houseID"] != None):
+                    service["houseID"] = self.generalConfigs["CONFIG"]["houseID"]
+
+                if(self.generalConfigs["CONFIG"]["userID"] != None):
+                    service["userID"] = self.generalConfigs["CONFIG"]["userID"]
+                
+                if(self.generalConfigs["CONFIG"]["resourceID"] != None):
+                    service["resourceID"] = self.generalConfigs["CONFIG"]["resourceID"]
+
+                service["endPoints"] = self.endPoints
+
                 headers = {'Content-Type': "application/json", 'Accept': "application/json"}
 
                 response = put(url, headers=headers, data=json.dumps([service]))

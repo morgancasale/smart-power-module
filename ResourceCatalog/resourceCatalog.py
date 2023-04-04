@@ -60,6 +60,12 @@ class ResourceCatalog:
                         entry.save2DB(self.DBPath)
                     return "Device Cluster registration was successful"
                 
+                case "regEndPoint":
+                    for endPointData in params:
+                        entry = EndPoint(endPointData, newEndPoint = True)
+                        entry.save2DB(self.DBPath)
+                    return "End Point registration was successful"
+                
                 case "regService":
                     for serviceData in params:
                         entry = Resource(serviceData, newService = True)
@@ -212,9 +218,9 @@ class ResourceCatalog:
                         entry.updateDB(self.DBPath)
                     return "EndPoint update was successful"
 
-                case "updateConn":
+                case "updateConnStatus":
                     for connData in params:
-                        self.updateConn(connData)
+                        self.updateConnStatus(connData)
                     return "Connection update was successful"
                 
                 case "exit":
@@ -284,37 +290,7 @@ class ResourceCatalog:
                 case _:
                     raise web_exception(400, "Unexpected invalid command")
         except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the DELETE request:\n\t" + e.message)
-
-    def updateConn(self, connData): #TODO check integrity of request
-        try:
-            if(not check_presence_ofTableInDB(self.DBPath, connData["table"])): 
-                raise web_exception(400, "The table \"" + connData["table"] + "\" does not exist")
-            
-            for keyName in connData["keyNames"]:
-                if(not check_presence_ofColumnInDB(self.DBPath, connData["table"], keyName)):
-                    raise web_exception(400, "The key \"" + keyName + "\" does not exist in the table \"" + connData["table"] + "\"")
-            
-            for conn in connData["conns"]:               
-                if(conn["new_status"]):
-                    entry = dict(zip(connData["keyNames"], conn["keyValues"]))
-                    entry["lastUpdate"] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-                    if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])):
-                        save_entry2DB(self.DBPath, connData["table"], entry)
-                
-                else:
-                    if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])):
-                        msg = "The entry (\"" + conn["keyValues"][0] +", " + conn["keyValues"][1]
-                        msg += "\") does not exist in the table \"" + connData["table"] + "\""
-                        raise web_exception(400, msg)
-
-                    delete_entry_fromDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])
-
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while updating a connection:\n\t" + e.message)
-        except Exception as e:
-            raise web_exception(400, "An error occurred while updating a connection:\n\t" + str(e))
-        
+            raise web_exception(400, "An error occurred while handling the DELETE request:\n\t" + e.message)        
 
     def reconstructJson(self, table, selectedData, requestEntry):
         reconstructedData = []
@@ -405,3 +381,32 @@ class ResourceCatalog:
         
         return json.dumps(reconstructedData)
         
+
+    def updateConnStatus(self, connData): #TODO check integrity of request
+        try:
+            if(not check_presence_ofTableInDB(self.DBPath, connData["table"])): 
+                raise web_exception(400, "The table \"" + connData["table"] + "\" does not exist")
+            
+            for keyName in connData["keyNames"]:
+                if(not check_presence_ofColumnInDB(self.DBPath, connData["table"], keyName)):
+                    raise web_exception(400, "The column \"" + keyName + "\" does not exist in the table \"" + connData["table"] + "\"")
+            
+            for conn in connData["conns"]:               
+                if(conn["new_status"]):
+                    entry = dict(zip(connData["keyNames"], conn["keyValues"]))
+                    entry["lastUpdate"] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])):
+                        save_entry2DB(DBPath, connData["table"], entry)
+                
+                else:
+                    if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])):
+                        msg = "The entry (\"" + conn["keyValues"][0] +", " + conn["keyValues"][1]
+                        msg += "\") does not exist in the table \"" + connData["table"] + "\""
+                        raise web_exception(400, msg)
+
+                    delete_entry_fromDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])
+
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while updating a connection:\n\t" + e.message)
+        except Exception as e:
+            raise web_exception(400, "An error occurred while updating a connection:\n\t" + str(e))

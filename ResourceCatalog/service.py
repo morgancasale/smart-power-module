@@ -53,10 +53,8 @@ class Service:
     def to_dict(self):
         result = {}
 
-        for key in self.serviceData.keys():
-            match key:
-                case ("serviceID" | "serviceName"):
-                    result[key] = self.serviceData[key]
+        for key in self.serviceKeys():
+            result[key] = self.serviceData[key]
         
         result["Online"] = self.Online
         result["lastUpdate"] = self.lastUpdate
@@ -126,6 +124,27 @@ class Service:
             self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
             update_entry_inDB(DBPath, "Services", "serviceID", self.to_dict())
+
+            if(self.serviceData["houseID"] != None):
+                data = {"table" : self.connTables[0], "refID" : "serviceID", "connID" : "houseID", "refValue" : self.serviceID, "connValues" : self.houseID}
+                updateConnTable(DBPath, data, self.Online)
+            
+            if(self.serviceData["userID"] != None):
+                data = {"table" : self.connTables[1], "refID" : "serviceID", "connID" : "userID", "refValue" : self.serviceID, "connValues" : self.userID}
+                updateConnTable(DBPath, data, self.Online)
+
+            if(self.serviceData["clusterID"] != None):
+                data = {"table" : self.connTables[2], "refID" : "serviceID", "connID" : "clusterID", "refValue" : self.serviceID, "connValues" : self.clusterID}
+                updateConnTable(DBPath, data, self.Online)
+            
+            if(self.serviceData["resourceID"] != None):
+                data = {"table" : self.connTables[2], "refID" : "serviceID", "connID" : "resourceID", "refValue" : self.serviceID, "connValues" : self.resourceID}
+                updateConnTable(DBPath, data, self.Online)
+
+            if(self.serviceData["endPointID"] != None):
+                data = {"table" : self.connTables[3], "refID" : "serviceID", "connID" : "endPointID", "refValue" : self.serviceID, "connValues" : self.endPointID}
+                updateConnTable(DBPath, data, self.Online)
+                
         except web_exception as e:
             raise web_exception(400, "An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB:\n\t" + e.message)
         except Exception as e:

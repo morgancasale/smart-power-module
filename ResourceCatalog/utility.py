@@ -61,10 +61,16 @@ def save_entry2DB(DBPath, table, entryData):
             if(isinstance(value, list)):
                 if(isinstance(value[0], int)):
                     value = [str(v) for v in value]
+                else:
+                    value = json.dumps(value).replace("\"", "\'")
+            if(isinstance(value, dict)):
+                value = json.dumps(value).replace("\"", "\'")            
             if(value == None):
                 value = "NULL"
             if(isinstance(value, bool)):
                 value = str(int(value))
+            if(isinstance(value, (int, float))):
+                value = str(value)
 
             values.append(value)
         query += "(\"" + "\", \"".join(values) + "\")"
@@ -86,16 +92,21 @@ def update_entry_inDB(DBPath, table, keyName, entryData):
         for key, value in entryData.items():
             if key != keyName:
                 keys.append(key)
+
                 if(isinstance(value, list)):
                     if(isinstance(value[0], int)):
                         value = [str(v) for v in value]
+                    else:
+                        value = json.dumps(value).replace("\"", "\'")
+                if(isinstance(value, dict)):
+                    value = json.dumps(value).replace("\"", "\'")            
                 if(value == None):
                     value = "NULL"
                 if(isinstance(value, bool)):
-                    value = int(value)
-                if(value == None):
-                    value = "NULL"
-                value = str(value)
+                    value = str(int(value))
+                if(isinstance(value, (int, float))):
+                    value = str(value)
+
                 edatas.append(value)
         keys = "(\"" + ("\", \"").join(keys)+"\")"
         edatas = "(\"" + ("\", \"").join(edatas) + "\")"
@@ -151,7 +162,7 @@ def nested_dict_pairs_iterator(dict_obj):
             # If value is not dict type then yield the value
             yield (key, value)
 
-def fix_jsonString(string):
+def fixJSONString(string):
     string = string.encode('unicode_escape').decode()
     string = string.replace(r"\\", "")
     string = string.replace(r']"', r"]")
@@ -165,7 +176,7 @@ def DBQuery_to_dict(DBPath, query):
     conn.close()
 
     data = result.to_json(orient="records")
-    data = json.loads(fix_jsonString(data))
+    data = json.loads(fixJSONString(data))
     if (len(data) == 0):
         return [None]
     return data
@@ -186,3 +197,42 @@ def istimeinstance(obj):
         return True
     except ValueError:
         return False
+    
+def updateConnTable(DBPath, data, newStatus = None):
+    try:
+        table = data["table"]
+        refID = data["refID"]
+        connID = data["connID"]
+
+        refValue = data["refValue"]
+        connValues = data["connValues"]
+
+        if(not check_presence_ofTableInDB(DBPath, table)):
+            raise web_exception(400, "Table \"" + table + "\" does not exist.")
+        
+        for keyName in [refID, connID]:
+            if(not check_presence_ofColumnInDB(self.DBPath, connData["table"], keyName)):
+                raise web_exception(400, "The column \"" + keyName + "\" does not exist in the table \"" + table + "\"")
+            
+        if(not check_presence_inDB(DBPath, table, refID, refValue)):
+            raise web_exception(400, "The entry \"" + refValue + "\" of column \"" + refID + "\" does not exist in the table \"" + table + "\"")
+        
+        for value in connValues:
+            entry = {
+                refID:refValue, 
+                connID:value,
+                "lastUpdate" : datetime.now().strftime("%d/%m/%Y %H:%M")
+            }
+            if(newStatus != None):
+                entry["Online"] = newStatus
+            if(not check_presence_inDB(DBPath, table, [refID,connID], [refValue,value])):
+                save_entry2DB(DBPath, table, entry)
+            else:
+                update_entry_inDB(DBPath, table, refID, entry)
+    
+    except web_exception as e:
+        raise web_exception(e.code, "An error occured while updating the connection table:\n\t" + e.message)
+    except Exception as e:
+        raise web_exception(400, "An error occured while updating the connection table:\n\t" + str(e))
+
+            

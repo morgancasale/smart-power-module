@@ -9,9 +9,9 @@
     "EndPoint" : {
         "endPointID" : null,
         "REST" : {
-            "address" : "192.168.2.145",
+            "IPAddress" : "192.168.2.145",
             "port" : 8099,
-            "crud" : {
+            "CRUDMethods" : {
                 "GET": true,
                 "POST": true,
                 "PUT": true,

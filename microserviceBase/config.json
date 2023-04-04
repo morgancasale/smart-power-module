@@ -4,9 +4,9 @@
     },
 
     "REST":{
-        "address" : "192.168.2.145",
+        "IPAddress" : "192.168.2.145",
         "port" : 8095,
-        "crud" : {
+        "CRUDMethods" : {
             "GET": true,
             "POST": false,
             "PUT": true,

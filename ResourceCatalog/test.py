@@ -1,5 +1,12 @@
-from utility import *
+import os
+import sys
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+sys.path.append(PROJECT_ROOT)
 
-a = "23/03/2023 thtkj23:59"
+from microserviceBase.serviceBase import *
 
-print(isinstance(a, datetime))
+a = ServiceBase("ResourceCatalog/serviceConfig.json")
+
+clientErrorHandler = Client_Error_Handler()
+
+print("!")

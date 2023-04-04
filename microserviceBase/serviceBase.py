@@ -4,6 +4,7 @@ from .register import *
 
 from .Error_Handler import *
 
+import os
 
 class ServiceBase(object):
     def __init__(self, config_file=None, init_REST_func=None, init_MQTT_func = None, GET=None, POST=None, PUT=None, DELETE=None, PATCH=None, Notifier=None, SubTopics=None):
@@ -12,10 +13,12 @@ class ServiceBase(object):
             self.serverErrorHandler = Server_Error_Handler()
             self.config_file = config_file
 
+            self.configParams = ["activatedMethod", "houseID", "userID", "resourceID"]
+
             self.check_and_loadConfigs()
 
             if(self.generalConfigs["REGISTRATION"]["enabled"]):
-                self.registerService = Register(1, "RegThread", self.generalConfigs["REGISTRATION"])
+                self.registerService = Register(1, "RegThread", self.generalConfigs, self.config_file)
                 self.registerService.start()
 
             if(self.configs["activatedMethod"]["REST"]):
@@ -27,7 +30,7 @@ class ServiceBase(object):
                 self.MQTT.start()
     
         except web_exception as e:
-            raise web_exception(e.code, "An error occurred while enabling servers: \n\t" + e.message)
+            raise web_exception(e.code, "An error occurred while enabling the servers: \n\t" + e.message)
 
 
         
@@ -48,20 +51,29 @@ class ServiceBase(object):
     
     
     def checkParams(self):
-        config_params = ["activatedMethod"]
-        if(not all(key in config_params for key in self.configs.keys())):
+        if(not all(key in self.configParams for key in list(self.configs.keys()))):
             raise self.clientErrorHandler.BadRequest("Missing parameters in config file")
    
     def validateParams(self):
-        methods = ["REST", "MQTT"]
-        
-        if (not all(key in methods for key in self.configs["activatedMethod"].keys())):
-            raise self.clientErrorHandler.BadRequest("Missing methods in activatedMethod parameter")
+        for key in self.configParams:
+            match key:
+                case "activatedMethod":
+                    methods = ["REST", "MQTT"]
+                    
+                    if (not all(key in methods for key in self.configs["activatedMethod"].keys())):
+                        raise self.clientErrorHandler.BadRequest("Missing methods in activatedMethod parameter")
 
-        err_cond = not isinstance(self.configs["activatedMethod"]["REST"], bool)
-        err_cond = err_cond or not isinstance(self.configs["activatedMethod"]["MQTT"], bool)
-        if(err_cond):
-            raise self.clientErrorHandler.BadRequest("activatedMethod parameters must be boolean")
+                    err_cond = not isinstance(self.configs["activatedMethod"]["REST"], bool)
+                    err_cond = err_cond or not isinstance(self.configs["activatedMethod"]["MQTT"], bool)
+                    if(err_cond):
+                        raise self.clientErrorHandler.BadRequest("activatedMethod parameters must be boolean")
+                case ("houseID", "userID", "resourceID"):
+                    if(self.configs[key] != None):
+                        if(not isinstance(self.configs[key], list)):
+                            raise self.clientErrorHandler.BadRequest(key + " parameter must be a list or null")
+                        if(not all(isinstance(item, str) for item in self.configs[key])):
+                            raise self.clientErrorHandler.BadRequest(key + " parameter must be a list of strings")
+
         
 
 
