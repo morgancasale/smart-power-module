@@ -12,7 +12,7 @@ class House:
         self.houseData = houseData
 
         if(newHouse):
-            self.lastUpdate = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     def checkKeys(self, houseData):
         if(not all(key in houseData.keys() for key in self.houseKeys)):
@@ -59,7 +59,7 @@ class House:
             if(check_presence_inDB(DBPath, "Houses", "houseID", self.houseID)):
                 raise web_exception(400, "An house with ID \"" + self.houseID + "\" already exists in the database")
             
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
             if("userID" in self.houseData.keys()):
                 for userID in self.userID:
@@ -77,22 +77,22 @@ class House:
 
             save_entry2DB(DBPath, "Houses", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving house with ID \"" + self.houseID + "\" to the DB: " + e.message)
+            raise web_exception(400, "An error occurred while saving house with ID \"" + self.houseID + "\" to the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving house with ID \"" + self.houseID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving house with ID \"" + self.houseID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
         try:
             if(not check_presence_inDB(DBPath, "Houses", "houseID", self.houseID)):
                 raise web_exception(400, "An house with ID \"" + self.houseID + "\" does not exist in the database")
             
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
             update_entry_inDB(DBPath, "Houses", "houseID", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while updating house with ID \"" + self.houseID + "\" in the DB: " + e.message)
+            raise web_exception(400, "An error occurred while updating house with ID \"" + self.houseID + "\" in the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating house with ID \"" + self.houseID + "\" in the DB: " + str(e))
+            raise web_exception(400, "An error occurred while updating house with ID \"" + self.houseID + "\" in the DB:\n\t" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
@@ -106,11 +106,22 @@ class House:
 
             delete_entry_fromDB(DBPath, "Houses", "houseID", params["houseID"])
         except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting house with ID \"" + params["houseID"] + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while deleting house with ID \"" + params["houseID"] + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting house with ID \"" + params["houseID"] + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while deleting house with ID \"" + params["houseID"] + "\" from the DB:\n\t" + str(e))
         
         return True
+
+    def set2DB(self, DBPath):
+        try:
+            if(not check_presence_inDB(DBPath, "Houses", "houseID", self.houseID)):
+                self.save2DB(DBPath)
+            else:
+                self.updateDB(DBPath)
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while saving house with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e.message))
+        except Exception as e:
+            raise web_exception(400, "An error occurred while saving house with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
 
     def DB_to_dict(DBPath, house):
         try:
@@ -138,6 +149,6 @@ class House:
 
             return houseData
         except web_exception as e:
-            raise web_exception(400, "An error occurred while retrieving house with ID \"" + houseID + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while retrieving house with ID \"" + houseID + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving house with ID \"" + houseID + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while retrieving house with ID \"" + houseID + "\" from the DB:\n\t" + str(e))

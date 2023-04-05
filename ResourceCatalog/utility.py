@@ -3,7 +3,8 @@ import pandas as pd
 import sqlite3 as sq
 import json
 import re
-import datetime
+import time
+from datetime import datetime
 
 DBPath = "db.sqlite"
 broker = "broker.hivemq.com"
@@ -13,13 +14,15 @@ def check_presence_inDB(DBPath, table, keyNames, keyValues):
         if(not isinstance(keyNames, list)) : keyNames = [keyNames]
         if(not isinstance(keyValues, list)) : keyValues = [keyValues]
 
+        keyValues = [str(value) for value in keyValues]
+
         keyNames = "(" + ", ".join(keyNames) + ")"
         keyValues = "(\"" + "\", \"".join(keyValues) + "\")"
 
         query = "SELECT COUNT(*)>0 as result FROM " + table + " WHERE " + keyNames + " = " + keyValues
         return bool(DBQuery_to_dict(DBPath, query)[0]["result"]) #True if the keyValue is present in the DB
     except Exception as e:
-        raise web_exception(400, "An error occured while extracting data from DB: " + str(e))
+        raise web_exception(400, "An error occured while extracting data from DB:\n\t" + str(e))
     
 
 def check_presence_ofColumnInDB(DBPath, table, columnName):
@@ -27,14 +30,14 @@ def check_presence_ofColumnInDB(DBPath, table, columnName):
         query = "SELECT COUNT(*)>0 AS result FROM pragma_table_info(\"" + table + "\") WHERE name=\"" + columnName + "\""
         return bool(DBQuery_to_dict(DBPath, query)[0]["result"])
     except Exception as e:
-        raise web_exception(400, "An error occured while extracting data from DB: " + str(e))
+        raise web_exception(400, "An error occured while extracting data from DB:\n\t" + str(e))
 
 def check_presence_ofTableInDB(DBPath, table):
     try:
         query = "SELECT COUNT(*)>0 AS result FROM sqlite_master WHERE (type, name) = (\"table\", \"" + table + "\")"
         return bool(DBQuery_to_dict(DBPath, query)[0]["result"])
     except Exception as e:
-        raise web_exception(400, "An error occured while extracting data from DB: " + str(e))
+        raise web_exception(400, "An error occured while extracting data from DB:\n\t" + str(e))
 
 def check_presence_inConnectionTables(DBPath, tables, keyName, keyValue):
     try:
@@ -45,7 +48,7 @@ def check_presence_inConnectionTables(DBPath, tables, keyName, keyValue):
         
         return result               
     except Exception as e:
-        raise web_exception(400, "An error occured while extracting data from DB: " + str(e))
+        raise web_exception(400, "An error occured while extracting data from DB:\n\t" + str(e))
 
 def save_entry2DB(DBPath, table, entryData):
     try:
@@ -56,11 +59,19 @@ def save_entry2DB(DBPath, table, entryData):
         values = []
         for value in entryData.values():
             if(isinstance(value, list)):
-                value = str(value)
+                if(isinstance(value[0], int)):
+                    value = [str(v) for v in value]
+                else:
+                    value = json.dumps(value).replace("\"", "\'")
+            if(isinstance(value, dict)):
+                value = json.dumps(value).replace("\"", "\'")            
             if(value == None):
                 value = "NULL"
             if(isinstance(value, bool)):
                 value = str(int(value))
+            if(isinstance(value, (int, float))):
+                value = str(value)
+
             values.append(value)
         query += "(\"" + "\", \"".join(values) + "\")"
 
@@ -69,7 +80,7 @@ def save_entry2DB(DBPath, table, entryData):
         conn.commit()
         conn.close()
     except Exception as e:
-        raise web_exception(400, "An error occured while saving data to DB: " + str(e))
+        raise web_exception(400, "An error occured while saving data to DB:\n\t" + str(e))
 
 def update_entry_inDB(DBPath, table, keyName, entryData):
     try:
@@ -81,12 +92,21 @@ def update_entry_inDB(DBPath, table, keyName, entryData):
         for key, value in entryData.items():
             if key != keyName:
                 keys.append(key)
+
                 if(isinstance(value, list)):
-                    value = str(value)
-                if(isinstance(value, bool)):
-                    value = str(int(value))
+                    if(isinstance(value[0], int)):
+                        value = [str(v) for v in value]
+                    else:
+                        value = json.dumps(value).replace("\"", "\'")
+                if(isinstance(value, dict)):
+                    value = json.dumps(value).replace("\"", "\'")            
                 if(value == None):
                     value = "NULL"
+                if(isinstance(value, bool)):
+                    value = str(int(value))
+                if(isinstance(value, (int, float))):
+                    value = str(value)
+
                 edatas.append(value)
         keys = "(\"" + ("\", \"").join(keys)+"\")"
         edatas = "(\"" + ("\", \"").join(edatas) + "\")"
@@ -113,6 +133,8 @@ def delete_entry_fromDB(DBPath, table, keyNames, keyValues):
         if(not isinstance(keyNames, list)) : keyNames = [keyNames]
         if(not isinstance(keyValues, list)) : keyValues = [keyValues]
 
+        keyValues = [str(value) for value in keyValues]
+
         conn = sq.connect(DBPath)
 
         keyNames = "(" + ", ".join(keyNames) + ")"
@@ -123,7 +145,7 @@ def delete_entry_fromDB(DBPath, table, keyNames, keyValues):
         conn.commit()
         conn.close()
     except Exception as e:
-        raise web_exception(400, "An error occured while deleting data from DB: " + str(e))
+        raise web_exception(400, "An error occured while deleting data from DB:\n\t" + str(e))
 
 def nested_dict_pairs_iterator(dict_obj):
     ''' This function accepts a nested dictionary as argument
@@ -140,7 +162,7 @@ def nested_dict_pairs_iterator(dict_obj):
             # If value is not dict type then yield the value
             yield (key, value)
 
-def fix_jsonString(string):
+def fixJSONString(string):
     string = string.encode('unicode_escape').decode()
     string = string.replace(r"\\", "")
     string = string.replace(r']"', r"]")
@@ -154,7 +176,7 @@ def DBQuery_to_dict(DBPath, query):
     conn.close()
 
     data = result.to_json(orient="records")
-    data = json.loads(fix_jsonString(data))
+    data = json.loads(fixJSONString(data))
     if (len(data) == 0):
         return [None]
     return data
@@ -167,3 +189,50 @@ def getIDs_fromDB(DBPath, table, keyName):
 def Ping(DBPath, table, KeyName, KeyValue):
     #TODO: get endpoints from DB and ping them
     return True
+
+
+def istimeinstance(obj):
+    try:
+        datetime.strptime(obj, "%d/%m/%Y %H:%M")
+        return True
+    except ValueError:
+        return False
+    
+def updateConnTable(DBPath, data, newStatus = None):
+    try:
+        table = data["table"]
+        refID = data["refID"]
+        connID = data["connID"]
+
+        refValue = data["refValue"]
+        connValues = data["connValues"]
+
+        if(not check_presence_ofTableInDB(DBPath, table)):
+            raise web_exception(400, "Table \"" + table + "\" does not exist.")
+        
+        for keyName in [refID, connID]:
+            if(not check_presence_ofColumnInDB(self.DBPath, connData["table"], keyName)):
+                raise web_exception(400, "The column \"" + keyName + "\" does not exist in the table \"" + table + "\"")
+            
+        if(not check_presence_inDB(DBPath, table, refID, refValue)):
+            raise web_exception(400, "The entry \"" + refValue + "\" of column \"" + refID + "\" does not exist in the table \"" + table + "\"")
+        
+        for value in connValues:
+            entry = {
+                refID:refValue, 
+                connID:value,
+                "lastUpdate" : datetime.now().strftime("%d/%m/%Y %H:%M")
+            }
+            if(newStatus != None):
+                entry["Online"] = newStatus
+            if(not check_presence_inDB(DBPath, table, [refID,connID], [refValue,value])):
+                save_entry2DB(DBPath, table, entry)
+            else:
+                update_entry_inDB(DBPath, table, refID, entry)
+    
+    except web_exception as e:
+        raise web_exception(e.code, "An error occured while updating the connection table:\n\t" + e.message)
+    except Exception as e:
+        raise web_exception(400, "An error occured while updating the connection table:\n\t" + str(e))
+
+            

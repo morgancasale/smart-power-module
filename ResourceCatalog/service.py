@@ -5,7 +5,7 @@ from devCluster import *
 
 class Service:
     def __init__(self, serviceData, newService = False):
-        self.serviceKeys = ["serviceID", "Name"]
+        self.serviceKeys = ["serviceID", "serviceName"]
         self.connTables = ["ServiceHouse_conn", "ServiceUser_conn", "ServiceCluster_conn", "ServiceRes_conn", "ServiceEndP_conn"]
 
         if(newService) : self.checkKeys(serviceData)
@@ -15,7 +15,7 @@ class Service:
 
         if(newService):
             self.Online = True
-            self.lastUpdate = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     def checkKeys(self, serviceData):
         if(not all(key in serviceData.keys() for key in self.serviceKeys)):
@@ -24,14 +24,14 @@ class Service:
     def checkSaveValues(self, serviceData):
         for key in serviceData.keys():
             match key:
-                case ("serviceID" | "Name"):
+                case ("serviceID" | "serviceName"):
                     if(not isinstance(serviceData[key], str)):
                         raise web_exception(400, "Service's \"" + key + "\" parameter must be a string")
                     match key:
                         case "serviceID":
                             self.serviceID = serviceData["serviceID"]
-                        case "Name":
-                            self.name = serviceData["Name"]
+                        case "serviceName":
+                            self.name = serviceData["serviceName"]
                 case ("houseID" | "userID" | "clusterID" | "resourceID" | "endPointID"):
                     if(not all(isinstance(entryID, str) for entryID in serviceData[key])):
                         raise web_exception(400, "Service's \"" + key + "\" parameter must be a list of strings")
@@ -53,11 +53,10 @@ class Service:
     def to_dict(self):
         result = {}
 
-        for key in self.serviceData.keys():
-            match key:
-                case ("serviceID" | "Name"):
-                    result[key] = self.serviceData[key]
-
+        for key in self.serviceKeys():
+            result[key] = self.serviceData[key]
+        
+        result["Online"] = self.Online
         result["lastUpdate"] = self.lastUpdate
 
         return result
@@ -67,7 +66,7 @@ class Service:
             if(check_presence_inDB(DBPath, "Services", "serviceID", self.serviceID)):
                 raise web_exception(400, "An service with ID \"" + self.serviceID + "\" already exists in the database")
             
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
             if("houseID" in self.serviceData.keys()):
                 for houseID in self.houseID:
@@ -113,22 +112,43 @@ class Service:
 
             save_entry2DB(DBPath, "Services", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB: " + e.message)
+            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
         try:
             if(not check_presence_inDB(DBPath, "Services", "serviceID", self.serviceID)):
                 raise web_exception(400, "An service with ID \"" + self.serviceID + "\" does not exist in the database")
             
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
             update_entry_inDB(DBPath, "Services", "serviceID", self.to_dict())
+
+            if(self.serviceData["houseID"] != None):
+                data = {"table" : self.connTables[0], "refID" : "serviceID", "connID" : "houseID", "refValue" : self.serviceID, "connValues" : self.houseID}
+                updateConnTable(DBPath, data, self.Online)
+            
+            if(self.serviceData["userID"] != None):
+                data = {"table" : self.connTables[1], "refID" : "serviceID", "connID" : "userID", "refValue" : self.serviceID, "connValues" : self.userID}
+                updateConnTable(DBPath, data, self.Online)
+
+            if(self.serviceData["clusterID"] != None):
+                data = {"table" : self.connTables[2], "refID" : "serviceID", "connID" : "clusterID", "refValue" : self.serviceID, "connValues" : self.clusterID}
+                updateConnTable(DBPath, data, self.Online)
+            
+            if(self.serviceData["resourceID"] != None):
+                data = {"table" : self.connTables[2], "refID" : "serviceID", "connID" : "resourceID", "refValue" : self.serviceID, "connValues" : self.resourceID}
+                updateConnTable(DBPath, data, self.Online)
+
+            if(self.serviceData["endPointID"] != None):
+                data = {"table" : self.connTables[3], "refID" : "serviceID", "connID" : "endPointID", "refValue" : self.serviceID, "connValues" : self.endPointID}
+                updateConnTable(DBPath, data, self.Online)
+                
         except web_exception as e:
-            raise web_exception(400, "An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB: " + e.message)
+            raise web_exception(400, "An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB: " + str(e))
+            raise web_exception(400, "An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB:\n\t" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
@@ -142,11 +162,23 @@ class Service:
 
             delete_entry_fromDB(DBPath, "Services", "serviceID", params["serviceID"])
         except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB:\n\t" + str(e))
         
         return True
+
+    def set2DB(self, DBPath):
+        try:
+            self.Online = True
+            if(not check_presence_inDB(DBPath, "Services", "serviceID", self.serviceID)):
+                self.save2DB(DBPath)
+            else:
+                self.updateDB(DBPath)
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + str(e.message))
+        except Exception as e:
+            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + str(e))
 
     def DB_to_dict(DBPath, service):
         try:
@@ -155,7 +187,7 @@ class Service:
             varsIDs = ["houseID", "userID", "clusterID", "deviceID", "resourceID", "endPointID"]
 
             serviceID = service["serviceID"]
-            serviceData = {"serviceID": serviceID, "Name": service["Name"]}
+            serviceData = {"serviceID": serviceID, "serviceName": service["serviceName"]}
 
             for i in range(len(connTables)):
                 if(check_presence_inDB(DBPath, connTables[i], "serviceID", serviceID)):
@@ -185,6 +217,27 @@ class Service:
 
             return serviceData
         except web_exception as e:
-            raise web_exception(400, "An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB:\n\t" + str(e))
+
+    def setOnlineStatus(entries):
+        newServiceIDs = []
+        newEndPointIDs = []
+        newResourceIDs = []
+
+        for entry in entries:
+            newServiceIDs.append(entry.serviceID)
+            newEndPointIDs.extend([e.endPointID for e in entry.endPoints])
+            newResourceIDs.extend([r.resourceID for r in entry.Resources])
+
+        allServiceIDs = getIDs_fromDB(DBPath, "Services", "serviceID")
+
+        missingServiceIDs = list(set(allServiceIDs) - set(newServiceIDs))
+
+        entry = {"serviceID": missingServiceIDs, "Online": False, "lastUpdate": datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+
+        update_entry_inDB(DBPath, "Services", "serviceID", entry)
+        EndPoint.setOnlineStatus(newEndPointIDs)
+        Resource.setOnlineStatus(newResourceIDs, "ServiceRes_conn")
+    

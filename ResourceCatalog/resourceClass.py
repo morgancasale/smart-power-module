@@ -11,7 +11,7 @@ class Resource:
 
         if(newResource):
             self.Online = self.Ping()
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
     def checkKeys(self, resourceData):
         if(not all(key in self.resourceKeys for key in resourceData.keys())):
@@ -55,9 +55,9 @@ class Resource:
             if(not check_presence_inDB(DBPath, "Resources", "resourceID", self.resourceID)):
                 save_entry2DB(DBPath, "Resources", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving resource with ID \"" + self.resourceID + "\" to the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while saving resource with ID \"" + self.resourceID + "\" to the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving resource with ID \"" + self.resourceID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving resource with ID \"" + self.resourceID + "\" to the DB:\n\t" + str(e))
     
     def updateDB(self, DBPath):
         try:
@@ -65,7 +65,7 @@ class Resource:
                 raise web_exception(400, "Resource with ID \"" + self.resourceID + "\" not found in the DB")
 
             self.Online = self.Ping()
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             update_entry_inDB(DBPath, "Resources", "resourceID", self.to_dict())
 
             entry = {
@@ -73,9 +73,9 @@ class Resource:
             }
             update_entry_inDB(DBPath, "DeviceResource_conn", "resourceID", entry)
         except web_exception as e:
-            raise web_exception(400, "An error occurred while updating resource with ID \"" + self.resourceID + "\" to the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while updating resource with ID \"" + self.resourceID + "\" to the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating resource with ID \"" + self.resourceID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while updating resource with ID \"" + self.resourceID + "\" to the DB:\n\t" + str(e))
 
     def DB_to_dict(DBPath, resource, requestEntry):
         try:
@@ -93,9 +93,9 @@ class Resource:
 
             return data
         except web_exception as e:
-            raise web_exception(400, "An error occurred while retrieving resource with ID \"" + resource["resourceID"] + "\" from the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while retrieving resource with ID \"" + resource["resourceID"] + "\" from the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving resource with ID \"" + resource["resourceID"] + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while retrieving resource with ID \"" + resource["resourceID"] + "\" from the DB:\n\t" + str(e))
 
     def cleanDB(DBPath): #TODO forse c'è un modo più furbo di fare questa funzione usando solo sql
         try:
@@ -108,9 +108,9 @@ class Resource:
                 if(not check_presence_inConnectionTables(DBPath, connTables, "resourceID", entry["resourceID"])):
                     delete_entry_fromDB(DBPath, "Resources", "resourceID", entry["resourceID"])
         except web_exception as e:
-            raise web_exception(400, "An error occurred while cleaning the DB from resources: " + str(e.message))
+            raise web_exception(400, "An error occurred while cleaning the DB from resources:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while cleaning the DB from resources: " + str(e))
+            raise web_exception(400, "An error occurred while cleaning the DB from resources:\n\t" + str(e))
     
     def deleteFromDB(DBPath, entry):
         try:
@@ -120,19 +120,30 @@ class Resource:
             delete_entry_fromDB(DBPath, "DeviceResource_conn", "resourceID", entry["resourceID"])
             delete_entry_fromDB(DBPath, "Resources", "resourceID", entry["resourceID"])
         except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting resource with ID \"" + entry["resourceID"] + "\" from the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while deleting resource with ID \"" + entry["resourceID"] + "\" from the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting resource with ID \"" + entry["resourceID"] + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while deleting resource with ID \"" + entry["resourceID"] + "\" from the DB:\n\t" + str(e))
 
         return True
 
-    def setOnlineStatus(newResIDs):
-        allResIDs = getIDs_fromDB(DBPath, "DeviceResource_conn", "resourceID")
+    def set2DB(self, DBPath):
+        try:
+            if(not check_presence_inDB(DBPath, "Resources", "resourceID", self.resourceID)):
+                self.save2DB(DBPath)
+            else:
+                self.updateDB(DBPath)
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while saving resource with ID \"" + self.resourceID + "\" to the DB:\n\t" + str(e.message))
+        except Exception as e:
+            raise web_exception(400, "An error occurred while saving device with ID \"" + self.resourceID + "\" to the DB:\n\t" + str(e))
+
+    def setOnlineStatus(newResIDs, connTable):
+        allResIDs = getIDs_fromDB(DBPath, connTable, "resourceID")
         missingResIDs = list(set(allResIDs) - set(newResIDs))
 
-        entry = {"resourceID": missingResIDs, "Online": False, "lastUpdate": datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+        entry = {"resourceID": missingResIDs, "Online": False, "lastUpdate": datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
 
-        update_entry_inDB(DBPath, "DeviceResource_conn", "resourceID", entry)
+        update_entry_inDB(DBPath, connTable, "resourceID", entry)
 
     def Ping(self):
         #TODO check devices that serve this resource, ping them and return True if at least one is online

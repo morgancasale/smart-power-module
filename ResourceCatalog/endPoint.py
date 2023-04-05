@@ -2,10 +2,9 @@ from utility import *
 
 class EndPoint:
     def __init__(self, endPointData, newEndPoint = False):
-        self.endPointKeys = ["endPointID", "endPointName", "commProtocol", "IPAddress", "MQTTTopics"]
+        self.endPointKeys = ["endPointID", "endPointName", "protocols", "IPAddress", "port", "clientID", "CRUDMethods", "MQTTTopics"]
         self.connTables = ["DeviceEndP_conn"]
         
-
         if(newEndPoint) : self.checkKeys(endPointData)
         self.checkSaveValues(endPointData)
 
@@ -13,15 +12,14 @@ class EndPoint:
 
         if(newEndPoint):
             self.Online = self.Ping()
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
 
     def to_dict(self):
         result = {}
 
-        for key in self.endPointData.keys():
-            if(key in self.endPointKeys): #TODO forse inutile
-                result[key] = self.endPointData[key]
+        for key in self.endPointKeys:
+            result[key] = self.endPointData[key]
 
         result["Online"] = self.Online
         result["lastUpdate"] = self.lastUpdate
@@ -43,37 +41,73 @@ class EndPoint:
                             self.endPointID = endPointData["endPointID"]
                         case "endPointName":
                             self.endPointName = endPointData["endPointName"]
-                case "commProtocol":
+
+                case "protocols":
                     if(not("MQTT" in endPointData[key] or "REST" in endPointData[key])):
-                        raise web_exception(400, "\"commProtocol\" must be MQTT and/or REST")
+                        raise web_exception(400, "\"protocols\" must be MQTT and/or REST")
 
                     if(not all(isinstance(prtcl, str) for prtcl in endPointData[key])):
-                        raise web_exception(400, "\"commProtocol\" value must be a list of strings")
+                        raise web_exception(400, "\"protocols\" value must be a list of strings")
 
                     if("REST" in endPointData[key] and endPointData["IPAddress"] == None):
-                        raise web_exception(400, "\"IPAddress\" must not be null if commProtocol is REST")
+                        raise web_exception(400, "\"IPAddress\" must not be null if protocols is REST")
                     if("REST" in endPointData[key] and not("MQTT" in endPointData[key]) and endPointData["MQTTTopics"] != None):
-                        raise web_exception(400, "\"MQTTTopics\" must be null if commProtocol is REST")
+                        raise web_exception(400, "\"MQTTTopics\" must be null if protocols is REST")
 
                     if("MQTT" in endPointData[key] and endPointData["MQTTTopics"] == None):
-                        raise web_exception(400, "\"MQTTTopics\" parameter must not be null if commProtocol is MQTT")
+                        raise web_exception(400, "\"MQTTTopics\" parameter must not be null if protocols is MQTT")
                     if("MQTT" in endPointData[key] and not("REST" in endPointData[key]) and endPointData["IPAddress"] != None):
-                        raise web_exception(400, "\"IPAddress\" must be null if commProtocol is MQTT")
+                        raise web_exception(400, "\"IPAddress\" must be null if protocols is MQTT")
                     
-                    if(not isinstance(endPointData["commProtocol"], list)) : endPointData["commProtocol"] = [endPointData["commProtocol"]]
-                    self.commProtocol = endPointData["commProtocol"]
+                    if(not isinstance(endPointData["protocols"], list)) : endPointData["protocols"] = [endPointData["protocols"]]
+                    self.protocols = endPointData["protocols"]
+
                 case "IPAddress":
                     if(endPointData[key] != None and not isinstance(endPointData[key], str)): # TODO Check if IP address is valid
                         raise web_exception(400, "\"IPAddress\" value must be string")
                     self.IPAddress = endPointData["IPAddress"]
-                case "MQTTTopics":
-                    cond = endPointData[key] != None and len(endPointData[key]) == 0
-                    cond &= not all(isinstance(topic, str) for topic in endPointData[key])
-                    if(cond): 
-                        raise web_exception(400, "\"MQTTTopics\" must be a list of strings not empty")
+
+                case "port":
+                    if(endPointData[key] != None and not isinstance(endPointData[key], int)): # TODO Check if port is valid
+                        raise web_exception(400, "\"port\" value must be integer")
                     
-                    if(not isinstance(endPointData["MQTTTopics"], list)) : endPointData["MQTTTopics"] = [endPointData["MQTTTopics"]]
-                    self.MQTTTopics = endPointData["MQTTTopics"]
+                    self.RESTPort = endPointData["port"]
+
+                case "clientID":
+                    if(not("MQTT" in endPointData["protocols"]) and endPointData[key] == None):
+                        raise web_exception(400, "\"clientID\" must not be null if protocols is MQTT")
+                    if(not isinstance(endPointData[key], str)):
+                        raise web_exception(400, "\"clientID\" value must be string")
+                    self.clientID = endPointData["clientID"]
+
+                case "CRUDMethods":
+                    methods = endPointData[key]
+                    if(not isinstance(methods, list)):
+                        raise web_exception(400, "\"CRUDMethods\" value must be a list")
+                    if(not all(isinstance(method, str) for method in methods)):
+                        raise web_exception(400, "\"CRUDMethods\" value must be a list of strings")
+                    if(not all(method in ["GET", "POST", "PUT", "DELETE", "PATCH"] for method in methods)):
+                        raise web_exception(400, "Unexpected method in \"" + key +"\".")
+
+                case "MQTTTopics":
+                    topics = endPointData[key]
+                    if(not isinstance(topics, dict)):
+                        raise web_exception(400, "\"" + key + "\" must be a dictionary")
+                    if(not all(key in ["pub", "sub"] for key in topics.keys())):
+                        raise web_exception(400, "\"" + key + "\" must have parameters \"pub\" and \"sub\"")
+                    
+                    if(not isinstance(topics["sub"], list)):
+                        raise web_exception(400, "Subscription \"" + key + "\" must be a list")
+                    if(not all(isinstance(topic, str) for topic in topics["sub"])):
+                        raise web_exception(400, "Subscription \"" + key + "\" must be a list of strings")
+                    
+                    if(not isinstance(topics["pub"], list)):
+                        raise web_exception(400, "Publication \"" + key + "\" must be a list")
+                    if(not all(isinstance(topic, str) for topic in topics["pub"])):
+                        raise web_exception(400, "Publication \"" + key + "\" must be a list of strings")
+                    
+                    self.MQTTTopics = endPointData[key]
+                    
                 case _:
                     raise web_exception(400, "Unexpected key \"" + key + "\"")
 
@@ -90,7 +124,7 @@ class EndPoint:
                 data["MQTTTopics"] = [data["MQTTTopics"]]
             
             result = True
-            if(not all(prtc in data["commProtocol"] for prtc in self.commProtocol)):  
+            if(not all(prtcl in data["protocols"] for prtcl in self.protocols)):  
                 result = False
             if(data["IPAddress"] != self.IPAddress):
                 result = False
@@ -99,9 +133,9 @@ class EndPoint:
                 
             return result
         except web_exception as e:
-            raise web_exception(400, "An error occurred while checking the consistency of the end-point with ID \"" + self.endPointID + "\" in the database: " + e.message)
+            raise web_exception(400, "An error occurred while checking the consistency of the end-point with ID \"" + self.endPointID + "\" in the database:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while checking the consistency of the end-point with ID \"" + self.endPointID + "\" in the database: " + str(e))
+            raise web_exception(400, "An error occurred while checking the consistency of the end-point with ID \"" + self.endPointID + "\" in the database:\n\t" + str(e))
 
     def save2DB(self, DBPath): # TODO Check if all error cases are covered
         try:
@@ -117,9 +151,9 @@ class EndPoint:
                 self.Online = self.Ping()
                 save_entry2DB(DBPath, "endPoints", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving end-point with ID \"" + self.endPointID + "\" to the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while saving end-point with ID \"" + self.endPointID + "\" to the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving end-point with ID \"" + self.endPointID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving end-point with ID \"" + self.endPointID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
         try:
@@ -130,7 +164,7 @@ class EndPoint:
                 raise web_exception(400, "IP Address \"" + self.IPAddress + "\" is already used by another end-point")
 
             self.Online = self.Ping()
-            self.lastUpdate = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             update_entry_inDB(DBPath, "endPoints", "endPointID", self.to_dict())
 
             entry = {
@@ -138,10 +172,21 @@ class EndPoint:
             }
             update_entry_inDB(DBPath, "DeviceEndP_conn", "endPointID", entry)
         except web_exception as e:
-            raise web_exception(400, "An error occurred while updating end-point with ID \"" + self.endPointID + "\" in the DB: " + e.message)
+            raise web_exception(400, "An error occurred while updating end-point with ID \"" + self.endPointID + "\" in the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating end-point with ID \"" + self.endPointID + "\" in the DB: " + str(e))
+            raise web_exception(400, "An error occurred while updating end-point with ID \"" + self.endPointID + "\" in the DB:\n\t" + str(e))
 
+    def set2DB(self, DBPath):
+        try:
+            if(not check_presence_inDB(DBPath, "EndPoints", "endPointID", self.endPointID)):
+                self.save2DB(DBPath)
+            else:
+                self.updateDB(DBPath)
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while saving endPoint with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e.message))
+        except Exception as e:
+            raise web_exception(400, "An error occurred while saving endPoint with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
+    
     def DB_to_dict(DBPath, EP):
         try:
             query = "SELECT * FROM EndPoints WHERE endPointID = \"" + EP["endPointID"] + "\""
@@ -149,7 +194,7 @@ class EndPoint:
             data["Online"] = bool(data["Online"])
             return data
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving end-point with ID \"" + EP["endPointID"] + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while retrieving end-point with ID \"" + EP["endPointID"] + "\" from the DB:\n\t" + str(e))
 
     def cleanDB(DBPath): #TODO forse c'è un modo più furbo di fare questa funzione usando solo sql
         connTables = ["DeviceEndP_conn"]
@@ -171,9 +216,9 @@ class EndPoint:
             delete_entry_fromDB(DBPath, "DeviceEndP_conn", "endPointID", entry["endPointID"])
             delete_entry_fromDB(DBPath, "EndPoints", "endPointID", entry["endPointID"])
         except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB:\n\t" + str(e))
         
         return True
 
@@ -182,7 +227,7 @@ class EndPoint:
 
         missingEPIDs = list(set(allEPIDs) - set(newEPIDs))
 
-        entry = {"endPointID": missingEPIDs, "Online": False, "lastUpdate": datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+        entry = {"endPointID": missingEPIDs, "Online": False, "lastUpdate": datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
 
         update_entry_inDB(DBPath, "EndPoints", "endPointID", entry)
 

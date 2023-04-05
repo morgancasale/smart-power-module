@@ -67,27 +67,27 @@ class User:
                     if(not check_presence_inDB(DBPath, "Devices", "deviceID", deviceID)):
                         raise web_exception(400, "A device with ID \"" + deviceID + "\" does not exist in the database")
 
-                    self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
                     save_entry2DB(DBPath, "UserDevice_conn", {"userID": self.userID, "deviceID": deviceID, "lastUpdate": self.lastUpdate})
 
             save_entry2DB(DBPath, "Users", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB: " + e.message)
+            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
         try:
             if(not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
                 raise web_exception(400, "A user with ID \"" + self.userID + "\" does not exist in the database")
             
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
             update_entry_inDB(DBPath, "Users", "userID", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while updating user with ID \"" + self.userID + "\" in the DB: " + e.message)
+            raise web_exception(400, "An error occurred while updating user with ID \"" + self.userID + "\" in the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating user with ID \"" + self.userID + "\" in the DB: " + str(e))
+            raise web_exception(400, "An error occurred while updating user with ID \"" + self.userID + "\" in the DB:\n\t" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
@@ -98,11 +98,22 @@ class User:
             Device.cleanDB(DBPath)
             delete_entry_fromDB(DBPath, "Users", "userID", params["userID"])
         except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB:\n\t" + str(e))
             
         return True
+
+    def set2DB(self, DBPath):
+        try:
+            if(not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
+                self.save2DB(DBPath)
+            else:
+                self.updateDB(DBPath)
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e.message))
+        except Exception as e:
+            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e))
 
     def DB_to_dict(DBPath, user, verbose = True):
         try:
@@ -124,6 +135,6 @@ class User:
 
             return userData
         except web_exception as e:
-            raise web_exception(400, "An error occurred while retrieving user with ID \"" + userID + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while retrieving user with ID \"" + userID + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving user with ID \"" + userID + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while retrieving user with ID \"" + userID + "\" from the DB:\n\t" + str(e))

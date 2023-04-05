@@ -6,6 +6,9 @@ from house import *
 from devCluster import DevCluster
 from service import Service
 
+from devSettings import *
+from appliance import *
+
 class ResourceCatalog:
     def __init__(self, DBPath):
         self.DBPath = DBPath
@@ -16,6 +19,10 @@ class ResourceCatalog:
                 case "getInfo":
                     for entry in params:
                         return self.extractByKey(entry)
+                    
+                case "checkPresence":
+                    for entry in params:
+                        return self.checkPresence(entry)
                      
                 case "exit":
                     return self.exit(self.filename)
@@ -23,7 +30,7 @@ class ResourceCatalog:
                 case _:
                     raise web_exception(400, "Unexpected invalid command")
         except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the GET request: " + e.message)
+            raise web_exception(400, "An error occurred while handling the GET request:\n\t" + e.message)
 
     def handlePostRequest(self, cmd, params):
         try:
@@ -53,11 +60,23 @@ class ResourceCatalog:
                         entry.save2DB(self.DBPath)
                     return "Device Cluster registration was successful"
                 
+                case "regEndPoint":
+                    for endPointData in params:
+                        entry = EndPoint(endPointData, newEndPoint = True)
+                        entry.save2DB(self.DBPath)
+                    return "End Point registration was successful"
+                
                 case "regService":
                     for serviceData in params:
                         entry = Resource(serviceData, newService = True)
                         entry.save2DB(self.DBPath)
                     return "Service registration was successful"
+                
+                case "regAppliancesInfo":
+                    for applianceData in params:
+                        entry = Appliance(applianceData, newAppliance = True)
+                        entry.save2DB(self.DBPath)
+                    return "Appliance registration was successful"
                     
                 case "exit":
                     exit()
@@ -65,11 +84,29 @@ class ResourceCatalog:
                 case _:
                     raise web_exception(400, "The command \"" + cmd + "\" is not valid")
         except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the POST request: " + e.message)
+            raise web_exception(400, "An error occurred while handling the POST request:\n\t" + e.message)
 
     def handlePutRequest(self, cmd, params):
         try:
             match cmd:
+                case "setHouse":
+                    for houseData in params:
+                        entry = House(houseData)
+                        entry.set2DB(self.DBPath)
+                    return "House update was successful"
+
+                case "setUser":
+                    for userData in params:
+                        entry = User(userData)
+                        entry.set2DB(self.DBPath)
+                    return "User update was successful"
+                
+                case "setDevCluster":
+                    for devClustData in params:
+                        entry = DevCluster(devClustData)
+                        entry.set2DB(self.DBPath)
+                    return "Device Cluster update was successful"
+
                 case "setDevice":
                     entries = []
 
@@ -81,11 +118,11 @@ class ResourceCatalog:
                     Device.setOnlineStatus(entries)
                     return "Device update was successful"
                 
-                case "setUser":
-                    for userData in params:
-                        entry = User(userData)
+                case "setService":
+                    for serviceData in params:
+                        entry = Service(serviceData)
                         entry.set2DB(self.DBPath)
-                    return "User update was successful"
+                    return "Service update was successful"
 
                 case "setResource":
                     for resourceData in params:
@@ -98,6 +135,35 @@ class ResourceCatalog:
                         entry = EndPoint(endPointData)
                         entry.set2DB(self.DBPath)
                     return "EndPoint update was successful"
+
+                case "setService":
+                    entries = []
+
+                    for serviceData in params:
+                        entry = Service(serviceData, newService = True)
+                        entries.append(entry)
+                        entry.set2DB(self.DBPath)
+                    
+                    Service.setOnlineStatus(entries)
+                    return "Device update was successful"
+                
+                case "setDeviceSettings":
+                    for DeviceSettingsData in params:
+                        entry = DeviceSettings(DeviceSettingsData, newSettings = True)
+                        entry.set2DB(self.DBPath)
+                    return "Device settings update was successful"
+                
+                case "setDeviceSchedule":
+                    for deviceScheduleData in params:
+                        entry = DeviceSchedule(deviceScheduleData, newSchedule = True)
+                        entry.set2DB(self.DBPath)
+                    return "Device schedule update was successful"
+                
+                case "setAppliancesInfo":
+                    for applianceData in params:
+                        entry = Appliance(applianceData, newAppliance = True)
+                        entry.set2DB(self.DBPath)
+                    return "Appliance update was successful"
                 
                 case "exit":
                     exit()
@@ -105,7 +171,7 @@ class ResourceCatalog:
                 case _:
                     raise web_exception(400, "Unexpected invalid command")
         except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the PUT request: " + e.message)
+            raise web_exception(400, "An error occurred while handling the PUT request:\n\t" + e.message)
 
     def handlePatchRequest(self, cmd, params):
         try:
@@ -122,17 +188,17 @@ class ResourceCatalog:
                         entry.updateDB(self.DBPath)
                     return "User update was successful"
 
-                case "updateDevice":
-                    for deviceData in params:
-                        entry = Device(deviceData)
-                        entry.updateDB(self.DBPath)
-                    return "Device update was successful"
-
                 case "updateDevCluster":
                     for devClustData in params:
                         entry = DevCluster(devClustData)
                         entry.updateDB(self.DBPath)
                     return "Device Cluster update was successful"
+
+                case "updateDevice":
+                    for deviceData in params:
+                        entry = Device(deviceData)
+                        entry.updateDB(self.DBPath)
+                    return "Device update was successful"
 
                 case "updateService":
                     for serviceData in params:
@@ -152,10 +218,10 @@ class ResourceCatalog:
                         entry.updateDB(self.DBPath)
                     return "EndPoint update was successful"
 
-                case "updateConn":
+                case "updateConnStatus":
                     for connData in params:
-                        self.updateConn(connData)
-                    return "Connection update was successful"                        
+                        self.updateConnStatus(connData)
+                    return "Connection update was successful"
                 
                 case "exit":
                     exit()
@@ -163,7 +229,7 @@ class ResourceCatalog:
                 case _:
                     raise web_exception(400, "Unexpected invalid command")
         except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the PATCH request: " + e.message)
+            raise web_exception(400, "An error occurred while handling the PATCH request:\n\t" + e.message)
 
     def handleDeleteRequest(self, cmd, params):
         try:
@@ -202,6 +268,21 @@ class ResourceCatalog:
                     for entry in params:
                         EndPoint.deleteFromDB(self.DBPath, entry)
                     return "EndPoint deletion was successful"
+                
+                case "delDevSettings":
+                    for entry in params:
+                        DeviceSettings.deleteFromDB(self.DBPath, entry)
+                    return "Device Settings deletion was successful"
+                
+                case "delDevSchedule":
+                    for entry in params:
+                        DeviceSchedule.deleteFromDB(self.DBPath, entry)
+                    return "Device Schedule deletion was successful"
+                
+                case "delAppliancesInfo":
+                    for entry in params:
+                        Appliance.deleteFromDB(self.DBPath, entry)
+                    return "Appliance deletion was successful"
 
                 case "exit":
                     exit()
@@ -209,37 +290,7 @@ class ResourceCatalog:
                 case _:
                     raise web_exception(400, "Unexpected invalid command")
         except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the DELETE request: " + e.message)
-
-    def updateConn(self, connData): #TODO check integrity of request
-        try:
-            if(not check_presence_ofTableInDB(self.DBPath, connData["table"])): 
-                raise web_exception(400, "The table \"" + connData["table"] + "\" does not exist")
-            
-            for keyName in connData["keyNames"]:
-                if(not check_presence_ofColumnInDB(self.DBPath, connData["table"], keyName)):
-                    raise web_exception(400, "The key \"" + keyName + "\" does not exist in the table \"" + connData["table"] + "\"")
-            
-            for conn in connData["conns"]:               
-                if(conn["new_status"]):
-                    entry = dict(zip(connData["keyNames"], conn["keyValues"]))
-                    entry["lastUpdate"] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-                    if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])):
-                        save_entry2DB(self.DBPath, connData["table"], entry)
-                
-                else:
-                    if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])):
-                        msg = "The entry (\"" + conn["keyValues"][0] +", " + conn["keyValues"][1]
-                        msg += "\") does not exist in the table \"" + connData["table"] + "\""
-                        raise web_exception(400, msg)
-
-                    delete_entry_fromDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])
-
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while updating a connection: " + e.message)
-        except Exception as e:
-            raise web_exception(400, "An error occurred while updating a connection: " + str(e))
-        
+            raise web_exception(400, "An error occurred while handling the DELETE request:\n\t" + e.message)        
 
     def reconstructJson(self, table, selectedData, requestEntry):
         reconstructedData = []
@@ -260,6 +311,12 @@ class ResourceCatalog:
                         reconstructedData.append(Resource.DB_to_dict(self.DBPath, sel, requestEntry))
                     case "EndPoints":
                         reconstructedData.append(EndPoint.DB_to_dict(self.DBPath, sel))
+                    case "DeviceSettings":
+                        reconstructedData.append(DeviceSettings.DB_to_dict(self.DBPath, sel))
+                    case "DeviceScheduling":
+                        reconstructedData.append(DeviceSchedule.DB_to_dict(self.DBPath, sel))
+                    case "AppliancesInfo":
+                        reconstructedData.append(Appliance.DB_to_dict(self.DBPath, sel))
                     case _:
                         raise web_exception(400, "Unexpected invalid table")
         except web_exception as e:
@@ -268,6 +325,16 @@ class ResourceCatalog:
             raise web_exception(400, e)
 
         return reconstructedData
+    
+    def checkPresence(self, entry): # check if an entry is present in the DB
+        try:
+            table = entry["table"]
+            keyNames = entry["keyNames"]
+            keyValues = entry["keyValues"]
+            
+            return json.dumps({"result" : check_presence_inDB(self.DBPath, table, keyNames, keyValues)})
+        except Exception as e:
+            raise web_exception(400, "An error occurred while checking the presence of an entry in the DB:\n\t" + str(e))            
 
     def extractByKey(self, entry):
         table = entry["table"]
@@ -297,7 +364,7 @@ class ResourceCatalog:
             selectedData = pd.read_sql_query(query, conn).to_dict(orient="records")
             conn.close()
         except Exception as e:
-            raise web_exception(400, "An error occured while extracting data from DB: " + str(e))
+            raise web_exception(400, "An error occured while extracting data from DB:\n\t" + str(e))
 
         if len(selectedData) == 0:
             msg = "No entry found in table \"" + table
@@ -308,9 +375,38 @@ class ResourceCatalog:
         try:
             reconstructedData = ResourceCatalog.reconstructJson(self, table, selectedData, entry) 
         except web_exception as e:
-            raise web_exception(400, "An error occured while reconstructing data: " + e.message)
+            raise web_exception(400, "An error occured while reconstructing data:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occured while reconstructing data: " + str(e))
+            raise web_exception(400, "An error occured while reconstructing data:\n\t" + str(e))
         
         return json.dumps(reconstructedData)
         
+
+    def updateConnStatus(self, connData): #TODO check integrity of request
+        try:
+            if(not check_presence_ofTableInDB(self.DBPath, connData["table"])): 
+                raise web_exception(400, "The table \"" + connData["table"] + "\" does not exist")
+            
+            for keyName in connData["keyNames"]:
+                if(not check_presence_ofColumnInDB(self.DBPath, connData["table"], keyName)):
+                    raise web_exception(400, "The column \"" + keyName + "\" does not exist in the table \"" + connData["table"] + "\"")
+            
+            for conn in connData["conns"]:               
+                if(conn["new_status"]):
+                    entry = dict(zip(connData["keyNames"], conn["keyValues"]))
+                    entry["lastUpdate"] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])):
+                        save_entry2DB(DBPath, connData["table"], entry)
+                
+                else:
+                    if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])):
+                        msg = "The entry (\"" + conn["keyValues"][0] +", " + conn["keyValues"][1]
+                        msg += "\") does not exist in the table \"" + connData["table"] + "\""
+                        raise web_exception(400, msg)
+
+                    delete_entry_fromDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])
+
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while updating a connection:\n\t" + e.message)
+        except Exception as e:
+            raise web_exception(400, "An error occurred while updating a connection:\n\t" + str(e))

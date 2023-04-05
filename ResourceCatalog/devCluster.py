@@ -12,7 +12,7 @@ class DevCluster:
         self.devClusterData = devClusterData
 
         if(newDevCluster):
-            self.lastUpdate = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     def checkKeys(self, devClusterData):
         if(not all(key in devClusterData.keys() for key in self.devClusterKeys)):
@@ -56,7 +56,7 @@ class DevCluster:
                 raise web_exception(400, "An devCluster with ID \"" + self.devClustID + "\" already exists in the database")
             
             self.Online = True
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
             if("deviceID" in self.devClusterData.keys()):
                 for deviceID in self.deviceID:
@@ -67,9 +67,9 @@ class DevCluster:
 
             save_entry2DB(DBPath, "DevClusters", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving Device Cluster with ID \"" + self.devClustID + "\" to the DB: " + e.message)
+            raise web_exception(400, "An error occurred while saving Device Cluster with ID \"" + self.devClustID + "\" to the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving Device Cluster with ID \"" + self.devClustID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving Device Cluster with ID \"" + self.devClustID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
         try:
@@ -77,13 +77,13 @@ class DevCluster:
                 raise web_exception(400, "Device Cluster with ID \"" + self.devClustID + "\" does not exist in the database")
             
 
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
             update_entry_inDB(DBPath, "DevClusters", "devClustID", self.to_dict())
         except web_exception as e:
-            raise web_exception(400, "An error occurred while updating Device Dluster with ID \"" + self.devClustID + "\" in the DB: " + e.message)
+            raise web_exception(400, "An error occurred while updating Device Dluster with ID \"" + self.devClustID + "\" in the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating Device Cluster with ID \"" + self.devClustID + "\" in the DB: " + str(e))
+            raise web_exception(400, "An error occurred while updating Device Cluster with ID \"" + self.devClustID + "\" in the DB:\n\t" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
@@ -97,9 +97,9 @@ class DevCluster:
 
             delete_entry_fromDB(DBPath, "DevClusters", "devClustID", params["devClustID"])
         except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting Device Cluster with ID \"" + params["devClustID"] + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while deleting Device Cluster with ID \"" + params["devClustID"] + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting Device Cluster with ID \"" + params["devClustID"] + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while deleting Device Cluster with ID \"" + params["devClustID"] + "\" from the DB:\n\t" + str(e))
         return True
 
     def DB_to_dict(DBPath, devCluster):
@@ -124,6 +124,6 @@ class DevCluster:
 
             return devClusterData
         except web_exception as e:
-            raise web_exception(400, "An error occurred while retrieving Device Cluster with ID \"" + devClustID + "\" from the DB: " + e.message)
+            raise web_exception(400, "An error occurred while retrieving Device Cluster with ID \"" + devClustID + "\" from the DB:\n\t" + e.message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving Device Cluster with ID \"" + devClustID + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while retrieving Device Cluster with ID \"" + devClustID + "\" from the DB:\n\t" + str(e))

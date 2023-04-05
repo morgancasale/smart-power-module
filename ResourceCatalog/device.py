@@ -16,7 +16,7 @@ class Device:
 
         if(newDevice): 
             self.Online = True
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         
 
     def checkKeys(self, deviceData):
@@ -30,25 +30,22 @@ class Device:
                     if(not isinstance(deviceData[key], str)):
                         raise web_exception(400, "Device's \"" + key + "\" value must be string")
                     match key:
-                        case "deviceID":
-                            self.deviceID = deviceData["deviceID"]
-                        case "deviceName":
-                            self.deviceName = deviceData["deviceName"]
-                        case "userID":
-                            self.userID = deviceData["userID"]
+                        case "deviceID": self.deviceID = deviceData["deviceID"]
+                        case "deviceName": self.deviceName = deviceData["deviceName"]
+                        case "userID": self.userID = deviceData["userID"]
                     
                 case "endPoints":
                     for endPointData in deviceData["endPoints"]:
                         try:
                             self.endPoints.append(EndPoint(endPointData, newEndPoint = True))
                         except web_exception as e:
-                            raise web_exception(400, "EndPoint with ID " + endPointData["endPointID"] + " not valid: " + e.message)
+                            raise web_exception(400, "EndPoint with ID " + endPointData["endPointID"] + " not valid:\n\t" + e.message)
                 case "Resources":
                     for resourceData in deviceData["Resources"]:
                         try:
                             self.Resources.append(Resource(resourceData, newResource = True))
                         except web_exception as e:
-                            raise web_exception(400, "Resource with ID " + resourceData["resourceID"] + " not valid: " + e.message)
+                            raise web_exception(400, "Resource with ID " + resourceData["resourceID"] + " not valid:\n\t" + e.message)
                 case _:
                     raise web_exception(400, "Unexpected key \"" + key + "\"")
 
@@ -93,9 +90,9 @@ class Device:
                         }
                 save_entry2DB(DBPath, "DeviceResource_conn", entry)
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
         try:
@@ -103,14 +100,25 @@ class Device:
                 raise web_exception(400, "The device with ID \"" + self.deviceID + "\" does not exist in the database")
 
             self.Online = True
-            self.lastUpdate = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
             update_entry_inDB(DBPath, "Devices", "deviceID", self.to_dict())   
         except web_exception as e:
-            raise web_exception(400, "An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB: " + str(e))
+            raise web_exception(400, "An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB:\n\t" + str(e))
 
+    def set2DB(self, DBPath):
+        try:
+            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
+                self.save2DB(DBPath)
+            else:
+                self.updateDB(DBPath)
+        except web_exception as e:
+            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e.message))
+        except Exception as e:
+            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
+    
     def DB_to_dict(DBPath, device, verbose = True):
         try:
             deviceID = device["deviceID"]
@@ -131,7 +139,7 @@ class Device:
 
             return deviceData
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving device with ID \"" + deviceID + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while retrieving device with ID \"" + deviceID + "\" from the DB:\n\t" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
@@ -145,9 +153,9 @@ class Device:
             Resource.cleanDB(DBPath)
             delete_entry_fromDB(DBPath, "Devices", "deviceID", params["deviceID"])
         except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB: " + str(e.message))
+            raise web_exception(400, "An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB: " + str(e))
+            raise web_exception(400, "An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e))
         
         return True
 
@@ -162,20 +170,9 @@ class Device:
                 if(not check_presence_inConnectionTables(DBPath, connTables, "deviceID", entry["deviceID"])):
                     Device.deleteFromDB(DBPath, {"deviceID": entry["deviceID"]})
         except web_exception as e:
-            raise web_exception(400, "An error occurred while cleaning the DB from devices: " + str(e.message))
+            raise web_exception(400, "An error occurred while cleaning the DB from devices:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while cleaning the DB from devices: " + str(e))
-
-    def set2DB(self, DBPath):
-        try:
-            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
-                self.save2DB(DBPath)
-            else:
-                self.updateDB(DBPath)
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e.message))
-        except Exception as e:
-            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB: " + str(e))
+            raise web_exception(400, "An error occurred while cleaning the DB from devices:\n\t" + str(e))
 
     def setOnlineStatus(entries):
         newDeviceIDs = []
@@ -191,11 +188,11 @@ class Device:
 
         missingDeviceIDs = list(set(allDeviceIDs) - set(newDeviceIDs))
 
-        entry = {"deviceID": missingDeviceIDs, "Online": False, "lastUpdate": datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+        entry = {"deviceID": missingDeviceIDs, "Online": False, "lastUpdate": datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
 
         update_entry_inDB(DBPath, "Devices", "deviceID", entry)
         EndPoint.setOnlineStatus(newEndPointIDs)
-        Resource.setOnlineStatus(newResourceIDs)
+        Resource.setOnlineStatus(newResourceIDs, "DeviceResource_conn")
     
     def Ping(self):
         #TODO check devices that use this endpoint, ping them and return True if at least one is online
