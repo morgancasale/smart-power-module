@@ -25,7 +25,7 @@ class ServiceBase(object):
                 self.REST = RESTServer(2, "RESTThread", self.generalConfigs["REST"], init_REST_func, GET, POST, PUT, DELETE, PATCH)
                 self.REST.start()
             
-            if(self.configs["activatedMethod"]["MQTT"]):
+            if(False and self.configs["activatedMethod"]["MQTT"]):
                 self.MQTT = MQTTServer(3, "MQTTThread", self.generalConfigs["MQTT"], init_MQTT_func, Notifier, SubTopics)
                 self.MQTT.start()
     
