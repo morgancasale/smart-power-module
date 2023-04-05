@@ -6,10 +6,7 @@ import paho.mqtt.client as MQTT
 from threading import Thread
 
 class MyMQTT(Thread):
-    def __init__(self, threadID, threadName, configs, clientID, broker, brokerPort, subNotifier=None):
-        Thread.__init__(self)
-        self.threadID = threadID
-        self.name = threadName
+    def __init__(self, clientID, broker, brokerPort, subNotifier=None):
 
         self.broker = broker
         self.brokerPort = brokerPort
@@ -54,8 +51,12 @@ class MyMQTT(Thread):
 
 
 class MQTTServer(Thread):
-    def __init__(self, config_file, init_func=None, Notifier=None, SubTopics=None):
+    def __init__(self, threadID, threadName, configs, init_func=None, Notifier=None):
         Thread.__init__(self)
+        self.threadID = threadID
+        self.name = threadName
+
+        self.configs = configs
         
         self.SubPub = ["sub", "pub"]
         try:
@@ -69,17 +70,7 @@ class MQTTServer(Thread):
                 self.notify = Notifier
                 self.Qos = self.configs["QoS"]
 
-                if (self.configs["Active"]):
-
-                    self.Client = MyMQTT(
-                        self.clientID, self.broker, self.brokerPort, subNotifier=self.notify)
-                    self.Client.start()
-                    time.sleep(3)
-                    if (self.configs["SubPub"]["sub"]):
-                        for sub in SubTopics:
-                            self.Client.Subscribe(sub)
-                    if (not self.configs["SubPub"]["pub"]):
-                        self.publish = self.publish_error()
+               
 
             init_func()
 
@@ -87,6 +78,7 @@ class MQTTServer(Thread):
             print(e)
 
     def publish(self, topic, msg):
+
         self.Client.Publish(topic, msg)
 
     def publish_error(self):
@@ -136,8 +128,6 @@ class MQTTServer(Thread):
     def check_and_loadConfigs(self):
 
         try:
-            configs = json.load(open(self.config_file, 'r'))
-
             self.configs = configs["MQTT"]
             self.checkParams()
             self.validateParams()
@@ -147,5 +137,16 @@ class MQTTServer(Thread):
             print(e)
    
 
-    #def openRESTServer(s):
+    
+    def run(self):
+        self.openMQTTServer()
         
+
+    def openMQTTServer(self):
+        self.Client = MyMQTT(self.clientID, self.broker, self.brokerPort, subNotifier=self.notify)
+        self.Client.start()
+        time.sleep(3)
+        if (self.configs["SubPub"]["sub"]):
+            self.Client.Subscribe(self.configs["Sub_Topic"])
+        if (not self.configs["SubPub"]["pub"]):
+            self.publish = self.publish_error()    

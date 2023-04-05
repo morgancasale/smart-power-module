@@ -75,7 +75,8 @@ class Register(Thread):
         with open(self.config_file, "r+") as file:
             configs = json.load(file)
             configs[keys[0]][keys[1]] = value
-            json.dump(configs, file, indent=4)
+            file.truncate(0)
+            json.dump(configs, file)
 
     def generateServiceID(self):
         existence = True
@@ -106,7 +107,7 @@ class Register(Thread):
 
             url = self.configs["catalogAddress"] + ":" + str(self.configs["catalogPort"])+ "/checkPresence"
             params = {
-                "table" : "Services",
+                "table" : "EndPoints",
                 "keyNames" : "endPointID",
                 "keyValues" : newID
             }
