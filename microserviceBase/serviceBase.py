@@ -13,7 +13,7 @@ class ServiceBase(object):
             self.serverErrorHandler = Server_Error_Handler()
             self.config_file = config_file
 
-            self.configParams = ["activatedMethod", "houseID", "userID", "resourceID"]
+            self.configParams = ["activatedMethod", "houseID", "userID", "deviceID", "resourceID"]
 
             self.check_and_loadConfigs()
 
@@ -31,9 +31,6 @@ class ServiceBase(object):
     
         except web_exception as e:
             raise web_exception(e.code, "An error occurred while enabling the servers: \n\t" + e.message)
-
-
-        
     
     def check_and_loadConfigs(self):
         try:
@@ -67,7 +64,7 @@ class ServiceBase(object):
                     err_cond = err_cond or not isinstance(self.configs["activatedMethod"]["MQTT"], bool)
                     if(err_cond):
                         raise self.clientErrorHandler.BadRequest("activatedMethod parameters must be boolean")
-                case ("houseID", "userID", "resourceID"):
+                case ("houseID", "userID", "resourceID", "deviceID"):
                     if(self.configs[key] != None):
                         if(not isinstance(self.configs[key], list)):
                             raise self.clientErrorHandler.BadRequest(key + " parameter must be a list or null")

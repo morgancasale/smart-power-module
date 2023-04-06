@@ -82,7 +82,13 @@ def save_entry2DB(DBPath, table, entryData):
     except Exception as e:
         raise web_exception(400, "An error occured while saving data to DB:\n\t" + str(e))
 
-def update_entry_inDB(DBPath, table, keyName, entryData):
+def update_entry_inDB(DBPath, table, primaryKeyNames, entryData):
+    r"""
+    - table: the table to update
+    - primaryKeyNames: the name of the keys to find the entry to update
+    - entryData: the values of the primaryKey and the data to update ({keyName : keyValue})
+    """
+    if(not isinstance(primaryKeyNames, list)) : primaryKeyNames = [primaryKeyNames]
     try:
         conn = sq.connect(DBPath)
         query = "UPDATE " + table + " SET "
@@ -90,7 +96,7 @@ def update_entry_inDB(DBPath, table, keyName, entryData):
         keys = []
         edatas = []
         for key, value in entryData.items():
-            if key != keyName:
+            if key not in primaryKeyNames:
                 keys.append(key)
 
                 if(isinstance(value, list)):
@@ -114,12 +120,14 @@ def update_entry_inDB(DBPath, table, keyName, entryData):
         query += keys + " = "
         query += edatas
 
-        query += " WHERE " + keyName + " IN " 
+        primaryKeyNamesQuery = "(\"" + ("\", \"").join(primaryKeyNames)+"\")"
+        query += " WHERE " + primaryKeyNamesQuery + " = "
 
-        keyNames = entryData[keyName]
-        if(not isinstance(keyNames, list)) : keyNames = [keyNames]
-        keys = "(\"" + ("\", \"").join(keyNames) + "\")"
-        query += keys
+        primaryKeyValues = []
+        for key in primaryKeyNames:
+            primaryKeyValues.append(entryData[key])
+        values = "(\"" + ("\", \"").join(primaryKeyValues) + "\")"
+        query += values
 
         cursor = conn.cursor()
         cursor.execute(query)
@@ -167,6 +175,8 @@ def fixJSONString(string):
     string = string.replace(r"\\", "")
     string = string.replace(r']"', r"]")
     string = string.replace(r'"[', r'[')
+    string = string.replace(r'"{', r'{')
+    string = string.replace(r'}"', r'}')
     string = string.replace(r"'", r'"')
     return string
 
@@ -177,6 +187,8 @@ def DBQuery_to_dict(DBPath, query):
 
     data = result.to_json(orient="records")
     data = json.loads(fixJSONString(data))
+    if(not isinstance(data, list)):
+        data = [data]
     if (len(data) == 0):
         return [None]
     return data
@@ -211,24 +223,24 @@ def updateConnTable(DBPath, data, newStatus = None):
             raise web_exception(400, "Table \"" + table + "\" does not exist.")
         
         for keyName in [refID, connID]:
-            if(not check_presence_ofColumnInDB(self.DBPath, connData["table"], keyName)):
+            if(not check_presence_ofColumnInDB(DBPath, table, keyName)):
                 raise web_exception(400, "The column \"" + keyName + "\" does not exist in the table \"" + table + "\"")
             
         if(not check_presence_inDB(DBPath, table, refID, refValue)):
             raise web_exception(400, "The entry \"" + refValue + "\" of column \"" + refID + "\" does not exist in the table \"" + table + "\"")
         
-        for value in connValues:
+        for connValue in connValues:
             entry = {
-                refID:refValue, 
-                connID:value,
+                refID : refValue,
+                connID : connValue,
                 "lastUpdate" : datetime.now().strftime("%d/%m/%Y %H:%M")
             }
             if(newStatus != None):
                 entry["Online"] = newStatus
-            if(not check_presence_inDB(DBPath, table, [refID,connID], [refValue,value])):
+            if(not check_presence_inDB(DBPath, table, [refID,connID], [refValue,connValue])):
                 save_entry2DB(DBPath, table, entry)
             else:
-                update_entry_inDB(DBPath, table, refID, entry)
+                update_entry_inDB(DBPath, table, [refID,connID], entry)
     
     except web_exception as e:
         raise web_exception(e.code, "An error occured while updating the connection table:\n\t" + e.message)

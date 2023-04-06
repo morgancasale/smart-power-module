@@ -2,7 +2,7 @@ from utility import *
 
 class EndPoint:
     def __init__(self, endPointData, newEndPoint = False):
-        self.endPointKeys = ["endPointID", "endPointName", "protocols", "IPAddress", "port", "clientID", "CRUDMethods", "MQTTTopics"]
+        self.endPointKeys = ["endPointID", "endPointName", "protocols", "IPAddress", "port", "clientID", "CRUDMethods", "MQTTTopics", "QOS"]
         self.connTables = ["DeviceEndP_conn"]
         
         if(newEndPoint) : self.checkKeys(endPointData)
@@ -67,11 +67,17 @@ class EndPoint:
                         raise web_exception(400, "\"IPAddress\" value must be string")
                     self.IPAddress = endPointData["IPAddress"]
 
-                case "port":
+                case ("port" | "QOS"):
                     if(endPointData[key] != None and not isinstance(endPointData[key], int)): # TODO Check if port is valid
-                        raise web_exception(400, "\"port\" value must be integer")
+                        raise web_exception(400, "\"" + key + "\" value must be integer")
                     
-                    self.RESTPort = endPointData["port"]
+                    if(key == "port"):
+                        self.port = endPointData["port"]
+
+                case "QOS":
+                    if(endPointData[key] != None and not (endPointData[key] in [0,1,2])):
+                        raise web_exception(400, "\"" + key + "\" value must be 0, 1 or 2")
+                    self.QOS = endPointData[key]
 
                 case "clientID":
                     if(not("MQTT" in endPointData["protocols"]) and endPointData[key] == None):
@@ -146,9 +152,12 @@ class EndPoint:
                 if(self.IPAddress != None and check_presence_inConnectionTables(DBPath, self.connTables, "endPointID", self.endPointID)):
                     raise web_exception(400, "An end-point with ID \"" + self.endPointID + "\" is already used in another connection")
             else:
-                if(self.IPAddress != None and check_presence_inDB(DBPath, "endPoints", "IPAddress", self.IPAddress)):
-                    raise web_exception(400, "IP Address \"" + self.IPAddress + "\" is already used by another end-point")
+                if("IPAddress" in self.endPointData.keys()):
+                    foundEndPoints = DBQuery_to_dict(DBPath, "SELECT * FROM endPoints WHERE (\"IPAddress\", \"port\") = (\"" + self.IPAddress + "\", \"" + str(self.port) + "\")")
+                if(len(foundEndPoints) > 0 and foundEndPoints[0] != None and foundEndPoints[0]["endPointID"] != self.endPointID):
+                    raise web_exception(400, "IP Address \"" + self.IPAddress + "\" and port \"" + str(self.port) + "\" are already used by another end-point")
                 self.Online = self.Ping()
+                self.lastUpdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 save_entry2DB(DBPath, "endPoints", self.to_dict())
         except web_exception as e:
             raise web_exception(400, "An error occurred while saving end-point with ID \"" + self.endPointID + "\" to the DB:\n\t" + str(e.message))
@@ -159,9 +168,11 @@ class EndPoint:
         try:
             if(not check_presence_inDB(DBPath, "endPoints", "endPointID", self.endPointID)):
                 raise web_exception(400, "End-point with ID \"" + self.endPointID + "\" not found in the database")
-
-            if("IPAddress" in self.endPointData.keys() and check_presence_inDB(DBPath, "endPoints", "IPAddress", self.IPAddress)):
-                raise web_exception(400, "IP Address \"" + self.IPAddress + "\" is already used by another end-point")
+            
+            if("IPAddress" in self.endPointData.keys()):
+                foundEndPoints = DBQuery_to_dict(DBPath, "SELECT * FROM endPoints WHERE (\"IPAddress\", \"port\") = (\"" + self.IPAddress + "\", \"" + str(self.port) + "\")")
+                if(len(foundEndPoints) > 0 and foundEndPoints[0] != None and foundEndPoints[0]["endPointID"] != self.endPointID):
+                    raise web_exception(400, "IP Address \"" + self.IPAddress + "\" and port \"" + str(self.port) + "\" are already used by another end-point")
 
             self.Online = self.Ping()
             self.lastUpdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -183,9 +194,9 @@ class EndPoint:
             else:
                 self.updateDB(DBPath)
         except web_exception as e:
-            raise web_exception(400, "An error occurred while saving endPoint with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e.message))
+            raise web_exception(400, "An error occurred while saving endPoint with ID \"" + self.endPointID + "\" to the DB:\n\t" + str(e.message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving endPoint with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
+            raise web_exception(400, "An error occurred while saving endPoint with ID \"" + self.endPointID + "\" to the DB:\n\t" + str(e))
     
     def DB_to_dict(DBPath, EP):
         try:

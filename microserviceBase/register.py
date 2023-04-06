@@ -23,11 +23,10 @@ class Register(Thread):
         self.check_and_loadConfigs()
 
         self.endPoints = []
+        cond = (self.generalConfigs["REST"]["endPointID"] == None and self.generalConfigs["MQTT"]["endPointID"] == None)
         if(self.generalConfigs["CONFIG"]["activatedMethod"]["REST"]) : self.generateRESTEndPoint()
         if(self.generalConfigs["CONFIG"]["activatedMethod"]["MQTT"]) : self.generateMQTTEndPoint()
-        
-        
-        cond = (self.generalConfigs["REST"]["endPointID"] == None and self.generalConfigs["MQTT"]["topicID"] == None)
+                
         cond |= (self.generalConfigs["REST"]["endPointID"] == self.generalConfigs["MQTT"]["endPointID"])
         cond &= self.generalConfigs["CONFIG"]["activatedMethod"]["REST"] and self.generalConfigs["CONFIG"]["activatedMethod"]["MQTT"]
         if(cond):
@@ -72,11 +71,11 @@ class Register(Thread):
                         raise self.clientErrorHandler.BadRequest("T_Registration parameter must be a positive number")
     
     def updateConfigFile(self, keys, value):
-        with open(self.config_file, "r+") as file:
+        with open(self.config_file, "r") as file:
             configs = json.load(file)
-            configs[keys[0]][keys[1]] = value
-            file.truncate(0)
-            json.dump(configs, file)
+        configs[keys[0]][keys[1]] = value
+        with open(self.config_file, "w") as file:
+            json.dump(configs, file, indent=4)
 
     def generateServiceID(self):
         existence = True
@@ -92,9 +91,9 @@ class Register(Thread):
 
             response = get(url, params=params)
             if(response.status_code != 200):
-                raise web_exception(response.status_code, str(response.content))
+                raise web_exception(response.status_code, str(response.text))
             
-            existence = json.loads(response.content)["result"]
+            existence = json.loads(response.text)["result"]
 
         self.updateConfigFile(["REGISTRATION", "serviceID"], newID)
 
@@ -114,9 +113,9 @@ class Register(Thread):
 
             response = get(url, params=params)
             if(response.status_code != 200):
-                raise web_exception(response.status_code, str(response.content))
+                raise web_exception(response.status_code, str(response.text))
             
-            existence = json.loads(response.content)["result"]
+            existence = json.loads(response.text)["result"]
 
         return newID
     
@@ -131,12 +130,12 @@ class Register(Thread):
             "protocols" : ["REST"],
             "IPAddress" : self.generalConfigs["REST"]["IPAddress"],
             "port" : self.generalConfigs["REST"]["port"], 
-            "CRUDMethods" : {}
+            "CRUDMethods" : []
         })
 
         for key, value in self.generalConfigs["REST"]["CRUDMethods"].items():
             if(value):
-                self.endPoints[0]["CRUDMethods"].update({key : value})
+                self.endPoints[0]["CRUDMethods"].append(key)
 
     def generateMQTTEndPoint(self):         
         if(self.generalConfigs["MQTT"]["endPointID"] == None):
@@ -148,13 +147,15 @@ class Register(Thread):
             "endPointName" : self.generalConfigs["MQTT"]["endPointName"],
             "protocols" : ["MQTT"],
             "clientID" : self.generalConfigs["MQTT"]["clientID"],
-            "MQTTTopics" : self.generalConfigs["MQTT"]["MQTTTopics"]
+            "MQTTTopics" : self.generalConfigs["MQTT"]["MQTTTopics"],
+            "QOS" : self.generalConfigs["MQTT"]["QOS"]
         })
 
     def joinEndPoints(self):
         self.endPoints[0]["clientID"] = self.generalConfigs["MQTT"]["clientID"]
         self.endPoints[0]["protocols"].append("MQTT")        
         self.endPoints[0]["MQTTTopics"] = self.generalConfigs["MQTT"]["MQTTTopics"]
+        self.endPoints[0]["QOS"] = self.generalConfigs["MQTT"]["QOS"]
         del self.endPoints[1]
         self.updateConfigFile(["MQTT", "endPointID"], self.endPoints[0]["endPointID"])
 
@@ -173,7 +174,10 @@ class Register(Thread):
 
                 if(self.generalConfigs["CONFIG"]["userID"] != None):
                     service["userID"] = self.generalConfigs["CONFIG"]["userID"]
-                
+
+                if(self.generalConfigs["CONFIG"]["deviceID"] != None):
+                    service["deviceID"] = self.generalConfigs["CONFIG"]["deviceID"]
+                    
                 if(self.generalConfigs["CONFIG"]["resourceID"] != None):
                     service["resourceID"] = self.generalConfigs["CONFIG"]["resourceID"]
 
@@ -183,7 +187,7 @@ class Register(Thread):
 
                 response = put(url, headers=headers, data=json.dumps([service]))
                 if(response.status_code != 200):
-                    raise web_exception(response.status_code, str(response.content))
+                    raise web_exception(response.status_code, str(response.text))
                 
             except web_exception as e:    
                 raise web_exception(e.code, "An error occurred while sending keep alive request: \n\t" + e.message)
