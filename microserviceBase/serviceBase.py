@@ -4,8 +4,6 @@ from .register import *
 
 from .Error_Handler import *
 
-import os
-
 class ServiceBase(object):
     def __init__(self, config_file=None, init_REST_func=None, init_MQTT_func = None, GET=None, POST=None, PUT=None, DELETE=None, PATCH=None, Notifier=None, SubTopics=None):
         try: 
@@ -29,8 +27,8 @@ class ServiceBase(object):
                 self.MQTT = MQTTServer(3, "MQTTThread", self.generalConfigs["MQTT"], init_MQTT_func, Notifier, SubTopics)
                 self.MQTT.start()
     
-        except web_exception as e:
-            raise web_exception(e.code, "An error occurred while enabling the servers: \n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(e.status, "An error occurred while enabling the servers: \n\t" + e._message)
     
     def check_and_loadConfigs(self):
         try:
@@ -40,8 +38,8 @@ class ServiceBase(object):
             self.checkParams()
             self.validateParams()
         
-        except web_exception as e:
-            raise web_exception(e.code, "An error occurred while loading configs: \n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(e.status, "An error occurred while loading configs: \n\t" + e._message)
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError("An error occurred while loading configs: \n\t" + str(e))
         

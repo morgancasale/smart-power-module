@@ -1,9 +1,9 @@
-import sqlite3 as sq
-
 from endPoint import *
 from resourceClass import *
 from utility import *
 from deviceScheduling import *
+
+from cherrypy import HTTPError
 
 class DeviceSettings:
     def __init__(self, settingsData, newSettings = False):
@@ -21,27 +21,27 @@ class DeviceSettings:
 
     def checkKeys(self, settingsData):
         if(not all(key in self.settingsKeys for key in settingsData.keys())): # Check if all keys of settingsKeys are present in deviceData
-            raise web_exception(400, "Missing one or more keys")
+            raise HTTPError(status=400, message="Missing one or more keys")
 
     def checkAppl(self, applType): #TODO check if appliance exists in DB
-        return True
+        return check_presence_inDB(DBPath, "Appliances", "ApplianceType", applType)
 
     def checkSaveValues(self, settingsData):
         for key in settingsData.keys():
             match key:
                 case ("deviceID" | "deviceName"):
                     if(not isinstance(settingsData[key], str)):
-                        raise web_exception(400, "Device settings' \"" + key + "\" value must be string")
+                        raise HTTPError(status=400, message="Device settings' \"" + key + "\" value must be string")
                     match key:
                         case "deviceID": self.deviceID = settingsData["deviceID"]
                         case "deviceName": self.deviceName = settingsData["deviceName"]
 
                 case "enabledSockets":
                     if(not isinstance(settingsData[key], list) or len(settingsData[key]) != 3):
-                        raise web_exception(400, "Device settings' \"" + key + "\" value must be a list of 3 values")
+                        raise HTTPError(status=400, message="Device settings' \"" + key + "\" value must be a list of 3 values")
                     for socket in settingsData[key]:
                         if(not isinstance(socket, int) or socket not in [0, 1]):
-                            raise web_exception(400, "Device settings' \"" + key + "\" value must be a list of booleans")
+                            raise HTTPError(status=400, message="Device settings' \"" + key + "\" value must be a list of booleans")
                     self.enabledSockets = settingsData["enabledSockets"]
                         
                     
@@ -49,7 +49,7 @@ class DeviceSettings:
                     if(isinstance(settingsData[key], int)):
                         settingsData[key] = bool(settingsData[key])
                     if(not isinstance(settingsData[key], bool)):
-                        raise web_exception(400, "Device settings' \"" + key + "\" value must be boolean")
+                        raise HTTPError(status=400, message="Device settings' \"" + key + "\" value must be boolean")
                     match key:
                         case "HPMode": self.HPMode = settingsData["HPMode"]
                         case "MPControl": self.MPControl = settingsData["MPControl"]
@@ -59,40 +59,40 @@ class DeviceSettings:
                     
                 case ("maxPower" | "parThreshold"):
                     if(not isinstance(settingsData[key], (int, float)) or settingsData[key] < 0):
-                        raise web_exception(400, "Device settings' \"" + key + "\" value must be a positive float")
+                        raise HTTPError(status=400, message="Device settings' \"" + key + "\" value must be a positive float")
                     match key:
                         case "maxPower": self.maxPower = settingsData["maxPower"]
                         case "parThreshold": self.parThreshold = settingsData["parThreshold"]
                     
                 case ("MPMode" | "FBMode"):
                     if(not isinstance(settingsData[key], str) or settingsData[key] not in ["null", "Notify", "Turn OFF"]):
-                        raise web_exception(400, "Device settings' \"" + key + "\" value must be \"null\", \"Notify\" or \"Turn OFF\"")
+                        raise HTTPError(status=400, message="Device settings' \"" + key + "\" value must be \"null\", \"Notify\" or \"Turn OFF\"")
                     match key:
                         case "MPMode": self.MPMode = settingsData["MPMode"]
                         case "FBMode": self.FBMode = settingsData["FBMode"]
                 
                 case "parMode":
                     if(not isinstance(settingsData[key], str) or settingsData[key] not in ["null", "Manual", "Auto"]):
-                        raise web_exception(400, "Device settings' \"" + key + "\" value must be \"null\", \"Manual\" or \"Auto\"")
+                        raise HTTPError(status=400, message="Device settings' \"" + key + "\" value must be \"null\", \"Manual\" or \"Auto\"")
                     self.parMode = settingsData["parMode"]
                     
                 case "applianceType":
                     if((not isinstance(settingsData[key], str)) or (not self.checkAppl(settingsData[key]))):
-                        raise web_exception(400, "Device settings' \"" + key + "\" value must be a valid appliance type")
+                        raise HTTPError(status=400, message="Device settings' \"" + key + "\" value must be a valid appliance type")
                     self.applianceType = settingsData["applianceType"]
 
                 case "scheduling":
                     if(settingsData[key] is not None):
                         if(not isinstance(settingsData[key], list)):
-                            raise web_exception(400, "Device settings' \"" + key + "\" value must be a list")
+                            raise HTTPError(status=400, message="Device settings' \"" + key + "\" value must be a list")
                         for sched in settingsData[key]:
                             if(not isinstance(sched, dict)):
-                                raise web_exception(400, "Device settings' \"" + key + "\" list must contain only dictionaries")
+                                raise HTTPError(status=400, message="Device settings' \"" + key + "\" list must contain only dictionaries")
                         
                             self.scheduling.append(DeviceSchedule(sched, newScheduling=True))
 
                 case _:
-                    raise web_exception(400, "Unexpected key \"" + key + "\"")
+                    raise HTTPError(status=400, message="Unexpected key \"" + key + "\"")
 
     def to_dict(self):
         result = {}
@@ -104,7 +104,7 @@ class DeviceSettings:
     def save2DB(self, DBPath):
         try:
             if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
-                raise web_exception(400, "Device not found in DB")
+                raise HTTPError(status=400, message="Device not found in DB")
             
             for sched in self.scheduling:
                 sched.save2DB(DBPath, self.deviceID)
@@ -112,10 +112,10 @@ class DeviceSettings:
             update_entry_inDB(DBPath, "DeviceSettings", "deviceID", self.to_dict())
             update_entry_inDB(DBPath, "Devices", "deviceID", {"deviceID": self.deviceID, "deviceName": self.deviceName})
 
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e.message))
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e._message))
         except Exception as e:
-            raise web_exception(500, "An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(500, "An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
         
     def updateDB(self, DBPath):
         self.save2DB(DBPath)
@@ -126,13 +126,13 @@ class DeviceSettings:
     def deleteFromDB(DBPath, params):
         try:
             if(not check_presence_inDB(DBPath, "DeviceSettings", "deviceID", params["deviceID"])):
-                raise web_exception(400, "Settings for this device not found in DB")
+                raise HTTPError(status=400, message="Settings for this device not found in DB")
 
             delete_entry_fromDB(DBPath, "DeviceSettings", params["deviceID"])
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting device settings for device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e.message))
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while deleting device settings for device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e._message))
         except Exception as e:
-            raise web_exception(500, "An error occurred while deleting device settings for device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(500, "An error occurred while deleting device settings for device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e))
         
     def cleanDB(DBPath):
         query = "SELECT * FROM DeviceSettings"
@@ -142,10 +142,10 @@ class DeviceSettings:
             for entry in data:
                 if(not check_presence_inDB(DBPath, "Devices", "deviceID", entry["deviceID"])):
                     DeviceSettings.deleteFromDB(DBPath, {"deviceID": entry["deviceID"]})
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while cleaning device settings table:\n\t" + str(e.message))
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while cleaning device settings table:\n\t" + str(e._message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while cleaning device settings table:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while cleaning device settings table:\n\t" + str(e))
         
     
     def DB_to_dict(DBPath, device, verbose = True):
@@ -158,10 +158,10 @@ class DeviceSettings:
                 devSettings["scheduling"] = DeviceSchedule.DB_to_dict(DBPath, deviceID)
 
             return devSettings
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while retrieving device settings for device with ID \"" + deviceID + "\" from the DB:\n\t" + str(e.message))
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while retrieving device settings for device with ID \"" + deviceID + "\" from the DB:\n\t" + str(e._message))
         except Exception as e:
-            raise web_exception(500, "An error occurred while retrieving device settings for device with ID \"" + deviceID + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(500, "An error occurred while retrieving device settings for device with ID \"" + deviceID + "\" from the DB:\n\t" + str(e))
 
 
 

@@ -21,14 +21,14 @@ class Device:
 
     def checkKeys(self, deviceData):
         if(not all(key in self.deviceKeys for key in deviceData.keys())): # Check if all keys of deviceKeys are present in deviceData
-            raise web_exception(400, "Missing one or more keys")
+            raise HTTPError(status=400, message="Missing one or more keys")
 
     def checkSaveValues(self, deviceData):
         for key in deviceData.keys():
             match key:
                 case ("deviceID" | "deviceName" | "userID"):
                     if(not isinstance(deviceData[key], str)):
-                        raise web_exception(400, "Device's \"" + key + "\" value must be string")
+                        raise HTTPError(status=400, message="Device's \"" + key + "\" value must be string")
                     match key:
                         case "deviceID": self.deviceID = deviceData["deviceID"]
                         case "deviceName": self.deviceName = deviceData["deviceName"]
@@ -38,16 +38,16 @@ class Device:
                     for endPointData in deviceData["endPoints"]:
                         try:
                             self.endPoints.append(EndPoint(endPointData, newEndPoint = True))
-                        except web_exception as e:
-                            raise web_exception(400, "EndPoint with ID " + endPointData["endPointID"] + " not valid:\n\t" + e.message)
+                        except HTTPError as e:
+                            raise HTTPError(status=400, message="EndPoint with ID " + endPointData["endPointID"] + " not valid:\n\t" + e._message)
                 case "Resources":
                     for resourceData in deviceData["Resources"]:
                         try:
                             self.Resources.append(Resource(resourceData, newResource = True))
-                        except web_exception as e:
-                            raise web_exception(400, "Resource with ID " + resourceData["resourceID"] + " not valid:\n\t" + e.message)
+                        except HTTPError as e:
+                            raise HTTPError(status=400, message="Resource with ID " + resourceData["resourceID"] + " not valid:\n\t" + e._message)
                 case _:
-                    raise web_exception(400, "Unexpected key \"" + key + "\"")
+                    raise HTTPError(status=400, message="Unexpected key \"" + key + "\"")
 
     def to_dict(self):
         return {"deviceID": self.deviceID, "deviceName": self.deviceName, "lastUpdate": self.lastUpdate, 
@@ -58,10 +58,10 @@ class Device:
         Res_Dev_conn = []
         try:
             if(not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
-                raise web_exception(400, "The user with ID \"" + self.userID + "\" does not exist in the database")
+                raise HTTPError(status=400, message="The user with ID \"" + self.userID + "\" does not exist in the database")
 
             if(check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
-                raise web_exception(400, "A device with ID \"" + self.deviceID + "\" already exists in the database")
+                raise HTTPError(status=400, message="A device with ID \"" + self.deviceID + "\" already exists in the database")
 
             for endPoint in self.endPoints:
                 endPoint.save2DB(DBPath)
@@ -89,24 +89,24 @@ class Device:
                          "Online": self.Online, "lastUpdate": self.lastUpdate
                         }
                 save_entry2DB(DBPath, "DeviceResource_conn", entry)
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e.message))
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e._message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
         try:
             if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
-                raise web_exception(400, "The device with ID \"" + self.deviceID + "\" does not exist in the database")
+                raise HTTPError(status=400, message="The device with ID \"" + self.deviceID + "\" does not exist in the database")
 
             self.Online = True
             self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
             update_entry_inDB(DBPath, "Devices", "deviceID", self.to_dict())   
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB:\n\t" + str(e.message))
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB:\n\t" + str(e._message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB:\n\t" + str(e))
 
     def set2DB(self, DBPath):
         try:
@@ -114,10 +114,10 @@ class Device:
                 self.save2DB(DBPath)
             else:
                 self.updateDB(DBPath)
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e.message))
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e._message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
     
     def DB_to_dict(DBPath, device, verbose = True):
         try:
@@ -125,26 +125,32 @@ class Device:
 
             deviceData = {"deviceID": deviceID, "deviceName": device["deviceName"], "lastUpdate": device["lastUpdate"], "Online": bool(device["Online"])}
 
-            if(verbose):  
-                deviceData = {"deviceID": deviceID, "deviceName": device["deviceName"], "endPoints": [], "Resources": [], "lastUpdate": device["lastUpdate"], "Online": bool(device["Online"])}
-                query = "SELECT * FROM DeviceEndP_conn WHERE deviceID = \"" + deviceID + "\""
-                result = DBQuery_to_dict(DBPath, query)
-                for EP in result:
+             
+            deviceData = {"deviceID": deviceID, "deviceName": device["deviceName"], "endPoints": [], "Resources": [], "lastUpdate": device["lastUpdate"], "Online": bool(device["Online"])}
+            query = "SELECT * FROM DeviceEndP_conn WHERE deviceID = \"" + deviceID + "\""
+            result = DBQuery_to_dict(DBPath, query)
+            for EP in result:
+                if(verbose):
                     deviceData["endPoints"].append(EndPoint.DB_to_dict(DBPath, EP))
+                else:
+                    deviceData["endPoints"].append(EP["endPointID"])
 
-                query = "SELECT * FROM DeviceResource_conn WHERE deviceID = \"" + deviceID + "\""
-                result = DBQuery_to_dict(DBPath, query)
-                for resource in result:
+            query = "SELECT * FROM DeviceResource_conn WHERE deviceID = \"" + deviceID + "\""
+            result = DBQuery_to_dict(DBPath, query)
+            for resource in result:
+                if(verbose):
                     deviceData["Resources"].append(Resource.DB_to_dict(DBPath, resource, {"deviceID": deviceID}))
-
+                else:
+                    deviceData["Resources"].append(resource["resourceID"])
+                    
             return deviceData
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving device with ID \"" + deviceID + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while retrieving device with ID \"" + deviceID + "\" from the DB:\n\t" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
             if(not check_presence_inDB(DBPath, "Devices", "deviceID", params["deviceID"])):
-                raise web_exception(400, "The device with ID \"" + params["deviceID"] + "\" does not exist in the database")
+                raise HTTPError(status=400, message="The device with ID \"" + params["deviceID"] + "\" does not exist in the database")
 
             delete_entry_fromDB(DBPath, "UserDevice_conn", "deviceID", params["deviceID"])
             delete_entry_fromDB(DBPath, "DeviceEndP_conn", "deviceID", params["deviceID"])
@@ -152,10 +158,10 @@ class Device:
             delete_entry_fromDB(DBPath, "DeviceResource_conn", "deviceID", params["deviceID"])
             Resource.cleanDB(DBPath)
             delete_entry_fromDB(DBPath, "Devices", "deviceID", params["deviceID"])
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e.message))
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e._message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e))
         
         return True
 
@@ -169,10 +175,10 @@ class Device:
             for entry in data:
                 if(not check_presence_inConnectionTables(DBPath, connTables, "deviceID", entry["deviceID"])):
                     Device.deleteFromDB(DBPath, {"deviceID": entry["deviceID"]})
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while cleaning the DB from devices:\n\t" + str(e.message))
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while cleaning the DB from devices:\n\t" + str(e._message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while cleaning the DB from devices:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while cleaning the DB from devices:\n\t" + str(e))
 
     def setOnlineStatus(entries):
         newDeviceIDs = []

@@ -3,6 +3,8 @@ from user import *
 from house import *
 from device import *
 
+from cherrypy import HTTPError
+
 class Service:
     def __init__(self, serviceData, newService = False):
         self.serviceKeys = ["serviceID", "serviceName"]
@@ -21,14 +23,14 @@ class Service:
     
     def checkKeys(self, serviceData):
         if(not all(key in serviceData.keys() for key in self.serviceKeys)):
-            raise web_exception(400, "Missing one or more keys")
+            raise HTTPError(status=400, message="Missing one or more keys")
 
     def checkSaveValues(self, serviceData):
         for key in serviceData.keys():
             match key:
                 case ("serviceID" | "serviceName"):
                     if(not isinstance(serviceData[key], str)):
-                        raise web_exception(400, "Service's \"" + key + "\" parameter must be a string")
+                        raise HTTPError(status=400, message="Service's \"" + key + "\" parameter must be a string")
                     match key:
                         case "serviceID":
                             self.serviceID = serviceData["serviceID"]
@@ -36,7 +38,7 @@ class Service:
                             self.name = serviceData["serviceName"]
                 case ("houseID" | "userID" | "deviceID" | "resourceID"):
                     if(not all(isinstance(entryID, str) for entryID in serviceData[key])):
-                        raise web_exception(400, "Service's \"" + key + "\" parameter must be a list of strings")
+                        raise HTTPError(status=400, message="Service's \"" + key + "\" parameter must be a list of strings")
                     match key:
                         case "houseID":
                             self.houseID = serviceData["houseID"]
@@ -50,11 +52,11 @@ class Service:
                     for endPointData in serviceData["endPoints"]:
                         try:
                             self.endPoints.append(EndPoint(endPointData))
-                        except web_exception as e:
-                            raise web_exception(e.code, "Service's endPoints with ID " + endPointData["endPointID"] + " is not valid:\n\t" + e.message)
+                        except HTTPError as e:
+                            raise HTTPError(e.status, "Service's endPoints with ID " + endPointData["endPointID"] + " is not valid:\n\t" + e._message)
         
                 case _:
-                    raise web_exception(400, "Unexpected key \"" + key + "\"")
+                    raise HTTPError(status=400, message="Unexpected key \"" + key + "\"")
         
         self.checkPresenceOfConnectedinDB(DBPath, serviceData)
         
@@ -81,26 +83,26 @@ class Service:
             if(connectedID in serviceData.keys()):
                 for ID in serviceData[connectedID]:
                     if(not check_presence_inDB(DBPath, table, connectedID, ID)):
-                        raise web_exception(400, "A " + table[:-1] + " with ID \"" + ID + "\" does not exist in the database")
+                        raise HTTPError(status=400, message="A " + table[:-1] + " with ID \"" + ID + "\" does not exist in the database")
 
     def save2DB(self, DBPath):
         endPointIDs = []
 
         try:
             if(check_presence_inDB(DBPath, "Services", "serviceID", self.serviceID)):
-                raise web_exception(400, "An service with ID \"" + self.serviceID + "\" already exists in the database")
+                raise HTTPError(status=400, message="An service with ID \"" + self.serviceID + "\" already exists in the database")
             
             self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
             for endPoint in self.endPoints:
                 try:
                     endPoint.set2DB(DBPath)
-                except web_exception as e:
-                    msg = "An error occurred while saving service's endPoints with ID " + endPoint.endPointID + " is not valid:\n\t" + e.message
-                    raise web_exception(e.code, msg)
+                except HTTPError as e:
+                    msg = "An error occurred while saving service's endPoints with ID " + endPoint.endPointID + " is not valid:\n\t" + e._message
+                    raise HTTPError(e.status, msg)
                 except Exception as e:
                     msg = "An error occurred while saving service's endPoints with ID " + endPoint.endPointID + " is not valid:\n\t" + str(e)
-                    raise web_exception(500, msg)
+                    raise HTTPError(500, msg)
                 
                 endPointIDs.append(endPoint.endPointID)
 
@@ -125,29 +127,29 @@ class Service:
                     save_entry2DB(DBPath, self.connTables[4], {"serviceID": self.serviceID, "endPointID": endPointID, "lastUpdate": self.lastUpdate})
 
             save_entry2DB(DBPath, "Services", self.to_dict())
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + e._message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
         endPointIDs = []
 
         try:
             if(not check_presence_inDB(DBPath, "Services", "serviceID", self.serviceID)):
-                raise web_exception(400, "An service with ID \"" + self.serviceID + "\" does not exist in the database")
+                raise HTTPError(status=400, message="An service with ID \"" + self.serviceID + "\" does not exist in the database")
             
             self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
             for endPoint in self.endPoints:
                 try:
                     endPoint.set2DB(DBPath)
-                except web_exception as e:
-                    msg = "An error occurred while updating service's endPoints with ID " + endPoint.endPointID +":\n\t" + e.message
-                    raise web_exception(e.code, msg)
+                except HTTPError as e:
+                    msg = "An error occurred while updating service's endPoints with ID " + endPoint.endPointID +":\n\t" + e._message
+                    raise HTTPError(e.status, msg)
                 except Exception as e:
                     msg = "An error occurred while saving service's endPoints with ID " + endPoint.endPointID + ":\n\t" + str(e)
-                    raise web_exception(500, msg)
+                    raise HTTPError(500, msg)
                 
                 endPointIDs.append(endPoint.endPointID)
             
@@ -174,25 +176,25 @@ class Service:
                 data = {"table" : self.connTables[4], "refID" : "serviceID", "connID" : "endPointID", "refValue" : self.serviceID, "connValues" : endPointIDs}
                 updateConnTable(DBPath, data)
                 
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB:\n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB:\n\t" + e._message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB:\n\t" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
             connTables = ["ServiceHouse_conn", "ServiceUser_conn", "ServiceDevice_conn", "ServiceRes_conn", "ServiceEndP_conn"]
             if(not check_presence_inDB(DBPath, "Services", "serviceID", params["serviceID"])):
-                raise web_exception(400, "An service with ID \"" + params["serviceID"] + "\" does not exist in the database")
+                raise HTTPError(status=400, message="An service with ID \"" + params["serviceID"] + "\" does not exist in the database")
 
             for connTable in connTables:
                 delete_entry_fromDB(DBPath, connTable, "serviceID", params["serviceID"])
 
             delete_entry_fromDB(DBPath, "Services", "serviceID", params["serviceID"])
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB:\n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB:\n\t" + e._message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB:\n\t" + str(e))
         
         return True
 
@@ -203,19 +205,21 @@ class Service:
                 self.save2DB(DBPath)
             else:
                 self.updateDB(DBPath)
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + str(e.message))
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + str(e._message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + str(e))
 
-    def DB_to_dict(DBPath, service):
+    def DB_to_dict(DBPath, service, verbose=False):
         try:
             connTables = ["ServiceHouse_conn", "ServiceUser_conn", "ServiceDevice_conn", "ServiceRes_conn", "ServiceEndP_conn"]
-            tablesNames = ["Houses", "Users", "DevDevices", "Devices", "Resources", "EndPoints"]
+            tablesNames = ["Houses", "Users", "Devices", "Resources", "EndPoints"]
             varsIDs = ["houseID", "userID", "deviceID", "deviceID", "resourceID", "endPointID"]
 
             serviceID = service["serviceID"]
-            serviceData = {"serviceID": serviceID, "serviceName": service["serviceName"]}
+            serviceData = {
+                "serviceID": serviceID, "serviceName": service["serviceName"],
+                "Houses": [], "Users": [], "Devices": [], "Resources": [], "EndPoints": []   }
 
             for i in range(len(connTables)):
                 if(check_presence_inDB(DBPath, connTables[i], "serviceID", serviceID)):
@@ -229,25 +233,39 @@ class Service:
                     for result in results:
                         match i:
                             case 0:
-                                serviceData["Houses"].append(House.DB_to_dict(DBPath, result, verbose = False))
+                                if(verbose):
+                                    serviceData["Houses"].append(House.DB_to_dict(DBPath, result, verbose = False))
+                                else:
+                                    serviceData["Houses"].append(result["houseID"])
                             case 1:
-                                serviceData["Users"].append(User.DB_to_dict(DBPath, result, verbose = False))
-                            case 2: 
-                                serviceData["Devices"].append(Device.DB_to_dict(DBPath, result, verbose = False))
-                            case 3:
-                                serviceData["Devices"].append(Device.DB_to_dict(DBPath, result, verbose = False))
+                                if(verbose):
+                                    serviceData["Users"].append(User.DB_to_dict(DBPath, result, verbose = False))
+                                else:
+                                    serviceData["Users"].append(result["userID"])
+                            case 2:
+                                if(verbose):
+                                    serviceData["Devices"].append(Device.DB_to_dict(DBPath, result, verbose = False))
+                                else:
+                                    serviceData["Devices"].append(result["deviceID"])
                             case 4:
-                                serviceData["Resources"].append(Resource.DB_to_dict(DBPath, result, verbose = False))
+                                if(verbose):
+                                    serviceData["Resources"].append(Resource.DB_to_dict(DBPath, result, verbose = False))
+                                else:
+                                    serviceData["Resources"].append(result["resourceID"])
                             case 5:
-                                serviceData["EndPoints"].append(EndPoint.DB_to_dict(DBPath, result, verbose = False))
+                                if(verbose):
+                                    serviceData["EndPoints"].append(EndPoint.DB_to_dict(DBPath, result, verbose = False))
+                                else:
+                                    serviceData["EndPoints"].append(result["endPointID"])
                             case _:
-                                raise web_exception(400, "Non valid case")
+                                raise HTTPError(status=400, message="Non valid case")
 
             return serviceData
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB:\n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB:\n\t" + e._message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB:\n\t" + str(e))
+            a = HTTPError(status=400, message="An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB:\n\t" + str(e))
+            raise a
 
     def setOnlineStatus(entries):
         newServiceIDs = []

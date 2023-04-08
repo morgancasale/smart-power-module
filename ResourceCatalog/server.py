@@ -6,7 +6,7 @@ from resourceCatalog import *
 class ResourceCatalog_server(object):
     def __init__(self, DBPath):
         if(not os.path.isfile(DBPath)):
-            raise cherrypy.HTTPError(400, "Database file not found")
+            raise cherrypy.HTTPError(status=400, message="Database file not found")
     
         self.resourceCatalog = ResourceCatalog(DBPath)
 
@@ -20,36 +20,36 @@ class ResourceCatalog_server(object):
     def GET(self, *uri, **params):
         try:
             return self.resourceCatalog.handleGetRequest(uri[0], [params])
-        except web_exception as e:
-            raise cherrypy.HTTPError(e.code, e.message)
+        except HTTPError as e:
+            raise cherrypy.HTTPError(e.status, e._message)
 
     @cherrypy_cors.tools.expose_public()
     def POST(self, *path):
         try:
             return self.resourceCatalog.handlePostRequest(path[0], cherrypy.request.json)
-        except web_exception as e:
-            raise cherrypy.HTTPError(e.code, e.message)
+        except HTTPError as e:
+            raise cherrypy.HTTPError(e.status, e._message)
     
     #@cherrypy_cors.tools.expose_public()
     def PUT(self, *path):
         try:
             return self.resourceCatalog.handlePutRequest(path[0], cherrypy.request.json)
-        except web_exception as e:
-            raise cherrypy.HTTPError(e.code, e.message)
+        except HTTPError as e:
+            raise cherrypy.HTTPError(e.status, e._message)
     
     @cherrypy_cors.tools.expose_public()
     def PATCH(self, *path):
         try:
             return self.resourceCatalog.handlePatchRequest(path[0], cherrypy.request.json)
-        except web_exception as e:
-            raise cherrypy.HTTPError(e.code, e.message)
+        except HTTPError as e:
+            raise cherrypy.HTTPError(e.status, e._message)
 
     @cherrypy_cors.tools.expose_public()
     def DELETE(self, *path):
         try:
             self.resourceCatalog.handleDeleteRequest(path[0], cherrypy.request.json)
-        except web_exception as e:
-            raise cherrypy.HTTPError(e.code, e.message)
+        except HTTPError as e:
+            raise cherrypy.HTTPError(e.status, e._message)
 
 
 def start_webpage():

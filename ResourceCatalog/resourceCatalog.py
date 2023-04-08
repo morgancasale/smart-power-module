@@ -1,3 +1,8 @@
+import os
+import sys
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+sys.path.append(PROJECT_ROOT)
+
 import json
 import pandas as pd
 import sqlite3 as sq
@@ -9,11 +14,24 @@ from service import Service
 from devSettings import *
 from appliance import *
 
+from microserviceBase.serviceBase import *
+from cherrypy import HTTPError
+
 class ResourceCatalog:
     def __init__(self, DBPath):
+        if(not os.path.isfile(DBPath)):
+            raise cherrypy.HTTPError(status=400, message="Database file not found")
         self.DBPath = DBPath
+
+        self.server = ServiceBase("ResourceCatalog/serviceConfig.json", 
+                                  GET=self.handleGetRequest, POST=self.handlePostRequest, 
+                                  PUT=self.handlePutRequest, PATCH=self.handlePatchRequest,
+                                  DELETE=self.handleDeleteRequest)
+        
     
-    def handleGetRequest(self, cmd, params):
+    def handleGetRequest(self, *uri, **params):
+        cmd = uri[1]
+        if(not isinstance(params, list)) : params = [params]
         try:
             match cmd:
                 case "getInfo":
@@ -28,11 +46,14 @@ class ResourceCatalog:
                     return self.exit(self.filename)
 
                 case _:
-                    raise web_exception(400, "Unexpected invalid command")
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the GET request:\n\t" + e.message)
+                    raise HTTPError(status=400, message="Unexpected invalid command")
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while handling the GET request:\n\t" + e._message)
 
-    def handlePostRequest(self, cmd, params):
+    def handlePostRequest(self, *uri):
+        cmd = uri[1]
+        params = cherrypy.request.json
+        if(not isinstance(params, list)) : params = [params]
         try:
             match cmd:            
                 case "regHouse":
@@ -82,11 +103,14 @@ class ResourceCatalog:
                     exit()
 
                 case _:
-                    raise web_exception(400, "The command \"" + cmd + "\" is not valid")
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the POST request:\n\t" + e.message)
+                    raise HTTPError(status=400, message="The command \"" + cmd + "\" is not valid")
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while handling the POST request:\n\t" + e._message)
 
-    def handlePutRequest(self, cmd, params):
+    def handlePutRequest(self, *uri):
+        cmd = uri[1]
+        params = cherrypy.request.json
+        if(not isinstance(params, list)) : params = [params]
         try:
             match cmd:
                 case "setHouse":
@@ -169,11 +193,14 @@ class ResourceCatalog:
                     exit()
 
                 case _:
-                    raise web_exception(400, "Unexpected invalid command")
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the PUT request:\n\t" + e.message)
+                    raise HTTPError(status=400, message="Unexpected invalid command")
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while handling the PUT request:\n\t" + e._message)
 
-    def handlePatchRequest(self, cmd, params):
+    def handlePatchRequest(self, *uri):
+        cmd = uri[1]
+        params = cherrypy.request.json
+        if(not isinstance(params, list)) : params = [params]
         try:
             match cmd:                
                 case "updateHouse":
@@ -227,11 +254,14 @@ class ResourceCatalog:
                     exit()
 
                 case _:
-                    raise web_exception(400, "Unexpected invalid command")
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the PATCH request:\n\t" + e.message)
+                    raise HTTPError(status=400, message="Unexpected invalid command")
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while handling the PATCH request:\n\t" + e._message)
 
-    def handleDeleteRequest(self, cmd, params):
+    def handleDeleteRequest(self, *uri):
+        cmd = uri[1]
+        params = cherrypy.request.json
+        if(not isinstance(params, list)) : params = [params]
         try:
             match cmd:
                 case "delHouse":
@@ -288,41 +318,41 @@ class ResourceCatalog:
                     exit()
 
                 case _:
-                    raise web_exception(400, "Unexpected invalid command")
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while handling the DELETE request:\n\t" + e.message)        
+                    raise HTTPError(status=400, message="Unexpected invalid command")
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while handling the DELETE request:\n\t" + e._message)        
 
-    def reconstructJson(self, table, selectedData, requestEntry):
+    def reconstructJson(self, table, selectedData, requestEntry, verbose = False):
         reconstructedData = []
         try:
             for sel in selectedData:
                 match table:
                     case "Houses":
-                        reconstructedData.append(House.DB_to_dict(self.DBPath, sel))
+                        reconstructedData.append(House.DB_to_dict(self.DBPath, sel, verbose))
                     case "DevClusters":
-                        reconstructedData.append(DevCluster.DB_to_dict(self.DBPath, sel))
+                        reconstructedData.append(DevCluster.DB_to_dict(self.DBPath, sel, verbose))
                     case "Services":
-                        reconstructedData.append(Service.DB_to_dict(self.DBPath, sel))
+                        reconstructedData.append(Service.DB_to_dict(self.DBPath, sel, verbose))
                     case "Users":
-                        reconstructedData.append(User.DB_to_dict(self.DBPath, sel))
+                        reconstructedData.append(User.DB_to_dict(self.DBPath, sel, verbose))
                     case "Devices":
-                        reconstructedData.append(Device.DB_to_dict(self.DBPath, sel))
+                        reconstructedData.append(Device.DB_to_dict(self.DBPath, sel, verbose))
                     case "Resources":
                         reconstructedData.append(Resource.DB_to_dict(self.DBPath, sel, requestEntry))
                     case "EndPoints":
-                        reconstructedData.append(EndPoint.DB_to_dict(self.DBPath, sel))
+                        reconstructedData.append(EndPoint.DB_to_dict(self.DBPath, sel, verbose))
                     case "DeviceSettings":
-                        reconstructedData.append(DeviceSettings.DB_to_dict(self.DBPath, sel))
+                        reconstructedData.append(DeviceSettings.DB_to_dict(self.DBPath, sel, verbose))
                     case "DeviceScheduling":
                         reconstructedData.append(DeviceSchedule.DB_to_dict(self.DBPath, sel))
                     case "AppliancesInfo":
                         reconstructedData.append(Appliance.DB_to_dict(self.DBPath, sel))
                     case _:
-                        raise web_exception(400, "Unexpected invalid table")
-        except web_exception as e:
-            raise web_exception(400, e.message)
+                        raise HTTPError(status=400, message="Unexpected invalid table")
+        except HTTPError as e:
+            raise HTTPError(status=400, message=e._message)
         except Exception as e:
-            raise web_exception(400, e)
+            raise HTTPError(status=400, message=e)
 
         return reconstructedData
     
@@ -334,23 +364,25 @@ class ResourceCatalog:
             
             return json.dumps({"result" : check_presence_inDB(self.DBPath, table, keyNames, keyValues)})
         except Exception as e:
-            raise web_exception(400, "An error occurred while checking the presence of an entry in the DB:\n\t" + str(e))            
+            raise HTTPError(status=400, message="An error occurred while checking the presence of an entry in the DB:\n\t" + str(e))            
 
     def extractByKey(self, entry):
         table = entry["table"]
         keyName = entry["keyName"]
-        keyValue = entry["keyValue"]            
+        keyValue = entry["keyValue"]
+        verbose = False
+        if("verbose" in entry.keys()): verbose = entry["verbose"]        
 
         selectedData = None
 
         if(not isinstance(keyValue, list)) : keyValue = [keyValue]
 
         if(not isinstance(keyName, str)):
-            raise web_exception(400, "Key name must be a single string") 
+            raise HTTPError(status=400, message="Key name must be a single string") 
         if(not all(isinstance(keyV, str) for keyV in keyValue)):
-            raise web_exception(400, "Key values must be string")       
+            raise HTTPError(status=400, message="Key values must be string")       
         if(not isinstance(table, str)):
-            raise web_exception(400, "Table name must be single string")
+            raise HTTPError(status=400, message="Table name must be single string")
 
         if(not isinstance(keyValue, list)) : keyValue = [keyValue]
 
@@ -364,20 +396,20 @@ class ResourceCatalog:
             selectedData = pd.read_sql_query(query, conn).to_dict(orient="records")
             conn.close()
         except Exception as e:
-            raise web_exception(400, "An error occured while extracting data from DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occured while extracting data from DB:\n\t" + str(e))
 
         if len(selectedData) == 0:
             msg = "No entry found in table \"" + table
             msg += "\" with key " + keyName + " and values " + "[\"" + "\", \"".join(keyValue) + "\"]"
-            raise web_exception(400, msg)
+            raise HTTPError(status=400, message=msg)
 
         reconstructedData = None
         try:
-            reconstructedData = ResourceCatalog.reconstructJson(self, table, selectedData, entry) 
-        except web_exception as e:
-            raise web_exception(400, "An error occured while reconstructing data:\n\t" + e.message)
+            reconstructedData = ResourceCatalog.reconstructJson(self, table, selectedData, entry, verbose=verbose) 
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occured while reconstructing data:\n\t" + e._message)
         except Exception as e:
-            raise web_exception(400, "An error occured while reconstructing data:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occured while reconstructing data:\n\t" + str(e))
         
         return json.dumps(reconstructedData)
         
@@ -385,11 +417,11 @@ class ResourceCatalog:
     def updateConnStatus(self, connData): #TODO check integrity of request
         try:
             if(not check_presence_ofTableInDB(self.DBPath, connData["table"])): 
-                raise web_exception(400, "The table \"" + connData["table"] + "\" does not exist")
+                raise HTTPError(status=400, message="The table \"" + connData["table"] + "\" does not exist")
             
             for keyName in connData["keyNames"]:
                 if(not check_presence_ofColumnInDB(self.DBPath, connData["table"], keyName)):
-                    raise web_exception(400, "The column \"" + keyName + "\" does not exist in the table \"" + connData["table"] + "\"")
+                    raise HTTPError(status=400, message="The column \"" + keyName + "\" does not exist in the table \"" + connData["table"] + "\"")
             
             for conn in connData["conns"]:               
                 if(conn["new_status"]):
@@ -402,11 +434,15 @@ class ResourceCatalog:
                     if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])):
                         msg = "The entry (\"" + conn["keyValues"][0] +", " + conn["keyValues"][1]
                         msg += "\") does not exist in the table \"" + connData["table"] + "\""
-                        raise web_exception(400, msg)
+                        raise HTTPError(status=400, message=msg)
 
                     delete_entry_fromDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])
 
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while updating a connection:\n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while updating a connection:\n\t" + e._message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating a connection:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while updating a connection:\n\t" + str(e))
+        
+
+if __name__ == "__main__":
+    resourceCatalog = ResourceCatalog("ResourceCatalog/db.sqlite")

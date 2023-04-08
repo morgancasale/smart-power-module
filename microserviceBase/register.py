@@ -42,8 +42,8 @@ class Register(Thread):
         try:
             self.checkParams()
             self.validateParams()
-        except web_exception as e:
-            raise web_exception(e.code, "An error occurred while loading registration configs: \n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(e.status, "An error occurred while loading registration configs: \n\t" + e._message)
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError("An error occurred while loading registration configs: \n\t" + str(e))
 
@@ -91,7 +91,7 @@ class Register(Thread):
 
             response = get(url, params=params)
             if(response.status_code != 200):
-                raise web_exception(response.status_code, str(response.text))
+                raise HTTPError(response.status_code, str(response.text))
             
             existence = json.loads(response.text)["result"]
 
@@ -113,7 +113,7 @@ class Register(Thread):
 
             response = get(url, params=params)
             if(response.status_code != 200):
-                raise web_exception(response.status_code, str(response.text))
+                raise HTTPError(response.status_code, str(response.text))
             
             existence = json.loads(response.text)["result"]
 
@@ -187,10 +187,10 @@ class Register(Thread):
 
                 response = put(url, headers=headers, data=json.dumps([service]))
                 if(response.status_code != 200):
-                    raise web_exception(response.status_code, str(response.text))
+                    raise HTTPError(response.status_code, str(response.text))
                 
-            except web_exception as e:    
-                raise web_exception(e.code, "An error occurred while sending keep alive request: \n\t" + e.message)
+            except HTTPError as e:    
+                raise HTTPError(e.status, "An error occurred while sending keep alive request: \n\t" + e._message)
             except Exception as e:
                 raise serverErrorHandler.InternalServerError("An error occurred while sending keep alive request: \n\t" + str(e))
             

@@ -12,22 +12,22 @@ class Appliance:
 
     def checkKeys(self, applianceData):
         if(not all(key in self.applianceKeys for key in applianceData.keys())):
-            raise web_exception(400, "Missing one or more keys")
+            raise HTTPError(status=400, message="Missing one or more keys")
         
     def checkSaveValues(self, applianceData):
         for key in applianceData.keys():
             match key:
                 case "applianceType":
                     if(not isinstance(applianceData[key], str)):
-                        raise web_exception(400, "Appliance settings' \"" + key + "\" value must be string")
+                        raise HTTPError(status=400, message="Appliance settings' \"" + key + "\" value must be string")
                     self.applianceType = applianceData["applianceType"]
                 case ("maxPower" | "standyPowerMax" | "functioningRangeMin" | "functioningRangeMax"):
                     if(not isinstance(applianceData[key], (int, float)) or applianceData[key] < 0):
-                        raise web_exception(400, "Appliance settings' \"" + key + "\" value must be a positive number")
+                        raise HTTPError(status=400, message="Appliance settings' \"" + key + "\" value must be a positive number")
                     self.maxPower = applianceData[key]
                 
                 case _:
-                    raise web_exception(400, "Unexpected key \"" + key + "\"")
+                    raise HTTPError(status=400, message="Unexpected key \"" + key + "\"")
                 
     def to_dict(self):
         result = {}
@@ -39,26 +39,26 @@ class Appliance:
     def save2DB(self, DBPath):
         try:
             if(check_presence_inDB(DBPath, "AppliancesInfo", "applianceType", self.applianceType)):
-                raise web_exception(400, "Appliance \"" + self.applianceType + "\" already exists in DB")
+                raise HTTPError(status=400, message="Appliance \"" + self.applianceType + "\" already exists in DB")
             
             save_entry2DB(DBPath, "AppliancesInfo", self.to_dict())
         
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while saving the appliance \"" + self.applianceType + "\" in DB: \n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while saving the appliance \"" + self.applianceType + "\" in DB: \n\t" + e._message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving the appliance \"" + self.applianceType + "\" in DB: \n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving the appliance \"" + self.applianceType + "\" in DB: \n\t" + str(e))
     
     def updateDB(self, DBPath):
         try:
             if(not check_presence_inDB(DBPath, "AppliancesInfo", "applianceType", self.applianceType)):
-                raise web_exception(400, "Appliance \"" + self.applianceType + "\" does not exist in DB")
+                raise HTTPError(status=400, message="Appliance \"" + self.applianceType + "\" does not exist in DB")
             
             update_entry_inDB(DBPath, "AppliancesInfo", "applianceType", self.to_dict())
         
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while updating the appliance \"" + self.applianceType + "\" in DB: \n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while updating the appliance \"" + self.applianceType + "\" in DB: \n\t" + e._message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating the appliance \"" + self.applianceType + "\" in DB: \n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while updating the appliance \"" + self.applianceType + "\" in DB: \n\t" + str(e))
     
     def set2DB(self, DBPath):
         try:
@@ -67,22 +67,22 @@ class Appliance:
             else:
                 self.updateDB(DBPath)
         
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while setting the appliance \"" + self.applianceType + "\" in DB: \n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while setting the appliance \"" + self.applianceType + "\" in DB: \n\t" + e._message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while setting the appliance \"" + self.applianceType + "\" in DB: \n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while setting the appliance \"" + self.applianceType + "\" in DB: \n\t" + str(e))
     
     def deleteFromDB(DBPath, params):
         try:
             if(not check_presence_inDB(DBPath, "AppliancesInfo", "applianceType", params["applianceType"])):
-                raise web_exception(400, "Appliance \"" + params["applianceType"] + "\" does not exist in DB")
+                raise HTTPError(status=400, message="Appliance \"" + params["applianceType"] + "\" does not exist in DB")
             
             delete_entry_fromDB(DBPath, "AppliancesInfo", params["applianceType"])
         
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting the appliance \"" + params["applianceType"] + "\" from DB: \n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while deleting the appliance \"" + params["applianceType"] + "\" from DB: \n\t" + e._message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting the appliance \"" + params["applianceType"] + "\" from DB: \n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while deleting the appliance \"" + params["applianceType"] + "\" from DB: \n\t" + str(e))
 
     def DB_to_dict(DBPath, appliance):
         try:
@@ -90,7 +90,7 @@ class Appliance:
             applianceData = DBQuery_to_dict(DBPath, query)
         
             return applianceData
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while retrieving the appliance \"" + appliance["applianceType"] + "\" from DB: \n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while retrieving the appliance \"" + appliance["applianceType"] + "\" from DB: \n\t" + e._message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving the appliance \"" + appliance["applianceType"] + "\" from DB: \n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while retrieving the appliance \"" + appliance["applianceType"] + "\" from DB: \n\t" + str(e))
