@@ -77,11 +77,16 @@ class User:
             raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
+        deviceIDs = []
         try:
             if(not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
                 raise HTTPError(status=400, message="A user with ID \"" + self.userID + "\" does not exist in the database")
             
             self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+
+            if("deviceID" in self.userData.keys()):
+                data = {"table": "UserDevice_conn", "refID": "userID", "connID": "deviceID", "refValue": self.userID, "connValues": self.deviceID}
+                updateConnTable(DBPath, data)
             
             update_entry_inDB(DBPath, "Users", "userID", self.to_dict())
         except HTTPError as e:

@@ -57,11 +57,10 @@ class Device:
         EP_Dev_conn = []
         Res_Dev_conn = []
         try:
-            if(not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
-                raise HTTPError(status=400, message="The user with ID \"" + self.userID + "\" does not exist in the database")
-
             if(check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
                 raise HTTPError(status=400, message="A device with ID \"" + self.deviceID + "\" already exists in the database")
+            if(not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
+                raise HTTPError(status=400, message="The user with ID \"" + self.userID + "\" does not exist in the database")            
 
             for endPoint in self.endPoints:
                 endPoint.save2DB(DBPath)
@@ -73,34 +72,65 @@ class Device:
 
             # Save the device to the DB
             self.Online = self.Ping()
-            save_entry2DB(DBPath, "Devices", self.to_dict())
 
             # Save the connection between the device and the user
-            #save_entry2DB(DBPath, "UserDevice_conn", {"userID": self.userID, "deviceID": self.deviceID})
+            # save_entry2DB(DBPath, "UserDevice_conn", {"userID": self.userID, "deviceID": self.deviceID})
             # Save the connection between the device and the endpoints
             for EPID in EP_Dev_conn:
-                entry = {"deviceID": self.deviceID, "endPointID": EPID,
-                         "lastUpdate": self.lastUpdate
-                        }
+                entry = {"deviceID": self.deviceID, "endPointID": EPID, "lastUpdate": self.lastUpdate}
                 save_entry2DB(DBPath, "DeviceEndP_conn", entry)
+
             # Save the connection between the device and the resources
             for ResID in Res_Dev_conn:
-                entry = {"deviceID": self.deviceID, "resourceID": ResID, 
-                         "Online": self.Online, "lastUpdate": self.lastUpdate
-                        }
+                entry = {"deviceID": self.deviceID, "resourceID": ResID, "Online": self.Online, "lastUpdate": self.lastUpdate}
                 save_entry2DB(DBPath, "DeviceResource_conn", entry)
+            
+            save_entry2DB(DBPath, "Devices", self.to_dict())
         except HTTPError as e:
             raise HTTPError(status=400, message="An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e._message))
         except Exception as e:
             raise HTTPError(status=400, message="An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
+        endPointIDs = []
+        resourceIDs = []
+
         try:
             if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
                 raise HTTPError(status=400, message="The device with ID \"" + self.deviceID + "\" does not exist in the database")
 
             self.Online = True
             self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+
+            for endPoint in self.endPoints:
+                try:
+                    endPoint.set2DB(DBPath)
+                except HTTPError as e:
+                    msg = "An error occurred while updating device's endpoint with ID \"" + endPoint.endPointID + "\":\n\t" + str(e._message)
+                    raise HTTPError(status=400, message=msg)
+                except Exception as e:
+                    msg = "An error occurred while updating device's endpoint with ID \"" + endPoint.endPointID + "\":\n\t" + str(e)
+                    raise HTTPError(status=500, message=msg)
+                endPointIDs.append(endPoint.endPointID)
+
+            for resource in self.Resources:
+                try:
+                    resource.set2DB(DBPath)
+                except HTTPError as e:
+                    msg = "An error occurred while updating device's resource with ID \"" + resource.resourceID + "\":\n\t" + str(e._message)
+                    raise HTTPError(status=400, message=msg)
+                except Exception as e:
+                    msg = "An error occurred while updating device's resource with ID \"" + resource.resourceID + "\":\n\t" + str(e)
+                    raise HTTPError(status=500, message=msg)
+                resourceIDs.append(resource.resourceID)
+
+            if(len(endPointIDs)>0):
+                data = {"table" : "DeviceEndP_conn", "refID" : "deviceID", "connID" : "endPointID", "refValue" : self.deviceID, "connValues" : endPointIDs}
+                updateConnTable(DBPath, data)
+                
+            if(len(resourceIDs)>0):
+                data = {"table" : "DeviceResource_conn", "refID" : "deviceID", "connID" : "resourceID", "refValue" : self.deviceID, "connValues" : resourceIDs}
+                updateConnTable(DBPath, data, self.Online)
             
             update_entry_inDB(DBPath, "Devices", "deviceID", self.to_dict())   
         except HTTPError as e:

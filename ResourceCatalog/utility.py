@@ -243,7 +243,7 @@ def updateConnTable(DBPath, data, newStatus = None):
                 update_entry_inDB(DBPath, table, [refID,connID], entry)
     
     except HTTPError as e:
-        raise HTTPError(e.status, "An error occured while updating the connection table:\n\t" + e._message)
+        raise HTTPError(status=e.status, message="An error occured while updating the connection table:\n\t" + e._message)
     except Exception as e:
         raise HTTPError(status=400, message="An error occured while updating the connection table:\n\t" + str(e))
 

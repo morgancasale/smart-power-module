@@ -145,16 +145,13 @@ class Service:
                 try:
                     endPoint.set2DB(DBPath)
                 except HTTPError as e:
-                    msg = "An error occurred while updating service's endPoints with ID " + endPoint.endPointID +":\n\t" + e._message
+                    msg = "An error occurred while updating service's endPoints with ID \"" + endPoint.endPointID +"\":\n\t" + e._message
                     raise HTTPError(e.status, msg)
                 except Exception as e:
-                    msg = "An error occurred while saving service's endPoints with ID " + endPoint.endPointID + ":\n\t" + str(e)
+                    msg = "An error occurred while saving service's endPoints with ID \"" + endPoint.endPointID + "\":\n\t" + str(e)
                     raise HTTPError(500, msg)
                 
-                endPointIDs.append(endPoint.endPointID)
-            
-            update_entry_inDB(DBPath, "Services", "serviceID", self.to_dict())
-            
+                endPointIDs.append(endPoint.endPointID)            
 
             if("houseID" in self.serviceData.keys()):
                 data = {"table" : self.connTables[0], "refID" : "serviceID", "connID" : "houseID", "refValue" : self.serviceID, "connValues" : self.houseID}
@@ -175,6 +172,8 @@ class Service:
             if(len(endPointIDs)>0):
                 data = {"table" : self.connTables[4], "refID" : "serviceID", "connID" : "endPointID", "refValue" : self.serviceID, "connValues" : endPointIDs}
                 updateConnTable(DBPath, data)
+
+            update_entry_inDB(DBPath, "Services", "serviceID", self.to_dict())
                 
         except HTTPError as e:
             raise HTTPError(status=400, message="An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB:\n\t" + e._message)

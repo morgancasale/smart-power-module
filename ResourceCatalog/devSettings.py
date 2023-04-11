@@ -6,7 +6,7 @@ from deviceScheduling import *
 from cherrypy import HTTPError
 
 class DeviceSettings:
-    def __init__(self, settingsData, newSettings = False):
+    def __init__(self, settingsData, newSettings = True):
         self.settingsKeys = [
             "deviceID", "deviceName", "enabledSockets", "HPMode", "MPControl", "maxPower", "MPMode", "faultControl",
             "parControl", "parThreshold", "parMode", "applianceType", "FBControl", "FBMode",
@@ -59,7 +59,7 @@ class DeviceSettings:
                     
                 case ("maxPower" | "parThreshold"):
                     if(not isinstance(settingsData[key], (int, float)) or settingsData[key] < 0):
-                        raise HTTPError(status=400, message="Device settings' \"" + key + "\" value must be a positive float")
+                        raise HTTPError(status=400, message="Device settings' \"" + key + "\" value must be a positive number")
                     match key:
                         case "maxPower": self.maxPower = settingsData["maxPower"]
                         case "parThreshold": self.parThreshold = settingsData["parThreshold"]
@@ -148,14 +148,12 @@ class DeviceSettings:
             raise HTTPError(status=400, message="An error occurred while cleaning device settings table:\n\t" + str(e))
         
     
-    def DB_to_dict(DBPath, device, verbose = True):
+    def DB_to_dict(DBPath, device):
         try:
             deviceID = device["deviceID"]
-
-            if(verbose):
-                query = "SELECT * FROM DeviceSettings WHERE deviceID = \"" + deviceID + "\""
-                devSettings = DBQuery_to_dict(DBPath, query)[0]
-                devSettings["scheduling"] = DeviceSchedule.DB_to_dict(DBPath, deviceID)
+            query = "SELECT * FROM DeviceSettings WHERE deviceID = \"" + deviceID + "\""
+            devSettings = DBQuery_to_dict(DBPath, query)[0]
+            devSettings["scheduling"] = DeviceSchedule.DB_to_dict(DBPath, deviceID)
 
             return devSettings
         except HTTPError as e:

@@ -8,7 +8,6 @@ import pandas as pd
 import sqlite3 as sq
 
 from house import *
-from devCluster import DevCluster
 from service import Service
 
 from devSettings import *
@@ -74,12 +73,6 @@ class ResourceCatalog:
 
                         entry.save2DB(self.DBPath)
                     return "Device registration was successful"
-
-                case "regDevCluster":
-                    for devClusterData in params:
-                        entry = DevCluster(devClusterData, newDevCluster = True)
-                        entry.save2DB(self.DBPath)
-                    return "Device Cluster registration was successful"
                 
                 case "regEndPoint":
                     for endPointData in params:
@@ -124,12 +117,6 @@ class ResourceCatalog:
                         entry = User(userData)
                         entry.set2DB(self.DBPath)
                     return "User update was successful"
-                
-                case "setDevCluster":
-                    for devClustData in params:
-                        entry = DevCluster(devClustData)
-                        entry.set2DB(self.DBPath)
-                    return "Device Cluster update was successful"
 
                 case "setDevice":
                     entries = []
@@ -215,12 +202,6 @@ class ResourceCatalog:
                         entry.updateDB(self.DBPath)
                     return "User update was successful"
 
-                case "updateDevCluster":
-                    for devClustData in params:
-                        entry = DevCluster(devClustData)
-                        entry.updateDB(self.DBPath)
-                    return "Device Cluster update was successful"
-
                 case "updateDevice":
                     for deviceData in params:
                         entry = Device(deviceData)
@@ -279,11 +260,6 @@ class ResourceCatalog:
                         Device.deleteFromDB(self.DBPath, entry)
                     return "Device deletion was successful"
 
-                case "delDevCluster":
-                    for entry in params:
-                        DevCluster.deleteFromDB(self.DBPath, entry)
-                    return "Device Cluster deletion was successful"
-
                 case "delService":
                     for entry in params:
                         Service.deleteFromDB(self.DBPath, entry)
@@ -329,8 +305,6 @@ class ResourceCatalog:
                 match table:
                     case "Houses":
                         reconstructedData.append(House.DB_to_dict(self.DBPath, sel, verbose))
-                    case "DevClusters":
-                        reconstructedData.append(DevCluster.DB_to_dict(self.DBPath, sel, verbose))
                     case "Services":
                         reconstructedData.append(Service.DB_to_dict(self.DBPath, sel, verbose))
                     case "Users":
@@ -342,7 +316,7 @@ class ResourceCatalog:
                     case "EndPoints":
                         reconstructedData.append(EndPoint.DB_to_dict(self.DBPath, sel, verbose))
                     case "DeviceSettings":
-                        reconstructedData.append(DeviceSettings.DB_to_dict(self.DBPath, sel, verbose))
+                        reconstructedData.append(DeviceSettings.DB_to_dict(self.DBPath, sel))
                     case "DeviceScheduling":
                         reconstructedData.append(DeviceSchedule.DB_to_dict(self.DBPath, sel))
                     case "AppliancesInfo":
@@ -350,7 +324,7 @@ class ResourceCatalog:
                     case _:
                         raise HTTPError(status=400, message="Unexpected invalid table")
         except HTTPError as e:
-            raise HTTPError(status=400, message=e._message)
+            raise e
         except Exception as e:
             raise HTTPError(status=400, message=e)
 

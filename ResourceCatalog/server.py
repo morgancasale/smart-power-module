@@ -21,35 +21,35 @@ class ResourceCatalog_server(object):
         try:
             return self.resourceCatalog.handleGetRequest(uri[0], [params])
         except HTTPError as e:
-            raise cherrypy.HTTPError(e.status, e._message)
+            raise cherrypy.HTTPError(status=e.status, message=e._message)
 
     @cherrypy_cors.tools.expose_public()
     def POST(self, *path):
         try:
             return self.resourceCatalog.handlePostRequest(path[0], cherrypy.request.json)
         except HTTPError as e:
-            raise cherrypy.HTTPError(e.status, e._message)
+            raise cherrypy.HTTPError(status=e.status, message=e._message)
     
     #@cherrypy_cors.tools.expose_public()
     def PUT(self, *path):
         try:
             return self.resourceCatalog.handlePutRequest(path[0], cherrypy.request.json)
         except HTTPError as e:
-            raise cherrypy.HTTPError(e.status, e._message)
+            raise cherrypy.HTTPError(status=e.status, message=e._message)
     
     @cherrypy_cors.tools.expose_public()
     def PATCH(self, *path):
         try:
             return self.resourceCatalog.handlePatchRequest(path[0], cherrypy.request.json)
         except HTTPError as e:
-            raise cherrypy.HTTPError(e.status, e._message)
+            raise cherrypy.HTTPError(status=e.status, message=e._message)
 
     @cherrypy_cors.tools.expose_public()
     def DELETE(self, *path):
         try:
             self.resourceCatalog.handleDeleteRequest(path[0], cherrypy.request.json)
         except HTTPError as e:
-            raise cherrypy.HTTPError(e.status, e._message)
+            raise cherrypy.HTTPError(status=e.status, message=e._message)
 
 
 def start_webpage():
