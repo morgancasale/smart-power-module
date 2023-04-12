@@ -24,7 +24,8 @@ class DeviceSettings:
             raise HTTPError(status=400, message="Missing one or more keys")
 
     def checkAppl(self, applType): #TODO check if appliance exists in DB
-        return check_presence_inDB(DBPath, "Appliances", "ApplianceType", applType)
+        if(applType == "None"): return True
+        return check_presence_inDB(DBPath, "AppliancesInfo", "ApplianceType", applType)
 
     def checkSaveValues(self, settingsData):
         for key in settingsData.keys():
@@ -77,19 +78,25 @@ class DeviceSettings:
                     self.parMode = settingsData["parMode"]
                     
                 case "applianceType":
-                    if((not isinstance(settingsData[key], str)) or (not self.checkAppl(settingsData[key]))):
-                        raise HTTPError(status=400, message="Device settings' \"" + key + "\" value must be a valid appliance type")
-                    self.applianceType = settingsData["applianceType"]
+                    if(settingsData[key] is not None):
+                        if((not isinstance(settingsData[key], str)) or (not self.checkAppl(settingsData[key]))):
+                            raise HTTPError(status=400, message="Device settings' \"" + key + "\" value must be a valid appliance type")
+                        self.applianceType = settingsData["applianceType"]
 
                 case "scheduling":
                     if(settingsData[key] is not None):
                         if(not isinstance(settingsData[key], list)):
                             raise HTTPError(status=400, message="Device settings' \"" + key + "\" value must be a list")
-                        for sched in settingsData[key]:
-                            if(not isinstance(sched, dict)):
-                                raise HTTPError(status=400, message="Device settings' \"" + key + "\" list must contain only dictionaries")
-                        
-                            self.scheduling.append(DeviceSchedule(sched, newScheduling=True))
+                        for socketScheds in settingsData[key]:
+                            if(socketScheds is not None):
+                                if(not isinstance(socketScheds, list)):
+                                    raise HTTPError(status=400, message="Device settings' \"" + key + "\" schedules must contain only lists")
+                                for sched in socketScheds:
+                                    if(not isinstance(sched, dict)):
+                                        raise HTTPError(status=400, message="Device settings' \"" + key + "\" list must contain only dictionaries")
+
+                                    sched.update({"deviceID": self.deviceID})
+                                    self.scheduling.append(DeviceSchedule(sched, newSchedule=True))
 
                 case _:
                     raise HTTPError(status=400, message="Unexpected key \"" + key + "\"")
@@ -107,7 +114,7 @@ class DeviceSettings:
                 raise HTTPError(status=400, message="Device not found in DB")
             
             for sched in self.scheduling:
-                sched.save2DB(DBPath, self.deviceID)
+                sched.save2DB(DBPath)
 
             update_entry_inDB(DBPath, "DeviceSettings", "deviceID", self.to_dict())
             update_entry_inDB(DBPath, "Devices", "deviceID", {"deviceID": self.deviceID, "deviceName": self.deviceName})

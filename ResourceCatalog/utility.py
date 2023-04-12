@@ -102,8 +102,7 @@ def update_entry_inDB(DBPath, table, primaryKeyNames, entryData):
                 if(isinstance(value, list)):
                     if(isinstance(value[0], int)):
                         value = [str(v) for v in value]
-                    else:
-                        value = json.dumps(value).replace("\"", "\'")
+                    value = json.dumps(value).replace("\"", "\'")
                 if(isinstance(value, dict)):
                     value = json.dumps(value).replace("\"", "\'")            
                 if(value == None):
@@ -114,6 +113,7 @@ def update_entry_inDB(DBPath, table, primaryKeyNames, entryData):
                     value = str(value)
 
                 edatas.append(value)
+
         keys = "(\"" + ("\", \"").join(keys)+"\")"
         edatas = "(\"" + ("\", \"").join(edatas) + "\")"
 
@@ -205,7 +205,7 @@ def Ping(DBPath, table, KeyName, KeyValue):
 
 def istimeinstance(obj):
     try:
-        datetime.strptime(obj, "%d/%m/%Y %H:%M")
+        datetime.strptime(obj, "%Y-%m-%d %H:%M")
         return True
     except ValueError:
         return False

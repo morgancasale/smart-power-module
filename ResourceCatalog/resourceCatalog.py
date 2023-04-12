@@ -8,6 +8,8 @@ import pandas as pd
 import sqlite3 as sq
 
 from house import *
+from houseSettings import *
+
 from service import Service
 
 from devSettings import *
@@ -111,6 +113,12 @@ class ResourceCatalog:
                         entry = House(houseData)
                         entry.set2DB(self.DBPath)
                     return "House update was successful"
+                
+                case "setHouseSettings":
+                    for houseSettingsData in params:
+                        entry = HouseSettings(houseSettingsData)
+                        entry.set2DB(self.DBPath)
+                    return "House settings update was successful"
 
                 case "setUser":
                     for userData in params:
@@ -305,6 +313,8 @@ class ResourceCatalog:
                 match table:
                     case "Houses":
                         reconstructedData.append(House.DB_to_dict(self.DBPath, sel, verbose))
+                    case "HouseSettings":
+                        reconstructedData.append(HouseSettings.DB_to_dict(self.DBPath, sel))
                     case "Services":
                         reconstructedData.append(Service.DB_to_dict(self.DBPath, sel, verbose))
                     case "Users":

@@ -1,7 +1,13 @@
 from utility import *
+import time
 class DeviceSchedule:
     def __init__(self, schedulingData, newSchedule = False):
         self.schedulingKeys = ["deviceID", "socketID", "mode", "startSchedule", "enableEndSchedule", "endSchedule", "repeat"]
+
+        self.enableEndSchedule = False
+        self.endSchedule = None
+        self.repeat = 0
+
 
         if(newSchedule) : self.checkKeys(schedulingData)
         self.checkSaveValues(schedulingData)
@@ -13,7 +19,7 @@ class DeviceSchedule:
     def checkSaveValues(self, schedulingData):
         for key in schedulingData.keys():
             match key:
-                case ("deviceID" | "socketID" | "mode"):
+                case ("deviceID" | "mode"):
                     if(not isinstance(schedulingData[key], str)):
                         raise HTTPError(status=400, message="Scheduling's \"" + key + "\" value must be a string")
                     match key:
@@ -23,6 +29,17 @@ class DeviceSchedule:
                             if(not schedulingData["mode"] in ["ON", "OFF"]):
                                 raise HTTPError(status=400, message="Scheduling's \"" + key + "\" value must be \"ON\" or \"OFF\"") 
                             self.mode = schedulingData["mode"]
+
+                case ("socketID" | "repeat"):
+                    if(not isinstance(schedulingData[key], int) or schedulingData[key] < 0):
+                        raise HTTPError(status=400, message="Scheduling's \"" + key + "\" value must be a positive integer")
+                    match key:
+                        case "socketID": 
+                            if(schedulingData["socketID"] not in [0, 1, 2]):
+                                raise HTTPError(status=400, message="Scheduling's \"" + key + "\" value must be 0, 1 or 2")
+                            self.socketID = schedulingData["socketID"]
+                        case "repeat": 
+                            self.repeat = schedulingData["repeat"]
 
                 case "enableEndSchedule":
                     if(not isinstance(schedulingData[key], bool)):
@@ -52,25 +69,24 @@ class DeviceSchedule:
                         timestamp = time.mktime(timestamp.timetuple())
                         self.endSchedule = timestamp
                     
-                case "repeat":
-                    if(not isinstance(schedulingData[key], int) or schedulingData[key] < 0):
-                        raise HTTPError(status=400, message="Scheduling's \"" + key + "\" value must be a positive integer")
-                    self.repeat = schedulingData["repeat"]
-                    
                 case _:
                     raise HTTPError(status=400, message="Unexpected key \"" + key + "\"")
                 
     def to_dict(self):
-        return { "deviceID": self.deviceID, "socketID": self.socketID, "mode": self.mode,
-                 "startSchedule": self.startSchedule, "enableEndSchedule": self.enableEndSchedule, "endSchedule": self.endSchedule, "repeat": self.repeat }
+        result = {}
+        for key in self.schedulingKeys:
+            if(getattr(self, key)!=None) : result[key] = getattr(self, key)
+            
+        return result
     
     def save2DB(self, DBPath):
         try: 
             if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
                 raise HTTPError(status=400, message="Device with ID \"" + self.deviceID + "\" does not exist")
             
-            if(not check_presence_inDB(DBPath, "DeviceScheduling", self.schedulingKeys, self.to_dict().values())): # Check if scheduling already exists
-                save_entry2DB(DBPath, "DeviceScheduling", self.to_dict())
+            dictData = self.to_dict()
+            if(not check_presence_inDB(DBPath, "DeviceScheduling", list(dictData.keys()), list(dictData.values()))): # Check if scheduling already exists
+                save_entry2DB(DBPath, "DeviceScheduling", dictData)
 
         except HTTPError as e:
             raise HTTPError(status=400, message="An error occured while saving device settings to DB:\n\t" + str(e._message))

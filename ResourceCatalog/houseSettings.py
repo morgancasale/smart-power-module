@@ -42,11 +42,11 @@ class HouseSettings:
     
     def save2DB(self, DBPath):
         try:
-            if(not check_presence_inDB(DBPath, "Houses", "HouseID", self.houseID)):
+            if(not check_presence_inDB(DBPath, "Houses", "houseID", self.houseID)):
                 raise HTTPError(status=400, message="House ID not found in DB")
             
-            update_entry_inDB(DBPath, "HouseSettings", "HouseID", self.to_dict())
-            update_entry_inDB(DBPath, "Houses", "HouseID", {"HouseID": self.houseID, "HouseName": self.houseName})
+            update_entry_inDB(DBPath, "HouseSettings", "houseID", self.to_dict())
+            update_entry_inDB(DBPath, "Houses", "houseID", {"houseID": self.houseID, "HouseName": self.houseName})
         except HTTPError as e:
             raise HTTPError(status=e.status, message="An error occurred while saving house settings for house with ID \"" + self.houseID + "\" to the DB:\n\t" + e._message)
         except Exception as e:
@@ -60,10 +60,10 @@ class HouseSettings:
 
     def deleteFromDB(DBPath, params):
         try:
-            if(not check_presence_inDB(DBPath, "HouseSettings", "HouseID", params["houseID"])):
+            if(not check_presence_inDB(DBPath, "HouseSettings", "houseID", params["houseID"])):
                 raise HTTPError(status=400, message="Settings for this House not found in DB")
             
-            delete_entry_fromDB(DBPath, "HouseSettings", "HouseID", params["houseID"])
+            delete_entry_fromDB(DBPath, "HouseSettings", "houseID", params["houseID"])
         except HTTPError as e:
             raise HTTPError(status=e.status, message="An error occurred while deleting house settings for house with ID \"" + params["houseID"] + "\" from the DB:\n\t" + e._message)
         except Exception as e:
@@ -75,8 +75,8 @@ class HouseSettings:
             data = DBQuery_to_dict(DBPath, query)
 
             for entry in data:
-                if(not check_presence_inDB(DBPath, "Houses", "HouseID", entry["HouseID"])):
-                    HouseSettings.deleteFromDB(DBPath, {"HouseID" : entry["HouseID"]})
+                if(not check_presence_inDB(DBPath, "Houses", "houseID", entry["houseID"])):
+                    HouseSettings.deleteFromDB(DBPath, {"houseID" : entry["houseID"]})
         except HTTPError as e:
             raise HTTPError(status=e.status, message="An error occurred while cleaning house settings from the DB:\n\t" + e._message)
         except Exception as e:
@@ -84,8 +84,8 @@ class HouseSettings:
         
     def DB_to_dict(DBPath, house):
         try:
-            houseID = house["HouseID"]
-            query = "SELECT * FROM HouseSettings WHERE HouseID = \"" + houseID + "\""
+            houseID = house["houseID"]
+            query = "SELECT * FROM HouseSettings WHERE houseID = \"" + houseID + "\""
             houseSettings = DBQuery_to_dict(DBPath, query)[0]
 
             return houseSettings
