@@ -21,7 +21,7 @@
         "brokerPort" : 2300,
         "subTopic" : "string",
         "pubTopic" : "string",
-        "QoS" : 0
+        "QOS" : 0
        
     },
 

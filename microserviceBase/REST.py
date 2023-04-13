@@ -45,7 +45,7 @@ class RESTServer(Thread):
             
             
         except HTTPError as e:
-            raise HTTPError(e.status, "An error occurred while enabling REST server: \n\t" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while enabling REST server: \n\t" + e._message)
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError("An error occurred while enabling REST server: \n\t" + str(e))
 
@@ -121,7 +121,7 @@ class RESTServer(Thread):
             self.validateParams()
             
         except HTTPError as e:
-            raise HTTPError(e.status, "An error ocurred while loading REST configs: " + e._message)
+            raise HTTPError(status=e.status, message="An error ocurred while loading REST configs: " + e._message)
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError("An error ocurred while loading REST configs: \n\t" + str(e))
 

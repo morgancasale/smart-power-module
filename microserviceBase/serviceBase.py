@@ -5,7 +5,7 @@ from .register import *
 from .Error_Handler import *
 
 class ServiceBase(object):
-    def __init__(self, config_file=None, init_REST_func=None, init_MQTT_func = None, GET=None, POST=None, PUT=None, DELETE=None, PATCH=None, Notifier=None, SubTopics=None):
+    def __init__(self, config_file=None, init_REST_func=None, init_MQTT_func = None, GET=None, POST=None, PUT=None, DELETE=None, PATCH=None, Notifier=None):
         try: 
             self.clientErrorHandler = Client_Error_Handler()
             self.serverErrorHandler = Server_Error_Handler()
@@ -15,20 +15,25 @@ class ServiceBase(object):
 
             self.check_and_loadConfigs()
 
+            queues = {
+                "REST": Queue(),
+                "MQTT": Queue()
+            }
+
             if(self.generalConfigs["REGISTRATION"]["enabled"]):
-                self.registerService = Register(1, "RegThread", self.generalConfigs, self.config_file)
+                self.registerService = Register(1, "RegThread", queues, self.generalConfigs, config_file)
                 self.registerService.start()
 
             if(self.configs["activatedMethod"]["REST"]):
-                self.REST = RESTServer(2, "RESTThread", self.generalConfigs["REST"], init_REST_func, GET, POST, PUT, DELETE, PATCH)
+                self.REST = RESTServer(2, "RESTThread", queues["REST"], self.generalConfigs["REST"], init_REST_func, GET, POST, PUT, DELETE, PATCH)
                 self.REST.start()
             
-            if(False and self.configs["activatedMethod"]["MQTT"]):
-                self.MQTT = MQTTServer(3, "MQTTThread", self.generalConfigs["MQTT"], init_MQTT_func, Notifier, SubTopics)
+            if(self.configs["activatedMethod"]["MQTT"]):
+                self.MQTT = MQTTServer(3, "MQTTThread", queues["MQTT"], self.generalConfigs["MQTT"], config_file, init_MQTT_func, Notifier)
                 self.MQTT.start()
     
         except HTTPError as e:
-            raise HTTPError(e.status, "An error occurred while enabling the servers: \n\t" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while enabling the servers: \n\t" + e._message)
     
     def check_and_loadConfigs(self):
         try:
@@ -39,7 +44,7 @@ class ServiceBase(object):
             self.validateParams()
         
         except HTTPError as e:
-            raise HTTPError(e.status, "An error occurred while loading configs: \n\t" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while loading configs: \n\t" + e._message)
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError("An error occurred while loading configs: \n\t" + str(e))
         

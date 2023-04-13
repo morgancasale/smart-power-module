@@ -3,15 +3,18 @@ import time
 import json
 
 from threading import Thread
+from queue import Queue
+import ctypes
 
 from .utility import *
 from .Error_Handler import *
 
 class Register(Thread):
-    def __init__(self, threadID, threadName, generalConfigs, config_file):
+    def __init__(self, threadID, queues, threadName, generalConfigs, config_file):
         Thread.__init__(self)
         self.threadID = threadID
         self.name = threadName
+        self.queues = queues
         
         self.configs = generalConfigs["REGISTRATION"]
         self.generalConfigs = generalConfigs
@@ -35,6 +38,14 @@ class Register(Thread):
         if(self.configs["serviceID"] == None):
             self.configs["serviceID"] = self.generateServiceID()
 
+    def stopAllThreads(self):
+        for thread_id in [2,3]:
+            res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id,
+                ctypes.py_object(SystemExit))
+            if res > 1:
+                ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
+                print('Exception raise failure')
+
     def run(self):
         self.KeepAlive()
 
@@ -43,7 +54,7 @@ class Register(Thread):
             self.checkParams()
             self.validateParams()
         except HTTPError as e:
-            raise HTTPError(e.status, "An error occurred while loading registration configs: \n\t" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while loading registration configs: \n\t" + e._message)
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError("An error occurred while loading registration configs: \n\t" + str(e))
 
@@ -70,12 +81,17 @@ class Register(Thread):
                     if(not isinstance(self.configs["T_Registration"], (int, float)) or self.configs["T_Registration"] < 0):
                         raise self.clientErrorHandler.BadRequest("T_Registration parameter must be a positive number")
     
-    def updateConfigFile(self, keys, value):
-        with open(self.config_file, "r") as file:
-            configs = json.load(file)
-        configs[keys[0]][keys[1]] = value
-        with open(self.config_file, "w") as file:
-            json.dump(configs, file, indent=4)
+    def updateConfigFile(self, key, dict):
+        try:
+            with open(self.config_file, "r") as file:
+                configs = json.load(file)
+            configs[key].update(dict)
+            with open(self.config_file, "w") as file:
+                json.dump(configs, file, indent=4)
+        except Exception as e:
+            raise self.serverErrorHandler.InternalServerError(
+                "An error occurred while updating the configuration file: \n\t" + str(e)
+            )
 
     def generateServiceID(self):
         existence = True
@@ -95,7 +111,7 @@ class Register(Thread):
             
             existence = json.loads(response.text)["result"]
 
-        self.updateConfigFile(["REGISTRATION", "serviceID"], newID)
+        self.updateConfigFile("REGISTRATION", {"serviceID":newID})
 
         return newID
     
@@ -122,7 +138,7 @@ class Register(Thread):
     def generateRESTEndPoint(self):
         if(self.generalConfigs["REST"]["endPointID"] == None):
             self.generalConfigs["REST"]["endPointID"] = self.generateEndPointID()
-            self.updateConfigFile(["REST", "endPointID"], self.generalConfigs["REST"]["endPointID"])
+            self.updateConfigFile("REST", {"endPointID": self.generalConfigs["REST"]["endPointID"]})
         
         self.endPoints.append({
             "endPointID" : self.generalConfigs["REST"]["endPointID"],
@@ -140,7 +156,7 @@ class Register(Thread):
     def generateMQTTEndPoint(self):         
         if(self.generalConfigs["MQTT"]["endPointID"] == None):
             self.generalConfigs["MQTT"]["endPointID"] = self.generateEndPointID()
-            self.updateConfigFile(["MQTT", "endPointID"], self.generalConfigs["MQTT"]["endPointID"])
+            self.updateConfigFile("MQTT", {"endPointID": self.generalConfigs["MQTT"]["endPointID"]})
         
         self.endPoints.append({
             "endPointID" : self.generalConfigs["MQTT"]["endPointID"],
@@ -157,10 +173,12 @@ class Register(Thread):
         self.endPoints[0]["MQTTTopics"] = self.generalConfigs["MQTT"]["MQTTTopics"]
         self.endPoints[0]["QOS"] = self.generalConfigs["MQTT"]["QOS"]
         del self.endPoints[1]
-        self.updateConfigFile(["MQTT", "endPointID"], self.endPoints[0]["endPointID"])
+        self.updateConfigFile("MQTT", {"endPointID": self.endPoints[0]["endPointID"]})
 
     def KeepAlive(self):
         serverErrorHandler = Server_Error_Handler()
+
+        firstRun = True
         while True:
             try:
                 url = self.configs["catalogAddress"] + ":" + str(self.configs["catalogPort"]) + "/setService"
@@ -189,9 +207,16 @@ class Register(Thread):
                 if(response.status_code != 200):
                     raise HTTPError(response.status_code, str(response.text))
                 
-            except HTTPError as e:    
-                raise HTTPError(e.status, "An error occurred while sending keep alive request: \n\t" + e._message)
+            except HTTPError as e:
+                self.stopAllThreads()
+                raise HTTPError(status = e.status, message="An error occurred while sending keep alive request: \n\t" + e._message)
             except Exception as e:
+                self.stopAllThreads()
                 raise serverErrorHandler.InternalServerError("An error occurred while sending keep alive request: \n\t" + str(e))
+            
+            if(firstRun):
+                firstRun = False
+                self.queues["REST"].put(True)
+                self.queues["MQTT"].put(True)
             
             time.sleep(self.configs["T_Registration"]*60)

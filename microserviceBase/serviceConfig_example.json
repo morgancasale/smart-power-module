@@ -34,6 +34,7 @@
     "MQTT": {
         "endPointID": null,
         "endPointName": "ResourceCatalog",
+        "autoBroker": false,
         "brokerAddress": "",
         "brokerPort": 1883,
         "subPub": {

@@ -18,7 +18,7 @@ class EndPoint:
     def to_dict(self):
         result = {}
 
-        for key in self.endPointKeys:
+        for key in self.endPointData.keys():
             result[key] = self.endPointData[key]
 
         result["Online"] = self.Online
@@ -56,7 +56,10 @@ class EndPoint:
 
                     if("MQTT" in endPointData[key] and endPointData["MQTTTopics"] == None):
                         raise HTTPError(status=400, message="\"MQTTTopics\" parameter must not be null if protocols is MQTT")
-                    if("MQTT" in endPointData[key] and not("REST" in endPointData[key]) and endPointData["IPAddress"] != None):
+                    
+                    cond = "MQTT" in endPointData[key] and not("REST" in endPointData[key])
+                    cond &= "IPAddress" in endPointData.keys() and endPointData["IPAddress"] != None
+                    if(cond):
                         raise HTTPError(status=400, message="\"IPAddress\" must be null if protocols is MQTT")
                     
                     if(not isinstance(endPointData["protocols"], list)) : endPointData["protocols"] = [endPointData["protocols"]]
@@ -67,14 +70,14 @@ class EndPoint:
                         raise HTTPError(status=400, message="\"IPAddress\" value must be string")
                     self.IPAddress = endPointData["IPAddress"]
 
-                case ("port" | "QOS"):
+                case ("port"):
                     if(endPointData[key] != None and not isinstance(endPointData[key], int)): # TODO Check if port is valid
                         raise HTTPError(status=400, message="\"" + key + "\" value must be integer")
-                    
-                    if(key == "port"):
-                        self.port = endPointData["port"]
+                    self.port = endPointData["port"]
 
                 case "QOS":
+                    if(endPointData[key] != None and not isinstance(endPointData[key], int)):
+                        raise HTTPError(status=400, message="\"" + key + "\" value must be integer")
                     if(endPointData[key] != None and not (endPointData[key] in [0,1,2])):
                         raise HTTPError(status=400, message="\"" + key + "\" value must be 0, 1 or 2")
                     self.QOS = endPointData[key]
@@ -102,14 +105,14 @@ class EndPoint:
                     if(not all(key in ["pub", "sub"] for key in topics.keys())):
                         raise HTTPError(status=400, message="\"" + key + "\" must have parameters \"pub\" and \"sub\"")
                     
-                    if(not isinstance(topics["sub"], list)):
+                    if(topics["sub"] != None and not isinstance(topics["sub"], list)):
                         raise HTTPError(status=400, message="Subscription \"" + key + "\" must be a list")
-                    if(not all(isinstance(topic, str) for topic in topics["sub"])):
+                    if(topics["sub"] != None and not all(isinstance(topic, str) for topic in topics["sub"])):
                         raise HTTPError(status=400, message="Subscription \"" + key + "\" must be a list of strings")
                     
-                    if(not isinstance(topics["pub"], list)):
+                    if(topics["pub"] != None and not isinstance(topics["pub"], list)):
                         raise HTTPError(status=400, message="Publication \"" + key + "\" must be a list")
-                    if(not all(isinstance(topic, str) for topic in topics["pub"])):
+                    if(topics["pub"] != None and not all(isinstance(topic, str) for topic in topics["pub"])):
                         raise HTTPError(status=400, message="Publication \"" + key + "\" must be a list of strings")
                     
                     self.MQTTTopics = endPointData[key]
@@ -152,6 +155,7 @@ class EndPoint:
                 if(self.IPAddress != None and check_presence_inConnectionTables(DBPath, self.connTables, "endPointID", self.endPointID)):
                     raise HTTPError(status=400, message="An end-point with ID \"" + self.endPointID + "\" is already used in another connection")
             else:
+                foundEndPoints = []
                 if("IPAddress" in self.endPointData.keys()):
                     foundEndPoints = DBQuery_to_dict(DBPath, "SELECT * FROM endPoints WHERE (\"IPAddress\", \"port\") = (\"" + self.IPAddress + "\", \"" + str(self.port) + "\")")
                 if(len(foundEndPoints) > 0 and foundEndPoints[0] != None and foundEndPoints[0]["endPointID"] != self.endPointID):
