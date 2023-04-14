@@ -8,6 +8,7 @@ from cherrypy import HTTPError
 
 #a = ServiceBase("ResourceCatalog/serviceConfig.json")
 
+
 try:
     raise HTTPError(status=500, message="errore")
 except HTTPError as e:
