@@ -12,7 +12,7 @@ def notify(self, topic, payload):
 
 
      
-a = ServiceBase("ResourceCatalog/serviceConfingFRA.json",Notifier = notify)
+a = ServiceBase("ResourceCatalog/fraSubFile.json",Notifier = notify)
 
 clientErrorHandler = Client_Error_Handler()
 

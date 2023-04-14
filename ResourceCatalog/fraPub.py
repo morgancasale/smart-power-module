@@ -5,10 +5,10 @@ sys.path.append(PROJECT_ROOT)
 
 from microserviceBase.serviceBase import *
 
-a = ServiceBase("ResourceCatalog/serviceConfingFRA.json", )
+a = ServiceBase("ResourceCatalog/fraPubFile.json", )
 
 if __name__ == "__main__":
 
     while(True):
         a.MQTT.publish("/bro/99/1", "ciao")
-        time.sleep(3)
+        time.sleep(10)
