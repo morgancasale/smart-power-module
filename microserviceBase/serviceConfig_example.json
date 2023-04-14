@@ -1,13 +1,26 @@
 {
     "CONFIG": {
         "activatedMethod": {
-            "MQTT": false,
+            "MQTT": true,
             "REST": true
-        }
+        },
+        "houseID": [
+            "H1",
+            "H2"
+        ],
+        "userID": [
+            "U1",
+            "U2"
+        ],
+        "deviceID": [
+            "D1",
+            "D3"
+        ],
+        "resourceID": null
     },
     "REST": {
         "endPointID": "E1",
-        "endPointName": "ResourceCatalogServer",
+        "endPointName": "ResourceCatalog",
         "IPAddress": "192.168.2.145",
         "port": 8099,
         "CRUDMethods": {
@@ -20,7 +33,8 @@
     },
     "MQTT": {
         "endPointID": null,
-        "endPointName": null,
+        "endPointName": "ResourceCatalog",
+        "autoBroker": false,
         "brokerAddress": "",
         "brokerPort": 1883,
         "subPub": {
@@ -39,9 +53,9 @@
         "QOS": 0
     },
     "REGISTRATION": {
-        "enabled": false,
-        "serviceID": "S1",
-        "serviceName": "ResourceCatalog",
+        "enabled": true,
+        "serviceID": "SNTU0NT",
+        "serviceName": "pazza",
         "catalogAddress": "http://192.168.2.145",
         "catalogPort": 8099,
         "T_Registration": 0.1

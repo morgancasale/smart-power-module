@@ -4,36 +4,36 @@ from .register import *
 
 from .Error_Handler import *
 
-import os
-
 class ServiceBase(object):
-    def __init__(self, config_file=None, init_REST_func=None, init_MQTT_func = None, GET=None, POST=None, PUT=None, DELETE=None, PATCH=None, Notifier=None, SubTopics=None):
+    def __init__(self, config_file=None, init_REST_func=None, init_MQTT_func = None, GET=None, POST=None, PUT=None, DELETE=None, PATCH=None, Notifier=None):
         try: 
             self.clientErrorHandler = Client_Error_Handler()
             self.serverErrorHandler = Server_Error_Handler()
             self.config_file = config_file
 
-            self.configParams = ["activatedMethod", "houseID", "userID", "resourceID"]
+            self.configParams = ["activatedMethod", "houseID", "userID", "deviceID", "resourceID"]
 
             self.check_and_loadConfigs()
 
+            queues = {
+                "REST": Queue(),
+                "MQTT": Queue()
+            }
+
             if(self.generalConfigs["REGISTRATION"]["enabled"]):
-                self.registerService = Register(1, "RegThread", self.generalConfigs, self.config_file)
+                self.registerService = Register(1, "RegThread", queues, self.generalConfigs, config_file)
                 self.registerService.start()
 
             if(self.configs["activatedMethod"]["REST"]):
-                self.REST = RESTServer(2, "RESTThread", self.generalConfigs["REST"], init_REST_func, GET, POST, PUT, DELETE, PATCH)
+                self.REST = RESTServer(2, "RESTThread", queues["REST"], self.generalConfigs["REST"], init_REST_func, GET, POST, PUT, DELETE, PATCH)
                 self.REST.start()
             
-            if(False and self.configs["activatedMethod"]["MQTT"]):
-                self.MQTT = MQTTServer(3, "MQTTThread", self.generalConfigs["MQTT"], init_MQTT_func, Notifier, SubTopics)
+            if(self.configs["activatedMethod"]["MQTT"]):
+                self.MQTT = MQTTServer(3, "MQTTThread", queues["MQTT"], self.generalConfigs["MQTT"], config_file, init_MQTT_func, Notifier)
                 self.MQTT.start()
     
-        except web_exception as e:
-            raise web_exception(e.code, "An error occurred while enabling the servers: \n\t" + e.message)
-
-
-        
+        except HTTPError as e:
+            raise HTTPError(status=e.status, message="An error occurred while enabling the servers: \n\t" + e._message)
     
     def check_and_loadConfigs(self):
         try:
@@ -43,8 +43,8 @@ class ServiceBase(object):
             self.checkParams()
             self.validateParams()
         
-        except web_exception as e:
-            raise web_exception(e.code, "An error occurred while loading configs: \n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(status=e.status, message="An error occurred while loading configs: \n\t" + e._message)
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError("An error occurred while loading configs: \n\t" + str(e))
         
@@ -67,7 +67,7 @@ class ServiceBase(object):
                     err_cond = err_cond or not isinstance(self.configs["activatedMethod"]["MQTT"], bool)
                     if(err_cond):
                         raise self.clientErrorHandler.BadRequest("activatedMethod parameters must be boolean")
-                case ("houseID", "userID", "resourceID"):
+                case ("houseID", "userID", "resourceID", "deviceID"):
                     if(self.configs[key] != None):
                         if(not isinstance(self.configs[key], list)):
                             raise self.clientErrorHandler.BadRequest(key + " parameter must be a list or null")

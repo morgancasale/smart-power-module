@@ -17,14 +17,14 @@ class User:
     
     def checkKeys(self, userData):
         if(not all(key in self.userKeys for key in userData.keys())):
-            raise web_exception(400, "Missing one or more keys")
+            raise HTTPError(status=400, message="Missing one or more keys")
 
     def checkSaveValues(self, userData):
         for key in userData.keys():
             match key:
                 case ("userID" | "Name" | "Surname" | "Email"):
                     if(not isinstance(userData[key], str)):
-                        raise web_exception(400, "User's \"" + key + "\"'s value must be a string")
+                        raise HTTPError(status=400, message="User's \"" + key + "\"'s value must be a string")
                     match key:
                         case "userID":
                             self.userID = userData["userID"]
@@ -35,16 +35,16 @@ class User:
                 case "Email":
                     email_pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
                     if(re.match(email_pattern, userData["Email"]) == None): 
-                        raise web_exception(400, userData["Email"] +" isn't a valid email address")
+                        raise HTTPError(status=400, message=userData["Email"] +" isn't a valid email address")
                     self.email = userData["Email"]
                 case "deviceID":
                     if(not all(isinstance(deviceID, str) for deviceID in userData["deviceID"])):
-                        raise web_exception(400, "User's \"deviceID\" value must be a list of strings")
+                        raise HTTPError(status=400, message="User's \"deviceID\" value must be a list of strings")
                     self.deviceID = userData["deviceID"]
 
 
                 case _:
-                    raise web_exception(400, "Unexpected key \"" + key + "\"")
+                    raise HTTPError(status=400, message="Unexpected key \"" + key + "\"")
         
 
     def to_dict(self):
@@ -60,47 +60,52 @@ class User:
     def save2DB(self, DBPath):
         try:
             if(check_presence_inDB(DBPath, "Users", "userID", self.userID)):
-                raise web_exception(400, "A user with ID \"" + self.userID + "\" already exists in the database")
+                raise HTTPError(status=400, message="A user with ID \"" + self.userID + "\" already exists in the database")
             
             if("deviceID" in self.userData.keys()):
                 for deviceID in self.deviceID:
                     if(not check_presence_inDB(DBPath, "Devices", "deviceID", deviceID)):
-                        raise web_exception(400, "A device with ID \"" + deviceID + "\" does not exist in the database")
+                        raise HTTPError(status=400, message="A device with ID \"" + deviceID + "\" does not exist in the database")
 
                     self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
                     save_entry2DB(DBPath, "UserDevice_conn", {"userID": self.userID, "deviceID": deviceID, "lastUpdate": self.lastUpdate})
 
             save_entry2DB(DBPath, "Users", self.to_dict())
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + e._message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e))
 
     def updateDB(self, DBPath):
+        deviceIDs = []
         try:
             if(not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
-                raise web_exception(400, "A user with ID \"" + self.userID + "\" does not exist in the database")
+                raise HTTPError(status=400, message="A user with ID \"" + self.userID + "\" does not exist in the database")
             
             self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+
+            if("deviceID" in self.userData.keys()):
+                data = {"table": "UserDevice_conn", "refID": "userID", "connID": "deviceID", "refValue": self.userID, "connValues": self.deviceID}
+                updateConnTable(DBPath, data)
             
             update_entry_inDB(DBPath, "Users", "userID", self.to_dict())
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while updating user with ID \"" + self.userID + "\" in the DB:\n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while updating user with ID \"" + self.userID + "\" in the DB:\n\t" + e._message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while updating user with ID \"" + self.userID + "\" in the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while updating user with ID \"" + self.userID + "\" in the DB:\n\t" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
             if(not check_presence_inDB(DBPath, "Users", "userID", params["userID"])):
-                raise web_exception(400, "A user with ID \"" + params["userID"] + "\" does not exist in the database")
+                raise HTTPError(status=400, message="A user with ID \"" + params["userID"] + "\" does not exist in the database")
 
             delete_entry_fromDB(DBPath, "UserDevice_conn", "userID", params["userID"])
             Device.cleanDB(DBPath)
             delete_entry_fromDB(DBPath, "Users", "userID", params["userID"])
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB:\n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB:\n\t" + e._message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB:\n\t" + str(e))
             
         return True
 
@@ -110,31 +115,33 @@ class User:
                 self.save2DB(DBPath)
             else:
                 self.updateDB(DBPath)
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e.message))
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e._message))
         except Exception as e:
-            raise web_exception(400, "An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e))
 
     def DB_to_dict(DBPath, user, verbose = True):
         try:
             userID = user["userID"]
             userData = {"userID": userID, "Name": user["Name"], "Surname": user["Surname"], "Email": user["Email"]}
 
-            if(verbose):
-                userData["Devices"] = []
-                if(check_presence_inDB(DBPath, "UserDevice_conn", "userID", userID)):
-                    query = "SELECT * FROM UserDevice_conn WHERE userID = \"" + userID + "\""
-                    user_dev_conns = DBQuery_to_dict(DBPath, query)
-                    
-                    devicesIDs = "(\"" + "\", \"".join([user_dev_conn["deviceID"] for user_dev_conn in user_dev_conns]) + "\")"
-                    query = "SELECT * FROM Devices WHERE deviceID in " + devicesIDs
-                    devices = DBQuery_to_dict(DBPath, query)
+            userData["Devices"] = []
+            if(check_presence_inDB(DBPath, "UserDevice_conn", "userID", userID)):
+                query = "SELECT * FROM UserDevice_conn WHERE userID = \"" + userID + "\""
+                user_dev_conns = DBQuery_to_dict(DBPath, query)
+                
+                devicesIDs = "(\"" + "\", \"".join([user_dev_conn["deviceID"] for user_dev_conn in user_dev_conns]) + "\")"
+                query = "SELECT * FROM Devices WHERE deviceID in " + devicesIDs
+                devices = DBQuery_to_dict(DBPath, query)
 
-                for device in devices:
+            for device in devices:
+                if(verbose):
                     userData["Devices"].append(Device.DB_to_dict(DBPath, device))
+                else:
+                    userData["Devices"].append(device["deviceID"])
 
             return userData
-        except web_exception as e:
-            raise web_exception(400, "An error occurred while retrieving user with ID \"" + userID + "\" from the DB:\n\t" + e.message)
+        except HTTPError as e:
+            raise HTTPError(status=400, message="An error occurred while retrieving user with ID \"" + userID + "\" from the DB:\n\t" + e._message)
         except Exception as e:
-            raise web_exception(400, "An error occurred while retrieving user with ID \"" + userID + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while retrieving user with ID \"" + userID + "\" from the DB:\n\t" + str(e))
