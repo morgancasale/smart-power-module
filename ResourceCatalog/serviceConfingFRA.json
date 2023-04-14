@@ -1,0 +1,60 @@
+{
+    "CONFIG": {
+        "activatedMethod": {
+            "MQTT": true,
+            "REST": false
+        },
+        "houseID": [
+            "H1",
+            "H2"
+        ],
+        "userID": [
+            "U1",
+            "U2"
+        ],
+        "resourceID": null
+    },
+    "REST": {
+        "endPointID": null, 
+        "endPointName": "ResourceCatalog",
+        "IPAddress": "192.168.2.145",
+        "port": 8099,
+        "CRUDMethods": {
+            "GET": true,
+            "POST": true,
+            "PUT": true,
+            "DELETE": true,
+            "PATCH": true
+        }
+    },
+    "MQTT": {
+        "endPointID": "E90",
+        "endPointName": "ResourceCatalog",
+        "autoBroker": false,
+        "brokerAddress": "broker.hivemq.com",
+        "brokerPort": 1883,
+        "subPub": {
+            "sub": true,
+            "pub": true
+        },
+        "clientID": "ciaoMario",
+        "MQTTTopics": {
+            "sub": [
+                "/bro/99/1"
+            ],
+            "pub": [
+                "/bro/99/1",
+                "/bro/ciao/pub"
+            ]
+        },
+        "QoS": 0
+    },
+    "REGISTRATION": {
+        "enabled":null,        
+        "serviceID": "S1",
+        "serviceName": "ResourceCatalog",
+        "catalogAddress": "http://192.168.2.145",
+        "catalogPort": 8099,
+        "T_Registration": 0.1
+    }
+}
