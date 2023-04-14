@@ -3,16 +3,20 @@ import cherrypy_cors
 import json
 
 from threading import Thread
+from queue import Queue
+import ctypes
+
 
 from .Error_Handler import *
 
 class RESTServer(Thread):
     global allowedMethods
 
-    def __init__(self, threadID, threadName, configs, init_func=None, GETHandler=None, POSTHandler=None, PUTHandler=None, DELETEHandler=None, PATCHHandler=None):
+    def __init__(self, threadID, threadName, startQueue, configs, init_func=None, GETHandler=None, POSTHandler=None, PUTHandler=None, DELETEHandler=None, PATCHHandler=None):
         Thread.__init__(self)
         self.threadID = threadID
         self.name = threadName
+        self.startQueue = startQueue
         
         self.configParams = ["endPointID", "endPointName", "IPAddress", "port", "CRUDMethods"]
         self.CRUDMethods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
@@ -50,7 +54,17 @@ class RESTServer(Thread):
             raise self.serverErrorHandler.InternalServerError("An error occurred while enabling REST server: \n\t" + str(e))
 
     def run(self):
+        print("REST - Waiting for registration...")
+        self.startQueue.get()
         self.openRESTServer()
+
+    def stopAllThreads(self):
+        for thread_id in [1,3]:
+            res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id,
+                ctypes.py_object(SystemExit))
+            if res > 1:
+                ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
+                print('Exception raise failure')
 
     exposed = True
 
