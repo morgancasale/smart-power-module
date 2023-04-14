@@ -1,34 +1,57 @@
-#bisogna decidere che tabelle usare per gli switch, ora ho creato delle tabelle di prova
-#posso scrivere in modo più compatto ma devo fare la connessione ogni volta
 import sqlite3 as sq
 import json
+from datetime import datetime
 
+ 
 
-def add_entryDB(DB, query, cursor, sqliteConnection):
-    cursor.execute(query)
-    sqliteConnection.commit()
-    print("Record inserted")
+class dev_conn_DB():
     
+    def __init__(self, jsonfile):
+        self.conn = sq.connect("C:/Users/hp/Desktop/IOT/lab4_es4/data_m.sqlite")
+        self.cursor = self.conn.cursor()
+        self.module_and_switches = 'Devices'
+        self.database= 'data'
 
-conf=json.load(open('device.json'))
-switches=conf["Data"]["Active"]["Switches"]
-passive=conf["Data"]["Passive"]
-module_ID=conf["deviceID"]
+        
+        conf = json.load(open(jsonfile))
+        switch = str(conf["Data"]["Active"]["Switches"])
+        my_list = json.loads(switch)
+        self.switches = str([str(i) for i in my_list])
+        self.module = conf["Data"]["Active"]["Module"]
+        self.passive = conf["Data"]["Passive"]
+        self.moduleID = conf["deviceID"]
+        #timedate=conf["timestamp"]
+        timedate= "2019-03-01T12:00:00Z"
+        date_format = "%Y-%m-%dT%H:%M:%SZ"
+        date_object = datetime.strptime(timedate, date_format)
+        self.timestamp = date_object.strftime("%Y-%m-%d %H:%M:%S")
 
-myTable1 = "switches_possible_config"
-myTable2="realTimeData"
+    def addEntryDB(self):
+        values= (modifyDB.moduleID, modifyDB.passive['Power'], modifyDB.passive['Voltage'],\
+                 modifyDB.passive['Current'], modifyDB.timestamp)
+        modifyDB.cursor.execute("""INSERT INTO {} 
+                            (deviceID, power, voltage, current, timestamp) 
+                            VALUES (?,?,?,?,?)""".format(modifyDB.database), values)
+        modifyDB.conn.commit()
+        print('updated')
+        modifyDB.cursor.close()
+        
+        
+    def updateDevices(self):
+        self.cursor.execute("""
+            UPDATE {} 
+            SET lastUpdate=?, moduleState=?,switchesStates=?
+            WHERE deviceID=?
+        """.format(self.module_and_switches), (self.timestamp, self.module, self.switches, self.moduleID))
+        self.conn.commit()
+        print("Record updated")
 
-sqliteConnection = sq.connect("data.db")
-cursor = sqliteConnection.cursor()
-print("Connected to SQLite")
-#query2= f"insert into {myTable2}(device_ID, Voltage, Current, Power, timestamp) values('{module_ID}', \
-#      {passive['Voltage']}, {passive['Current']}, {passive['Power']}, '{passive['timestamp']}' )"
-#add_entryDB('data.db', myTable2, keys2,values2)
-for i in range(len(switches)):
-    query1 = f"insert into {myTable1}(modulo_ID, switch_ID, switch_state) values('{module_ID}', {i+1}, {switches[i]})"
-    add_entryDB('data.db', query1, cursor, sqliteConnection)
-
-cursor.close()
+if __name__ == "__main__":
+    modifyDB = dev_conn_DB('device.json')
+    modifyDB.updateDevices()
+    modifyDB.addEntryDB()
+    modifyDB.cursor.close()
+    
 
 
 
