@@ -10,7 +10,7 @@ from .utility import *
 from .Error_Handler import *
 
 class Register(Thread):
-    def __init__(self, threadID, queues, threadName, generalConfigs, config_file):
+    def __init__(self, threadID, threadName, queues, generalConfigs, config_file):
         Thread.__init__(self)
         self.threadID = threadID
         self.name = threadName
@@ -186,7 +186,7 @@ class Register(Thread):
                     "serviceID" : self.configs["serviceID"],
                     "serviceName" : self.configs["serviceName"]
                 }
-
+                
                 if(self.generalConfigs["CONFIG"]["houseID"] != None):
                     service["houseID"] = self.generalConfigs["CONFIG"]["houseID"]
 

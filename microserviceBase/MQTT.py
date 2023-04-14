@@ -240,10 +240,7 @@ class MQTTServer(Thread):
                 self.Client.Publish(topic, msg)
         else:
               raise self.clientErrorHandler.BadRequest(
-            "Publisher is not active for this service") 
-
-    
-      
+            "Publisher is not active for this service")
 
     def checkParams(self): 
         config_params = ["endPointID", "endPointName", "autoBroker", "brokerAddress", "brokerPort","subPub",
@@ -331,5 +328,3 @@ class MQTTServer(Thread):
 
         except Exception as e:
             print(e)
-
-   
