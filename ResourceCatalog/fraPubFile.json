@@ -4,12 +4,12 @@
             "MQTT": true,
             "REST": false
         },
-        "houseID":null,
-        "userID": null ,
+        "houseID": null,
+        "userID": null,
         "resourceID": null
     },
     "REST": {
-        "endPointID": null, 
+        "endPointID": null,
         "endPointName": "ResourceCatalog",
         "IPAddress": "192.168.2.145",
         "port": 8099,
@@ -22,7 +22,7 @@
         }
     },
     "MQTT": {
-        "endPointID": null,
+        "endPointID": "EODAzOD",
         "endPointName": "PubFRA",
         "autoBroker": false,
         "brokerAddress": "broker.hivemq.com",
@@ -41,10 +41,10 @@
                 "/bro/ciao/pub"
             ]
         },
-        "QoS": 0
+        "QOS": 0
     },
     "REGISTRATION": {
-        "enabled":null,        
+        "enabled": true,
         "serviceID": "S1",
         "serviceName": "ResourceCatalog",
         "catalogAddress": "http://127.0.0.1",
