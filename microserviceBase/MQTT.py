@@ -5,6 +5,9 @@ import paho.mqtt.client as MQTT
 import requests
 
 from threading import Thread
+from queue import Queue
+import ctypes
+
 
 #TODO Supportare subscribe a più topic, prova come dicono qua : https://stackoverflow.com/questions/48942538/how-to-subscribe-on-multiple-topic-using-paho-mqtt-on-python
 #     (usa lo stesso QOS per tutti i topic)
@@ -60,12 +63,13 @@ class MyMQTT():
 
 
 class MQTTServer(Thread):
-    def __init__(self, threadID, threadName, configs,configs_file, init_func=None, Notifier=None):
+    def __init__(self, threadID, threadName, startQueue, configs,configs_file, init_func=None, Notifier=None):
         Thread.__init__(self)
         self.threadID = threadID
         self.name = threadName
-        self.notify = Notifier
+        self.startQueue = startQueue
 
+        self.notify = Notifier
         self.SubPub = ["sub", "pub"]
        
         try:
@@ -104,23 +108,31 @@ class MQTTServer(Thread):
                 init_func()
 
         except HTTPError as e:
+            self.stopAllThreads()
             raise HTTPError( status=e.status, message = "An error occurred while enabling the MQTT server: \n\t" + e._message)
         except Exception as e:
+            self.stopAllThreads()
             raise self.serverErrorHandler.InternalServerError(
                 "An error occurred while enabling MQTT server: \n\t" + str(e)
             )
+        
     def start(self):
+        print("MQTT - Waiting for registration...")
+        self.startQueue.get()
         self.openMQTTServer()
+
+    def stopAllThreads(self):
+        for thread_id in [1,2]:
+            res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id,
+                ctypes.py_object(SystemExit))
+            if res > 1:
+                ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
+                print('Exception raise failure')
 
     def openMQTTServer(self):
         self.Client = MyMQTT(self.clientID, self.brokerAddress,
                              self.brokerPort, subNotifier=self.notify)
         self.Client.start()
-    
-
-
-
-
 
     def updateConfigFile(self, dict):
         try:

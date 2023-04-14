@@ -23,6 +23,9 @@ class ServiceBase(object):
             if(self.generalConfigs["REGISTRATION"]["enabled"]):
                 self.registerService = Register(1, "RegThread", queues, self.generalConfigs, config_file)
                 self.registerService.start()
+            else:
+                queues["REST"].put(True)
+                queues["MQTT"].put(True)
 
             if(self.configs["activatedMethod"]["REST"]):
                 self.REST = RESTServer(2, "RESTThread", queues["REST"], self.generalConfigs["REST"], init_REST_func, GET, POST, PUT, DELETE, PATCH)
