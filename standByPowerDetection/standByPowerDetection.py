@@ -141,21 +141,8 @@ class StandByPowerDetection():
 
 if __name__ == "__main__":
     control= StandByPowerDetection('C:/Users/hp/Desktop/IOT/lab4_es4/data_m.sqlite')
-    #control.controlAndDisconnect()
-    control.cur.execute("""SELECT DISTINCT houseID
-                            FROM {}""".format( control.houses))
-    houses = control.cur.fetchall()
-    for house in houses:
-        modules=  control.houseInfo(house[0])
-        for info in modules:
-            standByPowercont=0 
-            value= control.getRange(info[0][0]) #info[i][0] = ID
-            last_measurement= control.lastValueCheck(info[0][0])#[id, time,power]
-            if (last_measurement[2]>=1 or last_measurement[2]<=value):
-                prevRows= control.prevValuesCheck(info[0][0])
-                for prevValues in prevRows:
-                    if (prevValues[1]>=1 or prevValues[1]<=value):
-                        standByPowercont+=1   
-                    if standByPowercont>=4:
-                        control.MQTTStandByPowerInterface(house[0], info[0][0])
-                        break
+    i=0
+    while(i>3): 
+        control.controlAndDisconnect()
+        time.sleep(2)
+       
