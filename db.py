@@ -1,7 +1,7 @@
 import sqlite3 as sq
 import json
 from datetime import datetime
-
+import time
  
 
 class dev_conn_DB():
@@ -20,11 +20,12 @@ class dev_conn_DB():
         self.module = conf["Data"]["Active"]["Module"]
         self.passive = conf["Data"]["Passive"]
         self.moduleID = conf["deviceID"]
-        #timedate=conf["timestamp"]
-        timedate= "2019-03-01T12:00:00Z"
-        date_format = "%Y-%m-%dT%H:%M:%SZ"
-        date_object = datetime.strptime(timedate, date_format)
-        self.timestamp = date_object.strftime("%Y-%m-%d %H:%M:%S")
+        timedate=conf["timestamp"]
+        #timedate= "2019-03-01T12:00:00Z"
+        self.timestamp = int(time.mktime(time.strptime(timedate, "%Y-%m-%dT%H:%M:%SZ")))
+   
+        
+        #self.timestamp = date_object.strftime("%Y-%m-%d %H:%M:%S")
 
     def addEntryDB(self):
         values= (modifyDB.moduleID, modifyDB.passive['Power'], modifyDB.passive['Voltage'],\
@@ -47,7 +48,7 @@ class dev_conn_DB():
         print("Record updated")
 
 if __name__ == "__main__":
-    modifyDB = dev_conn_DB('device.json')
+    modifyDB = dev_conn_DB('C:/Users/hp/Desktop/IOT/lab4_es4/deviceConn_sens/device.json')
     modifyDB.updateDevices()
     modifyDB.addEntryDB()
     modifyDB.cursor.close()
