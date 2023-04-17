@@ -2,21 +2,18 @@ import cherrypy
 import cherrypy_cors
 import json
 
-from threading import Thread
-from queue import Queue
-import ctypes
-
+from threading import Thread, Event, current_thread
 
 from .Error_Handler import *
 
 class RESTServer(Thread):
     global allowedMethods
 
-    def __init__(self, threadID, threadName, startQueue, configs, init_func=None, GETHandler=None, POSTHandler=None, PUTHandler=None, DELETEHandler=None, PATCHHandler=None):
+    def __init__(self, threadID, threadName, events, configs, init_func=None, GETHandler=None, POSTHandler=None, PUTHandler=None, DELETEHandler=None, PATCHHandler=None):
         Thread.__init__(self)
         self.threadID = threadID
         self.name = threadName
-        self.startQueue = startQueue
+        self.events = events
         
         self.configParams = ["endPointID", "endPointName", "IPAddress", "port", "CRUDMethods"]
         self.CRUDMethods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
@@ -44,27 +41,26 @@ class RESTServer(Thread):
                 self.PATCHHandler = PATCHHandler
                 allowedMethods.append("PATCH")
 
-            if(init_func != None): init_func()
-
-            
+            if(init_func != None): init_func()            
             
         except HTTPError as e:
+            events["stopEvent"].set()
             raise HTTPError(status=e.status, message="An error occurred while enabling REST server: \n\t" + e._message)
         except Exception as e:
+            events["stopEvent"].set()
             raise self.serverErrorHandler.InternalServerError("An error occurred while enabling REST server: \n\t" + str(e))
 
     def run(self):
-        print("REST - Waiting for registration...")
-        self.startQueue.get()
-        self.openRESTServer()
-
-    def stopAllThreads(self):
-        for thread_id in [1,3]:
-            res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id,
-                ctypes.py_object(SystemExit))
-            if res > 1:
-                ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
-                print('Exception raise failure')
+        try:
+            print("REST - Thread %s waiting for registration..." % current_thread().ident)
+            self.events["startEvent"].wait()
+            self.openRESTServer()
+        except HTTPError as e:
+            self.events["stopEvent"].set()
+            raise HTTPError(status=e.status, message="An error occurred while running REST server: \n\t" + e._message)
+        except Exception as e:
+            self.events["stopEvent"].set()
+            raise self.serverErrorHandler.InternalServerError("An error occurred while running REST server: \n\t" + str(e))
 
     exposed = True
 
@@ -162,4 +158,7 @@ class RESTServer(Thread):
         })
         
         cherrypy.quickstart(webServices,'/',conf)
+
+        self.events["stopEvent"].wait()
+        cherrypy.engine.exit()
 

@@ -58,11 +58,11 @@ def save_entry2DB(DBPath, table, entryData):
         query += " VALUES "
         values = []
         for value in entryData.values():
-            if(isinstance(value, list)):
-                if(isinstance(value[0], int)):
+            if(isinstance(value, list)):                
+                if(len(value) > 0 and isinstance(value[0], int)):
                     value = [str(v) for v in value]
-                else:
-                    value = json.dumps(value).replace("\"", "\'")
+                
+                value = json.dumps(value).replace("\"", "\'")
             if(isinstance(value, dict)):
                 value = json.dumps(value).replace("\"", "\'")            
             if(value == None):
@@ -100,7 +100,7 @@ def update_entry_inDB(DBPath, table, primaryKeyNames, entryData):
                 keys.append(key)
 
                 if(isinstance(value, list)):
-                    if(isinstance(value[0], int)):
+                    if(len(value) > 0 and isinstance(value[0], int)):
                         value = [str(v) for v in value]
                     value = json.dumps(value).replace("\"", "\'")
                 if(isinstance(value, dict)):

@@ -131,6 +131,7 @@ class EndPoint:
 
             if(not(isinstance(data["MQTTTopics"], list))):
                 data["MQTTTopics"] = [data["MQTTTopics"]]
+                
             
             result = True
             if(not all(prtcl in data["protocols"] for prtcl in self.protocols)):  

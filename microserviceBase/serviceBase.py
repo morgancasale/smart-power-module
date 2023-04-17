@@ -4,6 +4,8 @@ from .register import *
 
 from .Error_Handler import *
 
+from threading import Event
+
 class ServiceBase(object):
     def __init__(self, config_file=None, init_REST_func=None, init_MQTT_func = None, GET=None, POST=None, PUT=None, DELETE=None, PATCH=None, Notifier=None):
         try: 
@@ -20,19 +22,23 @@ class ServiceBase(object):
                 "MQTT": Queue()
             }
 
+            events = {
+                "startEvent" : Event(),
+                "stopEvent" : Event()
+            }
+
             if(self.generalConfigs["REGISTRATION"]["enabled"]):
-                self.registerService = Register(1, "RegThread", queues, self.generalConfigs, config_file)
+                self.registerService = Register(1, "RegThread", events, self.generalConfigs, config_file)
                 self.registerService.start()
             else:
-                queues["REST"].put(True)
-                queues["MQTT"].put(True)
+                events["startEvent"].set()
 
             if(self.configs["activatedMethod"]["REST"]):
-                self.REST = RESTServer(2, "RESTThread", queues["REST"], self.generalConfigs["REST"], init_REST_func, GET, POST, PUT, DELETE, PATCH)
+                self.REST = RESTServer(2, "RESTThread", events, self.generalConfigs["REST"], init_REST_func, GET, POST, PUT, DELETE, PATCH)
                 self.REST.start()
             
             if(self.configs["activatedMethod"]["MQTT"]):
-                self.MQTT = MQTTServer(3, "MQTTThread", queues["MQTT"], self.generalConfigs["MQTT"], config_file, init_MQTT_func, Notifier)
+                self.MQTT = MQTTServer(3, "MQTTThread", events, self.generalConfigs["MQTT"], config_file, init_MQTT_func, Notifier)
                 self.MQTT.start()
     
         except HTTPError as e:

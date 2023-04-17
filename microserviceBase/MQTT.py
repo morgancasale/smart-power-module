@@ -4,22 +4,10 @@ import time
 import paho.mqtt.client as MQTT
 import requests
 
-from threading import Thread
-from queue import Queue
-import ctypes
-
-
-#TODO Supportare subscribe a più topic, prova come dicono qua : https://stackoverflow.com/questions/48942538/how-to-subscribe-on-multiple-topic-using-paho-mqtt-on-python
-#     (usa lo stesso QOS per tutti i topic)
-
-#TODO Serve il metodo per cambiare il topic a cui si è iscritti (controllando che il nuovo topic sia sempre in lista dei topic segnati nel config)
-
-#TODO Serve il metodo per cambiare il topic a cui si pubblica (stessa roba di sopra)
-
+from threading import Thread, Event, current_thread
 
 class MyMQTT():
     def __init__(self, clientID, broker, brokerPort, subNotifier=None):
-
         self.broker = broker
         self.brokerPort = brokerPort
         self.subNotifier = subNotifier
@@ -63,11 +51,11 @@ class MyMQTT():
 
 
 class MQTTServer(Thread):
-    def __init__(self, threadID, threadName, startQueue, configs,configs_file, init_func=None, Notifier=None):
+    def __init__(self, threadID, threadName, events, configs,configs_file, init_func=None, Notifier=None):
         Thread.__init__(self)
         self.threadID = threadID
         self.name = threadName
-        self.startQueue = startQueue
+        self.events = events
 
         self.notify = Notifier
         self.SubPub = ["sub", "pub"]
@@ -108,31 +96,36 @@ class MQTTServer(Thread):
                 init_func()
 
         except HTTPError as e:
-            self.stopAllThreads()
+            self.events["stopEvent"].set()
             raise HTTPError( status=e.status, message = "An error occurred while enabling the MQTT server: \n\t" + e._message)
         except Exception as e:
-            self.stopAllThreads()
+            self.events["stopEvent"].set()
             raise self.serverErrorHandler.InternalServerError(
                 "An error occurred while enabling MQTT server: \n\t" + str(e)
             )
         
-    def start(self):
-        print("MQTT - Waiting for registration...")
-        self.startQueue.get()
-        self.openMQTTServer()
+    def run(self):
+        try:
+            print("MQTT - Thread %s waiting for registration..." % current_thread().ident)
+            self.events["startEvent"].wait()
+            self.openMQTTServer()
+            
 
-    def stopAllThreads(self):
-        for thread_id in [1,2]:
-            res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id,
-                ctypes.py_object(SystemExit))
-            if res > 1:
-                ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
-                print('Exception raise failure')
-
+        except HTTPError as e:
+            self.events["stopEvent"].set()
+            raise HTTPError( status=e.status, message = "An error occurred while running the MQTT server: \n\t" + e._message)
+        except Exception as e:
+            self.events["stopEvent"].set()
+            raise self.serverErrorHandler.InternalServerError(
+                "An error occurred while running the MQTT server: \n\t" + str(e)
+            )
+        
     def openMQTTServer(self):
         self.Client = MyMQTT(self.clientID, self.brokerAddress,
                              self.brokerPort, subNotifier=self.notify)
         self.Client.start()
+        self.events["stopEvent"].wait()
+        self.Client.stop()
 
     def updateConfigFile(self, dict):
         try:
@@ -227,9 +220,6 @@ class MQTTServer(Thread):
             self.Client.Subscribe(MQTTTopics)
         else:
              raise self.clientErrorHandler.BadRequest("Error subscriber not activated")
-   
-   
-    #gestione messaggi
 
     def publish(self, topics, msg):
         if(not isinstance(topics, list)):
@@ -258,9 +248,7 @@ class MQTTServer(Thread):
         
         if(not all(key in self.SubPub  for key in self.configs["MQTTTopics"].keys())):
             raise self.clientErrorHandler.BadRequest(
-                "Missing parameters in config file")
-        
-       
+                "Missing parameters in config file")       
 
     def validateParams(self):
         if (not isinstance(self.configs["endPointName"], str)):
