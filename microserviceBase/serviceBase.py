@@ -64,7 +64,7 @@ class ServiceBase(object):
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError("An error occurred while enabling the service: \u0085\u0009" + str(e))
 
-    def closeService(self):
+    def stop(self):
         self.events["stopEvent"].set()
     
     def check_and_loadConfigs(self):
@@ -171,6 +171,16 @@ class ServiceBase(object):
 
 
     def notifyHA(self, payload):
+        r"""Allows to trigger a notification in Home Assistant
+            The method expects a dictionary with the following structure:
+            {
+                "title": "Notification title",
+                "message": "Notification message"
+            }
+        """
+        if(not self.configs["HomeAssistant"]["enabled"]):
+            raise self.clientErrorHandler.BadRequest("Home Assistant connection is not enabled")
+
         try:
             url = "%s:%s/api/services/notify/persistent_notification" % (
                 self.configs["HomeAssistant"]["address"], self.configs["HomeAssistant"]["port"]
