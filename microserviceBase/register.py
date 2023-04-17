@@ -40,10 +40,10 @@ class Register(Thread):
         
         except HTTPError as e:
             self.events["stopEvent"].set()
-            raise HTTPError(status=e.status, message="An error occurred while initializing registration: \n\t" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while initializing registration: \u0085\u0009" + e._message)
         except Exception as e:
             self.events["stopEvent"].set()
-            raise self.serverErrorHandler.InternalServerError("An error occurred while initializing registration: \n\t" + str(e))
+            raise self.serverErrorHandler.InternalServerError("An error occurred while initializing registration: \u0085\u0009" + str(e))
 
     def run(self):
         self.KeepAlive()
@@ -53,9 +53,9 @@ class Register(Thread):
             self.checkParams()
             self.validateParams()
         except HTTPError as e:
-            raise HTTPError(status=e.status, message="An error occurred while loading registration configs: \n\t" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while loading registration configs: \u0085\u0009" + e._message)
         except Exception as e:
-            raise self.serverErrorHandler.InternalServerError("An error occurred while loading registration configs: \n\t" + str(e))
+            raise self.serverErrorHandler.InternalServerError("An error occurred while loading registration configs: \u0085\u0009" + str(e))
 
 
     def checkParams(self):
@@ -89,7 +89,7 @@ class Register(Thread):
                 json.dump(configs, file, indent=4)
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError(
-                "An error occurred while updating the configuration file: \n\t" + str(e)
+                "An error occurred while updating the configuration file: \u0085\u0009" + str(e)
             )
 
     def generateServiceID(self):
@@ -100,8 +100,8 @@ class Register(Thread):
             url = self.configs["catalogAddress"] + ":" + str(self.configs["catalogPort"])+ "/checkPresence"
             params = {
                 "table" : "Services",
-                "keyNames" : "serviceID",
-                "keyValues" : newID
+                "keyName" : "serviceID",
+                "keyValue" : newID
             }
 
             response = get(url, params=params)
@@ -122,8 +122,8 @@ class Register(Thread):
             url = self.configs["catalogAddress"] + ":" + str(self.configs["catalogPort"])+ "/checkPresence"
             params = {
                 "table" : "EndPoints",
-                "keyNames" : "endPointID",
-                "keyValues" : newID
+                "keyName" : "endPointID",
+                "keyValue" : newID
             }
 
             response = get(url, params=params)
@@ -208,10 +208,10 @@ class Register(Thread):
                 
             except HTTPError as e:
                 self.events["stopEvent"].set()
-                raise HTTPError(status = e.status, message="An error occurred while sending keep alive request: \n\t" + e._message)
+                raise HTTPError(status = e.status, message="An error occurred while sending keep alive request: \u0085\u0009" + e._message)
             except Exception as e:
                 self.events["stopEvent"].set()
-                raise serverErrorHandler.InternalServerError("An error occurred while sending keep alive request: \n\t" + str(e))
+                raise serverErrorHandler.InternalServerError("An error occurred while sending keep alive request: \u0085\u0009" + str(e))
             
             if(firstRun):
                 firstRun = False

@@ -9,20 +9,20 @@ DBPath = "ResourceCatalog/db.sqlite"
 broker = "broker.hivemq.com"
 
 
-def check_presence_inDB(DBPath, table, keyNames, keyValues):
+def check_presence_inDB(DBPath, table, keyName, keyValue):
     try:
-        if(not isinstance(keyNames, list)) : keyNames = [keyNames]
-        if(not isinstance(keyValues, list)) : keyValues = [keyValues]
+        if(not isinstance(keyName, list)) : keyName = [keyName]
+        if(not isinstance(keyValue, list)) : keyValue = [keyValue]
 
-        keyValues = [str(value) for value in keyValues]
+        keyValue = [str(value) for value in keyValue]
 
-        keyNames = "(" + ", ".join(keyNames) + ")"
-        keyValues = "(\"" + "\", \"".join(keyValues) + "\")"
+        keyName = "(" + ", ".join(keyName) + ")"
+        keyValue = "(\"" + "\", \"".join(keyValue) + "\")"
 
-        query = "SELECT COUNT(*)>0 as result FROM " + table + " WHERE " + keyNames + " = " + keyValues
+        query = "SELECT COUNT(*)>0 as result FROM " + table + " WHERE " + keyName + " = " + keyValue
         return bool(DBQuery_to_dict(DBPath, query)[0]["result"]) #True if the keyValue is present in the DB
     except Exception as e:
-        raise HTTPError(status=400, message="An error occured while extracting data from DB:\n\t" + str(e))
+        raise HTTPError(status=400, message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
     
 
 def check_presence_ofColumnInDB(DBPath, table, columnName):
@@ -30,14 +30,14 @@ def check_presence_ofColumnInDB(DBPath, table, columnName):
         query = "SELECT COUNT(*)>0 AS result FROM pragma_table_info(\"" + table + "\") WHERE name=\"" + columnName + "\""
         return bool(DBQuery_to_dict(DBPath, query)[0]["result"])
     except Exception as e:
-        raise HTTPError(status=400, message="An error occured while extracting data from DB:\n\t" + str(e))
+        raise HTTPError(status=400, message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
 
 def check_presence_ofTableInDB(DBPath, table):
     try:
         query = "SELECT COUNT(*)>0 AS result FROM sqlite_master WHERE (type, name) = (\"table\", \"" + table + "\")"
         return bool(DBQuery_to_dict(DBPath, query)[0]["result"])
     except Exception as e:
-        raise HTTPError(status=400, message="An error occured while extracting data from DB:\n\t" + str(e))
+        raise HTTPError(status=400, message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
 
 def check_presence_inConnectionTables(DBPath, tables, keyName, keyValue):
     try:
@@ -48,7 +48,7 @@ def check_presence_inConnectionTables(DBPath, tables, keyName, keyValue):
         
         return result               
     except Exception as e:
-        raise HTTPError(status=400, message="An error occured while extracting data from DB:\n\t" + str(e))
+        raise HTTPError(status=400, message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
 
 def save_entry2DB(DBPath, table, entryData):
     try:
@@ -80,7 +80,7 @@ def save_entry2DB(DBPath, table, entryData):
         conn.commit()
         conn.close()
     except Exception as e:
-        raise HTTPError(status=400, message="An error occured while saving data to DB:\n\t" + str(e))
+        raise HTTPError(status=400, message="An error occured while saving data to DB:\u0085\u0009" + str(e))
 
 def update_entry_inDB(DBPath, table, primaryKeyNames, entryData):
     r"""
@@ -136,24 +136,24 @@ def update_entry_inDB(DBPath, table, primaryKeyNames, entryData):
     except Exception as e:
         raise HTTPError(status=400, message=str(e))
 
-def delete_entry_fromDB(DBPath, table, keyNames, keyValues):
+def delete_entry_fromDB(DBPath, table, keyName, keyValue):
     try:
-        if(not isinstance(keyNames, list)) : keyNames = [keyNames]
-        if(not isinstance(keyValues, list)) : keyValues = [keyValues]
+        if(not isinstance(keyName, list)) : keyName = [keyName]
+        if(not isinstance(keyValue, list)) : keyValue = [keyValue]
 
-        keyValues = [str(value) for value in keyValues]
+        keyValue = [str(value) for value in keyValue]
 
         conn = sq.connect(DBPath)
 
-        keyNames = "(" + ", ".join(keyNames) + ")"
-        keyValues = "(\"" + "\", \"".join(keyValues) + "\")"
-        query = "DELETE FROM " + table + " WHERE " + keyNames + " = " + keyValues
+        keyName = "(" + ", ".join(keyName) + ")"
+        keyValue = "(\"" + "\", \"".join(keyValue) + "\")"
+        query = "DELETE FROM " + table + " WHERE " + keyName + " = " + keyValue
         cursor = conn.cursor()
         cursor.execute(query)
         conn.commit()
         conn.close()
     except Exception as e:
-        raise HTTPError(status=400, message="An error occured while deleting data from DB:\n\t" + str(e))
+        raise HTTPError(status=400, message="An error occured while deleting data from DB:\u0085\u0009" + str(e))
 
 def nested_dict_pairs_iterator(dict_obj):
     ''' This function accepts a nested dictionary as argument
@@ -243,8 +243,8 @@ def updateConnTable(DBPath, data, newStatus = None):
                 update_entry_inDB(DBPath, table, [refID,connID], entry)
     
     except HTTPError as e:
-        raise HTTPError(status=e.status, message="An error occured while updating the connection table:\n\t" + e._message)
+        raise HTTPError(status=e.status, message="An error occured while updating the connection table:\u0085\u0009" + e._message)
     except Exception as e:
-        raise HTTPError(status=400, message="An error occured while updating the connection table:\n\t" + str(e))
+        raise HTTPError(status=400, message="An error occured while updating the connection table:\u0085\u0009" + str(e))
 
             

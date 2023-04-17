@@ -79,9 +79,9 @@ class House:
 
             save_entry2DB(DBPath, "Houses", self.to_dict())
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while saving house with ID \"" + self.houseID + "\" to the DB:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while saving house with ID \"" + self.houseID + "\" to the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while saving house with ID \"" + self.houseID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving house with ID \"" + self.houseID + "\" to the DB:\u0085\u0009" + str(e))
 
     def updateDB(self, DBPath):
         try:
@@ -101,9 +101,9 @@ class House:
                 updateConnTable(DBPath, data)
                 
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while updating house with ID \"" + self.houseID + "\" in the DB:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while updating house with ID \"" + self.houseID + "\" in the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while updating house with ID \"" + self.houseID + "\" in the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while updating house with ID \"" + self.houseID + "\" in the DB:\u0085\u0009" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
@@ -117,9 +117,9 @@ class House:
 
             delete_entry_fromDB(DBPath, "Houses", "houseID", params["houseID"])
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while deleting house with ID \"" + params["houseID"] + "\" from the DB:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while deleting house with ID \"" + params["houseID"] + "\" from the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while deleting house with ID \"" + params["houseID"] + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while deleting house with ID \"" + params["houseID"] + "\" from the DB:\u0085\u0009" + str(e))
         
         return True
 
@@ -130,9 +130,9 @@ class House:
             else:
                 self.updateDB(DBPath)
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while saving house with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while saving house with ID \"" + self.deviceID + "\" to the DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while saving house with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving house with ID \"" + self.deviceID + "\" to the DB:\u0085\u0009" + str(e))
 
     def DB_to_dict(DBPath, house, verbose = True):
         try:
@@ -166,6 +166,6 @@ class House:
 
             return houseData
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while retrieving house with ID \"" + houseID + "\" from the DB:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while retrieving house with ID \"" + houseID + "\" from the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while retrieving house with ID \"" + houseID + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while retrieving house with ID \"" + houseID + "\" from the DB:\u0085\u0009" + str(e))

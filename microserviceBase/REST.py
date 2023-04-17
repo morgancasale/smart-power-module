@@ -45,10 +45,10 @@ class RESTServer(Thread):
             
         except HTTPError as e:
             events["stopEvent"].set()
-            raise HTTPError(status=e.status, message="An error occurred while enabling REST server: \n\t" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while enabling REST server: \u0085\u0009" + e._message)
         except Exception as e:
             events["stopEvent"].set()
-            raise self.serverErrorHandler.InternalServerError("An error occurred while enabling REST server: \n\t" + str(e))
+            raise self.serverErrorHandler.InternalServerError("An error occurred while enabling REST server: \u0085\u0009" + str(e))
 
     def run(self):
         try:
@@ -62,10 +62,10 @@ class RESTServer(Thread):
 
         except HTTPError as e:
             self.events["stopEvent"].set()
-            raise HTTPError(status=e.status, message="An error occurred while running REST server: \n\t" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while running REST server: \u0085\u0009" + e._message)
         except Exception as e:
             self.events["stopEvent"].set()
-            raise self.serverErrorHandler.InternalServerError("An error occurred while running REST server: \n\t" + str(e))
+            raise self.serverErrorHandler.InternalServerError("An error occurred while running REST server: \u0085\u0009" + str(e))
         
     def waitStop(self):
         self.events["stopEvent"].wait()
@@ -143,7 +143,7 @@ class RESTServer(Thread):
         except HTTPError as e:
             raise HTTPError(status=e.status, message="An error ocurred while loading REST configs: " + e._message)
         except Exception as e:
-            raise self.serverErrorHandler.InternalServerError("An error ocurred while loading REST configs: \n\t" + str(e))
+            raise self.serverErrorHandler.InternalServerError("An error ocurred while loading REST configs: \u0085\u0009" + str(e))
 
     
 

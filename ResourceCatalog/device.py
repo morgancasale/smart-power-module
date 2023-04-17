@@ -39,13 +39,13 @@ class Device:
                         try:
                             self.endPoints.append(EndPoint(endPointData, newEndPoint = True))
                         except HTTPError as e:
-                            raise HTTPError(status=400, message="EndPoint with ID " + endPointData["endPointID"] + " not valid:\n\t" + e._message)
+                            raise HTTPError(status=400, message="EndPoint with ID " + endPointData["endPointID"] + " not valid:\u0085\u0009" + e._message)
                 case "Resources":
                     for resourceData in deviceData["Resources"]:
                         try:
                             self.Resources.append(Resource(resourceData, newResource = True))
                         except HTTPError as e:
-                            raise HTTPError(status=400, message="Resource with ID " + resourceData["resourceID"] + " not valid:\n\t" + e._message)
+                            raise HTTPError(status=400, message="Resource with ID " + resourceData["resourceID"] + " not valid:\u0085\u0009" + e._message)
                 case _:
                     raise HTTPError(status=400, message="Unexpected key \"" + key + "\"")
 
@@ -87,9 +87,9 @@ class Device:
             
             save_entry2DB(DBPath, "Devices", self.to_dict())
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\u0085\u0009" + str(e))
 
     def updateDB(self, DBPath):
         endPointIDs = []
@@ -106,10 +106,10 @@ class Device:
                 try:
                     endPoint.set2DB(DBPath)
                 except HTTPError as e:
-                    msg = "An error occurred while updating device's endpoint with ID \"" + endPoint.endPointID + "\":\n\t" + str(e._message)
+                    msg = "An error occurred while updating device's endpoint with ID \"" + endPoint.endPointID + "\":\u0085\u0009" + str(e._message)
                     raise HTTPError(status=400, message=msg)
                 except Exception as e:
-                    msg = "An error occurred while updating device's endpoint with ID \"" + endPoint.endPointID + "\":\n\t" + str(e)
+                    msg = "An error occurred while updating device's endpoint with ID \"" + endPoint.endPointID + "\":\u0085\u0009" + str(e)
                     raise HTTPError(status=500, message=msg)
                 endPointIDs.append(endPoint.endPointID)
 
@@ -117,10 +117,10 @@ class Device:
                 try:
                     resource.set2DB(DBPath)
                 except HTTPError as e:
-                    msg = "An error occurred while updating device's resource with ID \"" + resource.resourceID + "\":\n\t" + str(e._message)
+                    msg = "An error occurred while updating device's resource with ID \"" + resource.resourceID + "\":\u0085\u0009" + str(e._message)
                     raise HTTPError(status=400, message=msg)
                 except Exception as e:
-                    msg = "An error occurred while updating device's resource with ID \"" + resource.resourceID + "\":\n\t" + str(e)
+                    msg = "An error occurred while updating device's resource with ID \"" + resource.resourceID + "\":\u0085\u0009" + str(e)
                     raise HTTPError(status=500, message=msg)
                 resourceIDs.append(resource.resourceID)
 
@@ -134,9 +134,9 @@ class Device:
             
             update_entry_inDB(DBPath, "Devices", "deviceID", self.to_dict())   
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while updating device with ID \"" + self.deviceID + "\" in the DB:\u0085\u0009" + str(e))
 
     def set2DB(self, DBPath):
         try:
@@ -145,9 +145,9 @@ class Device:
             else:
                 self.updateDB(DBPath)
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving device with ID \"" + self.deviceID + "\" to the DB:\u0085\u0009" + str(e))
     
     def DB_to_dict(DBPath, device, verbose = True):
         try:
@@ -175,7 +175,7 @@ class Device:
                     
             return deviceData
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while retrieving device with ID \"" + deviceID + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while retrieving device with ID \"" + deviceID + "\" from the DB:\u0085\u0009" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
@@ -189,9 +189,9 @@ class Device:
             Resource.cleanDB(DBPath)
             delete_entry_fromDB(DBPath, "Devices", "deviceID", params["deviceID"])
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while deleting the device with ID \"" + params["deviceID"] + "\" from the DB:\u0085\u0009" + str(e))
         
         return True
 
@@ -206,9 +206,9 @@ class Device:
                 if(not check_presence_inConnectionTables(DBPath, connTables, "deviceID", entry["deviceID"])):
                     Device.deleteFromDB(DBPath, {"deviceID": entry["deviceID"]})
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while cleaning the DB from devices:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while cleaning the DB from devices:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while cleaning the DB from devices:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while cleaning the DB from devices:\u0085\u0009" + str(e))
 
     def setOnlineStatus(entries):
         newDeviceIDs = []

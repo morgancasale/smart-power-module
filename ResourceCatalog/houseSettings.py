@@ -48,9 +48,9 @@ class HouseSettings:
             update_entry_inDB(DBPath, "HouseSettings", "houseID", self.to_dict())
             update_entry_inDB(DBPath, "Houses", "houseID", {"houseID": self.houseID, "HouseName": self.houseName})
         except HTTPError as e:
-            raise HTTPError(status=e.status, message="An error occurred while saving house settings for house with ID \"" + self.houseID + "\" to the DB:\n\t" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while saving house settings for house with ID \"" + self.houseID + "\" to the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=500, message="An error occurred while saving house settings for house with ID \"" + self.houseID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=500, message="An error occurred while saving house settings for house with ID \"" + self.houseID + "\" to the DB:\u0085\u0009" + str(e))
         
     def updateDB(self, DBPath):
         self.save2DB(DBPath)
@@ -65,9 +65,9 @@ class HouseSettings:
             
             delete_entry_fromDB(DBPath, "HouseSettings", "houseID", params["houseID"])
         except HTTPError as e:
-            raise HTTPError(status=e.status, message="An error occurred while deleting house settings for house with ID \"" + params["houseID"] + "\" from the DB:\n\t" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while deleting house settings for house with ID \"" + params["houseID"] + "\" from the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=500, message="An error occurred while deleting house settings for house with ID \"" + params["houseID"] + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=500, message="An error occurred while deleting house settings for house with ID \"" + params["houseID"] + "\" from the DB:\u0085\u0009" + str(e))
         
     def cleanDB(DBPath):
         query = "SELECT * FROM HouseSettings"
@@ -78,9 +78,9 @@ class HouseSettings:
                 if(not check_presence_inDB(DBPath, "Houses", "houseID", entry["houseID"])):
                     HouseSettings.deleteFromDB(DBPath, {"houseID" : entry["houseID"]})
         except HTTPError as e:
-            raise HTTPError(status=e.status, message="An error occurred while cleaning house settings from the DB:\n\t" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while cleaning house settings from the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=500, message="An error occurred while cleaning house settings from the DB:\n\t" + str(e))
+            raise HTTPError(status=500, message="An error occurred while cleaning house settings from the DB:\u0085\u0009" + str(e))
         
     def DB_to_dict(DBPath, house):
         try:
@@ -90,6 +90,6 @@ class HouseSettings:
 
             return houseSettings
         except HTTPError as e:
-            raise HTTPError(status=e.status, message="An error occurred while retrieving house settings for house with ID \"" + houseID + "\" from the DB:\n\t" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while retrieving house settings for house with ID \"" + houseID + "\" from the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=500, message="An error occurred while retrieving house settings for house with ID \"" + houseID + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=500, message="An error occurred while retrieving house settings for house with ID \"" + houseID + "\" from the DB:\u0085\u0009" + str(e))

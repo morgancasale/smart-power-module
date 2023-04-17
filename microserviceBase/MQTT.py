@@ -27,8 +27,8 @@ class MQTTServer(Thread):
                 url = "http://localhost:8080/getInfo"
                 params = {
                     "table": "EndPoints",
-                    "keyNames": "endPointName",
-                    "keyValues": "MQTTBroker"
+                    "keyName": "endPointName",
+                    "keyValue": "MQTTBroker"
                 }
 
                     
@@ -57,11 +57,11 @@ class MQTTServer(Thread):
 
         except HTTPError as e:
             self.events["stopEvent"].set()
-            raise HTTPError( status=e.status, message = "An error occurred while enabling the MQTT server: \n\t" + e._message)
+            raise HTTPError( status=e.status, message = "An error occurred while enabling the MQTT server: \u0085\u0009" + e._message)
         except Exception as e:
             self.events["stopEvent"].set()
             raise self.serverErrorHandler.InternalServerError(
-                "An error occurred while enabling MQTT server: \n\t" + str(e)
+                "An error occurred while enabling MQTT server: \u0085\u0009" + str(e)
             )
     
     def run(self):
@@ -73,11 +73,11 @@ class MQTTServer(Thread):
 
         except HTTPError as e:
             self.events["stopEvent"].set()
-            raise HTTPError( status=e.status, message = "An error occurred while running the MQTT server: \n\t" + e._message)
+            raise HTTPError( status=e.status, message = "An error occurred while running the MQTT server: \u0085\u0009" + e._message)
         except Exception as e:
             self.events["stopEvent"].set()
             raise self.serverErrorHandler.InternalServerError(
-                "An error occurred while running the MQTT server: \n\t" + str(e)
+                "An error occurred while running the MQTT server: \u0085\u0009" + str(e)
             )
 
     def OnConnect(self, a, b, c, rc):
@@ -112,7 +112,7 @@ class MQTTServer(Thread):
                 json.dump(configs, file, indent=4)
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError(
-                "An error occurred while updating the configuration file: \n\t" + str(e)
+                "An error occurred while updating the configuration file: \u0085\u0009" + str(e)
             )
     
     def Wildcards(self,topic, subpub):

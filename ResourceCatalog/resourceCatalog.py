@@ -28,6 +28,7 @@ class ResourceCatalog:
                                   GET=self.handleGetRequest, POST=self.handlePostRequest, 
                                   PUT=self.handlePutRequest, PATCH=self.handlePatchRequest,
                                   DELETE=self.handleDeleteRequest)
+        self.server.start()
         
     
     def handleGetRequest(self, *uri, **params):
@@ -49,7 +50,7 @@ class ResourceCatalog:
                 case _:
                     raise HTTPError(status=400, message="Unexpected invalid command")
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while handling the GET request:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while handling the GET request:\u0085\u0009" + e._message)
 
     def handlePostRequest(self, *uri):
         cmd = uri[1]
@@ -100,7 +101,7 @@ class ResourceCatalog:
                 case _:
                     raise HTTPError(status=400, message="The command \"" + cmd + "\" is not valid")
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while handling the POST request:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while handling the POST request:\u0085\u0009" + e._message)
 
     def handlePutRequest(self, *uri):
         cmd = uri[1]
@@ -190,7 +191,7 @@ class ResourceCatalog:
                 case _:
                     raise HTTPError(status=400, message="Unexpected invalid command")
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while handling the PUT request:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while handling the PUT request:\u0085\u0009" + e._message)
 
     def handlePatchRequest(self, *uri):
         cmd = uri[1]
@@ -245,7 +246,7 @@ class ResourceCatalog:
                 case _:
                     raise HTTPError(status=400, message="Unexpected invalid command")
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while handling the PATCH request:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while handling the PATCH request:\u0085\u0009" + e._message)
 
     def handleDeleteRequest(self, *uri):
         cmd = uri[1]
@@ -304,7 +305,7 @@ class ResourceCatalog:
                 case _:
                     raise HTTPError(status=400, message="Unexpected invalid command")
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while handling the DELETE request:\n\t" + e._message)        
+            raise HTTPError(status=400, message="An error occurred while handling the DELETE request:\u0085\u0009" + e._message)        
 
     def reconstructJson(self, table, selectedData, requestEntry, verbose = False):
         reconstructedData = []
@@ -324,7 +325,7 @@ class ResourceCatalog:
                     case "Resources":
                         reconstructedData.append(Resource.DB_to_dict(self.DBPath, sel, requestEntry))
                     case "EndPoints":
-                        reconstructedData.append(EndPoint.DB_to_dict(self.DBPath, sel, verbose))
+                        reconstructedData.append(EndPoint.DB_to_dict(self.DBPath, sel))
                     case "DeviceSettings":
                         reconstructedData.append(DeviceSettings.DB_to_dict(self.DBPath, sel))
                     case "DeviceScheduling":
@@ -343,12 +344,12 @@ class ResourceCatalog:
     def checkPresence(self, entry): # check if an entry is present in the DB
         try:
             table = entry["table"]
-            keyNames = entry["keyNames"]
-            keyValues = entry["keyValues"]
+            keyName = entry["keyName"]
+            keyValue = entry["keyValue"]
             
-            return json.dumps({"result" : check_presence_inDB(self.DBPath, table, keyNames, keyValues)})
+            return json.dumps({"result" : check_presence_inDB(self.DBPath, table, keyName, keyValue)})
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while checking the presence of an entry in the DB:\n\t" + str(e))            
+            raise HTTPError(status=400, message="An error occurred while checking the presence of an entry in the DB:\u0085\u0009" + str(e))            
 
     def extractByKey(self, entry):
         table = entry["table"]
@@ -380,7 +381,7 @@ class ResourceCatalog:
             selectedData = pd.read_sql_query(query, conn).to_dict(orient="records")
             conn.close()
         except Exception as e:
-            raise HTTPError(status=400, message="An error occured while extracting data from DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
 
         if len(selectedData) == 0:
             msg = "No entry found in table \"" + table
@@ -391,9 +392,9 @@ class ResourceCatalog:
         try:
             reconstructedData = ResourceCatalog.reconstructJson(self, table, selectedData, entry, verbose=verbose) 
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occured while reconstructing data:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occured while reconstructing data:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occured while reconstructing data:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occured while reconstructing data:\u0085\u0009" + str(e))
         
         return json.dumps(reconstructedData)
         
@@ -403,29 +404,29 @@ class ResourceCatalog:
             if(not check_presence_ofTableInDB(self.DBPath, connData["table"])): 
                 raise HTTPError(status=400, message="The table \"" + connData["table"] + "\" does not exist")
             
-            for keyName in connData["keyNames"]:
+            for keyName in connData["keyName"]:
                 if(not check_presence_ofColumnInDB(self.DBPath, connData["table"], keyName)):
                     raise HTTPError(status=400, message="The column \"" + keyName + "\" does not exist in the table \"" + connData["table"] + "\"")
             
             for conn in connData["conns"]:               
                 if(conn["new_status"]):
-                    entry = dict(zip(connData["keyNames"], conn["keyValues"]))
+                    entry = dict(zip(connData["keyName"], conn["keyValue"]))
                     entry["lastUpdate"] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-                    if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])):
+                    if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyName"], conn["keyValue"])):
                         save_entry2DB(DBPath, connData["table"], entry)
                 
                 else:
-                    if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])):
-                        msg = "The entry (\"" + conn["keyValues"][0] +", " + conn["keyValues"][1]
+                    if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyName"], conn["keyValue"])):
+                        msg = "The entry (\"" + conn["keyValue"][0] +", " + conn["keyValue"][1]
                         msg += "\") does not exist in the table \"" + connData["table"] + "\""
                         raise HTTPError(status=400, message=msg)
 
-                    delete_entry_fromDB(self.DBPath, connData["table"], connData["keyNames"], conn["keyValues"])
+                    delete_entry_fromDB(self.DBPath, connData["table"], connData["keyName"], conn["keyValue"])
 
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while updating a connection:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while updating a connection:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while updating a connection:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while updating a connection:\u0085\u0009" + str(e))
         
 
 if __name__ == "__main__":

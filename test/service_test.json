@@ -4,6 +4,13 @@
             "MQTT": true,
             "REST": true
         },
+        "HomeAssistant": {
+            "enabled": true,
+            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIxZmMxM2JlNzgxOWU0Y2Y5OTZlNWM4ZTMwYjJkYzcyYiIsImlhdCI6MTY4MTc0MzQwNSwiZXhwIjoxOTk3MTAzNDA1fQ.1i-O9JwJ8pQpuBI9bAwh4bP76dNPPM5Uz6flhDpgVIU",
+            "autoHA": true,
+            "address": "http://192.168.2.163",
+            "port": 8123
+        },
         "houseID": null,
         "userID": null,
         "resourceID": null,

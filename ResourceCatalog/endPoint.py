@@ -143,9 +143,9 @@ class EndPoint:
                 
             return result
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while checking the consistency of the end-point with ID \"" + self.endPointID + "\" in the database:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while checking the consistency of the end-point with ID \"" + self.endPointID + "\" in the database:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while checking the consistency of the end-point with ID \"" + self.endPointID + "\" in the database:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while checking the consistency of the end-point with ID \"" + self.endPointID + "\" in the database:\u0085\u0009" + str(e))
 
     def save2DB(self, DBPath): # TODO Check if all error cases are covered
         try:
@@ -165,9 +165,9 @@ class EndPoint:
                 self.lastUpdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 save_entry2DB(DBPath, "endPoints", self.to_dict())
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while saving end-point with ID \"" + self.endPointID + "\" to the DB:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while saving end-point with ID \"" + self.endPointID + "\" to the DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while saving end-point with ID \"" + self.endPointID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving end-point with ID \"" + self.endPointID + "\" to the DB:\u0085\u0009" + str(e))
 
     def updateDB(self, DBPath):
         try:
@@ -188,9 +188,9 @@ class EndPoint:
             }
             update_entry_inDB(DBPath, "DeviceEndP_conn", "endPointID", entry)
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while updating end-point with ID \"" + self.endPointID + "\" in the DB:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while updating end-point with ID \"" + self.endPointID + "\" in the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while updating end-point with ID \"" + self.endPointID + "\" in the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while updating end-point with ID \"" + self.endPointID + "\" in the DB:\u0085\u0009" + str(e))
 
     def set2DB(self, DBPath):
         try:
@@ -199,9 +199,9 @@ class EndPoint:
             else:
                 self.updateDB(DBPath)
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while saving endPoint with ID \"" + self.endPointID + "\" to the DB:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while saving endPoint with ID \"" + self.endPointID + "\" to the DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while saving endPoint with ID \"" + self.endPointID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving endPoint with ID \"" + self.endPointID + "\" to the DB:\u0085\u0009" + str(e))
     
     def DB_to_dict(DBPath, EP):
         try:
@@ -210,7 +210,7 @@ class EndPoint:
             data["Online"] = bool(data["Online"])
             return data
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while retrieving end-point with ID \"" + EP["endPointID"] + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while retrieving end-point with ID \"" + EP["endPointID"] + "\" from the DB:\u0085\u0009" + str(e))
 
     def cleanDB(DBPath): #TODO forse c'è un modo più furbo di fare questa funzione usando solo sql
         connTables = ["DeviceEndP_conn"]
@@ -232,9 +232,9 @@ class EndPoint:
             delete_entry_fromDB(DBPath, "DeviceEndP_conn", "endPointID", entry["endPointID"])
             delete_entry_fromDB(DBPath, "EndPoints", "endPointID", entry["endPointID"])
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while deleting end-point with ID \"" + entry["endPointID"] + "\" from the DB:\u0085\u0009" + str(e))
         
         return True
 

@@ -1,27 +1,21 @@
 {
     "CONFIG": {
         "activatedMethod": {
-            "MQTT": true,
+            "MQTT": false,
             "REST": true
         },
-        "houseID": [
-            "H1",
-            "H2"
-        ],
-        "userID": [
-            "U1",
-            "U2"
-        ],
-        "deviceID": [
-            "D1",
-            "D3"
-        ],
-        "resourceID": null
+        "HomeAssistant": {
+            "enabled": false,
+            "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU", 
+            "autoHA" : false,
+            "address" : "http://192.168.2.163",
+            "port" : 8123
+        }
     },
     "REST": {
         "endPointID": "E1",
-        "endPointName": "ResourceCatalog",
-        "IPAddress": "192.168.2.145",
+        "endPointName": "ResourceCatalogServer",
+        "IPAddress": "127.0.0.1",
         "port": 8099,
         "CRUDMethods": {
             "GET": true,
@@ -33,8 +27,7 @@
     },
     "MQTT": {
         "endPointID": null,
-        "endPointName": "ResourceCatalog",
-        "autoBroker": false,
+        "endPointName": null,
         "brokerAddress": "",
         "brokerPort": 1883,
         "subPub": {
@@ -53,9 +46,9 @@
         "QOS": 0
     },
     "REGISTRATION": {
-        "enabled": true,
-        "serviceID": "SNTU0NT",
-        "serviceName": "pazza",
+        "enabled": false,
+        "serviceID": "S1",
+        "serviceName": "ResourceCatalog",
         "catalogAddress": "http://192.168.2.145",
         "catalogPort": 8099,
         "T_Registration": 0.1

@@ -120,9 +120,9 @@ class DeviceSettings:
             update_entry_inDB(DBPath, "Devices", "deviceID", {"deviceID": self.deviceID, "deviceName": self.deviceName})
 
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(500, "An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(500, "An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB:\u0085\u0009" + str(e))
         
     def updateDB(self, DBPath):
         self.save2DB(DBPath)
@@ -137,9 +137,9 @@ class DeviceSettings:
 
             delete_entry_fromDB(DBPath, "DeviceSettings", params["deviceID"])
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while deleting device settings for device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while deleting device settings for device with ID \"" + params["deviceID"] + "\" from the DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(500, "An error occurred while deleting device settings for device with ID \"" + params["deviceID"] + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(500, "An error occurred while deleting device settings for device with ID \"" + params["deviceID"] + "\" from the DB:\u0085\u0009" + str(e))
         
     def cleanDB(DBPath):
         query = "SELECT * FROM DeviceSettings"
@@ -150,9 +150,9 @@ class DeviceSettings:
                 if(not check_presence_inDB(DBPath, "Devices", "deviceID", entry["deviceID"])):
                     DeviceSettings.deleteFromDB(DBPath, {"deviceID": entry["deviceID"]})
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while cleaning device settings table:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while cleaning device settings table:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while cleaning device settings table:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while cleaning device settings table:\u0085\u0009" + str(e))
         
     
     def DB_to_dict(DBPath, device):
@@ -164,9 +164,9 @@ class DeviceSettings:
 
             return devSettings
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while retrieving device settings for device with ID \"" + deviceID + "\" from the DB:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while retrieving device settings for device with ID \"" + deviceID + "\" from the DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(500, "An error occurred while retrieving device settings for device with ID \"" + deviceID + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(500, "An error occurred while retrieving device settings for device with ID \"" + deviceID + "\" from the DB:\u0085\u0009" + str(e))
 
 
 
