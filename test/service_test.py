@@ -14,6 +14,8 @@ def notify(topic, payload):
      
 a = ServiceBase("test/service_test.json", Notifier = notify)
 
+0 == 0
 while(True):
     a.MQTT.publish("/test/pub/1", "ciao")
     time.sleep(10)
+    a.closeService()

@@ -54,13 +54,23 @@ class RESTServer(Thread):
         try:
             print("REST - Thread %s waiting for registration..." % current_thread().ident)
             self.events["startEvent"].wait()
-            self.openRESTServer()
+
+            thread = Thread(target=self.waitStop)
+            thread.start()
+
+            self.openRESTServer()            
+
         except HTTPError as e:
             self.events["stopEvent"].set()
             raise HTTPError(status=e.status, message="An error occurred while running REST server: \n\t" + e._message)
         except Exception as e:
             self.events["stopEvent"].set()
             raise self.serverErrorHandler.InternalServerError("An error occurred while running REST server: \n\t" + str(e))
+        
+    def waitStop(self):
+        self.events["stopEvent"].wait()
+        cherrypy.engine.exit()
+        exit()
 
     exposed = True
 
@@ -158,7 +168,4 @@ class RESTServer(Thread):
         })
         
         cherrypy.quickstart(webServices,'/',conf)
-
-        self.events["stopEvent"].wait()
-        cherrypy.engine.exit()
 

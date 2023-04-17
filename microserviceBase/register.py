@@ -178,7 +178,7 @@ class Register(Thread):
         serverErrorHandler = Server_Error_Handler()
 
         firstRun = True
-        while True:
+        while not self.events["stopEvent"].is_set():
             try:
                 url = self.configs["catalogAddress"] + ":" + str(self.configs["catalogPort"]) + "/setService"
                 service = {
@@ -215,7 +215,7 @@ class Register(Thread):
             
             if(firstRun):
                 firstRun = False
-                print("REGISTRATION - Thread %s registered service for the fist time" % current_thread().ident)
+                print("REGISTRATION - Thread %s registered service for the first time" % current_thread().ident)
                 self.events["startEvent"].set()
             
             time.sleep(self.configs["T_Registration"]*60)

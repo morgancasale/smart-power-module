@@ -17,32 +17,29 @@ class ServiceBase(object):
 
             self.check_and_loadConfigs()
 
-            queues = {
-                "REST": Queue(),
-                "MQTT": Queue()
-            }
-
-            events = {
+            self.events = {
                 "startEvent" : Event(),
                 "stopEvent" : Event()
             }
 
             if(self.generalConfigs["REGISTRATION"]["enabled"]):
-                self.registerService = Register(1, "RegThread", events, self.generalConfigs, config_file)
+                self.registerService = Register(1, "RegThread", self.events, self.generalConfigs, config_file)
                 self.registerService.start()
             else:
-                events["startEvent"].set()
+                self.events["startEvent"].set()
 
             if(self.configs["activatedMethod"]["REST"]):
-                self.REST = RESTServer(2, "RESTThread", events, self.generalConfigs["REST"], init_REST_func, GET, POST, PUT, DELETE, PATCH)
+                self.REST = RESTServer(2, "RESTThread", self.events, self.generalConfigs["REST"], init_REST_func, GET, POST, PUT, DELETE, PATCH)
                 self.REST.start()
             
             if(self.configs["activatedMethod"]["MQTT"]):
-                self.MQTT = MQTTServer(3, "MQTTThread", events, self.generalConfigs["MQTT"], config_file, init_MQTT_func, Notifier)
+                self.MQTT = MQTTServer(3, "MQTTThread", self.events, self.generalConfigs["MQTT"], config_file, init_MQTT_func, Notifier)
                 self.MQTT.start()
-    
         except HTTPError as e:
             raise HTTPError(status=e.status, message="An error occurred while enabling the servers: \n\t" + e._message)
+        
+    def closeService(self):
+        self.events["stopEvent"].set()
     
     def check_and_loadConfigs(self):
         try:

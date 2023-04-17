@@ -6,50 +6,6 @@ import requests
 
 from threading import Thread, Event, current_thread
 
-class MyMQTT():
-    def __init__(self, clientID, broker, brokerPort, subNotifier=None):
-        self.broker = broker
-        self.brokerPort = brokerPort
-        self.subNotifier = subNotifier
-
-        self.isSub = False
-
-        self.Client = MQTT.Client(clientID, True)
-
-        self.Client.on_connect = self.OnConnect
-        self.Client.on_message = self.OnMessageReceived
-
-    def OnConnect(self, a, b, c, rc):
-        print("Connected to %s with result code: %d" % (self.broker, rc))
-
-    def OnMessageReceived(self, a, b, msg):
-        self.subNotifier(msg.topic, msg.payload)
-
-    def Publish(self, topic, msg):
-        print("Publishing '%s' at topic '%s'" % (msg, topic))
-        self.Client.publish(topic, json.dumps(msg), 2)
-
-    def Subscribe(self, tuplet):
-        self.Client.subscribe(tuplet)
-        self.isSub = True
-        self.topic = tuplet
-
-    def start(self):
-        self.Client.connect(self.broker, self.brokerPort)
-        self.Client.loop_start()
-
-    def unsubscribe(self):
-        if (self.isSub):
-            self.Client.unsubscribe(self.topic)
-
-    def stop(self):
-        if (self.isSub):
-            self.unsubscribe()
-
-            self.Client.loop_stop()
-            self.Client.disconnect()
-
-
 class MQTTServer(Thread):
     def __init__(self, threadID, threadName, events, configs,configs_file, init_func=None, Notifier=None):
         Thread.__init__(self)
@@ -57,8 +13,8 @@ class MQTTServer(Thread):
         self.name = threadName
         self.events = events
 
-        self.notify = Notifier
         self.SubPub = ["sub", "pub"]
+        self.isSub = False
        
         try:
             self.configs = configs
@@ -87,13 +43,17 @@ class MQTTServer(Thread):
                     
                     self.updateConfigFile({"MQTT": {"brokerAddress": self.broker, "brokerPort": self.brokerPort}})
                     
-                self.notify = Notifier
+                self.subNotifier = Notifier
                
-                self.MQTTSubTopic =  [(topic, self.QOS)  for topic in self.configs["MQTTTopics"]["sub"]]
-               
+                self.MQTTSubTopic =  [(topic, self.QOS)  for topic in self.configs["MQTTTopics"]["sub"]]              
 
             if (init_func != None):
                 init_func()
+
+            self.Client = MQTT.Client(self.clientID, True)
+
+            self.Client.on_connect = self.OnConnect
+            self.Client.on_message = self.OnMessageReceived
 
         except HTTPError as e:
             self.events["stopEvent"].set()
@@ -103,7 +63,7 @@ class MQTTServer(Thread):
             raise self.serverErrorHandler.InternalServerError(
                 "An error occurred while enabling MQTT server: \n\t" + str(e)
             )
-        
+    
     def run(self):
         try:
             print("MQTT - Thread %s waiting for registration..." % current_thread().ident)
@@ -119,13 +79,29 @@ class MQTTServer(Thread):
             raise self.serverErrorHandler.InternalServerError(
                 "An error occurred while running the MQTT server: \n\t" + str(e)
             )
+
+    def OnConnect(self, a, b, c, rc):
+        print("Connected to %s with result code: %d" % (self.broker, rc))
+
+    def OnMessageReceived(self, a, b, msg):
+        self.subNotifier(msg.topic, msg.payload)
+
+    def unsubscribe(self):
+        if (self.isSub):
+            self.Client.unsubscribe(self.topics)
+
+    def stop(self):
+        self.unsubscribe()
+
+        self.Client.loop_stop()
+        self.Client.disconnect()
         
     def openMQTTServer(self):
-        self.Client = MyMQTT(self.clientID, self.brokerAddress,
-                             self.brokerPort, subNotifier=self.notify)
-        self.Client.start()
+        self.Client.connect(self.broker, self.brokerPort)
+        self.Client.loop_start()
+
         self.events["stopEvent"].wait()
-        self.Client.stop()
+        self.stop()
 
     def updateConfigFile(self, dict):
         try:
@@ -204,7 +180,7 @@ class MQTTServer(Thread):
             self.Client.unsubscribe()
             for topic in newtopic:
                self.checkTopic(topic,"sub")
-               self.Client.Subscribe(newtopic,self.QOS)
+               self.subscribe(newtopic,self.QOS)
         else:
             raise self.clientErrorHandler.BadRequest("Error subscriber not activated")
    
@@ -217,7 +193,10 @@ class MQTTServer(Thread):
             for topic in topics:
                self.checkTopic(topic,"sub")
                MQTTTopics.append((topic, self.QOS))
-            self.Client.Subscribe(MQTTTopics)
+            
+            self.Client.subscribe(topics)
+            self.isSub = True
+            self.topics = topics
         else:
              raise self.clientErrorHandler.BadRequest("Error subscriber not activated")
 
@@ -226,16 +205,15 @@ class MQTTServer(Thread):
             topics = [topics] 
         if (self.configs["subPub"]["pub"]):
             for topic in topics:
-                self.checkTopic(topic,"pub")
-                self.Client.Publish(topic, msg)
+                self.checkTopic(topic, "pub")
+
+                print("Publishing '%s' at topic '%s'" % (msg, topic))
+                self.Client.publish(topic, json.dumps(msg), 2)
         else:
-              raise self.clientErrorHandler.BadRequest(
+            raise self.clientErrorHandler.BadRequest(
             "Publisher is not active for this service")
 
-    def checkParams(self): 
-        config_params = ["endPointID", "endPointName", "autoBroker", "brokerAddress", "brokerPort","subPub",
-                         "Client_ID", "MQTTTopics", "QOS"]
-
+    def checkParams(self):
         if (not all(key in self.configs for key in self.configs.keys())):
             raise self.clientErrorHandler.BadRequest(
                 "Missing parameters in config file")
@@ -263,14 +241,14 @@ class MQTTServer(Thread):
         
         if (not isinstance(self.configs["autoBroker"], bool)):
             raise self.clientErrorHandler.BadRequest(
-                "autoBroker parameter must be a bolean")
+                "autoBroker parameter must be a boolean")
         
         
         if(not self.configs["autoBroker"]):                
             if (not isinstance(self.configs["brokerAddress"], str)):
                 raise self.clientErrorHandler.BadRequest(
                     "brokerAddress parameter must be a string")
-            self.brokerAddress = self.configs["brokerAddress"]
+            self.broker = self.configs["brokerAddress"]
 
             if (not isinstance(self.configs["brokerPort"], int)):
                 raise self.clientErrorHandler.BadRequest(
@@ -294,6 +272,10 @@ class MQTTServer(Thread):
             if (not isinstance(self.configs["MQTTTopics"][method], list)):
                 raise self.clientErrorHandler.BadRequest(
                     method + " parameter must be a list") 
+            for topic in self.configs["MQTTTopics"][method]:
+                if (not isinstance(topic, str)):
+                    raise self.clientErrorHandler.BadRequest(
+                        method + " parameter must be a list of strings")
              
         self.subTopics = self.configs["MQTTTopics"]["sub"] 
         self.pubTopis = self.configs["MQTTTopics"]["pub"] 
