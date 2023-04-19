@@ -44,6 +44,7 @@ class ServiceBase(object):
                 self.registerService = Register(1, "RegThread", self.events, self.generalConfigs, self.config_file)
                 self.registerService.start()
             else:
+                print("Registration is disabled, starting service...")
                 self.events["startEvent"].set()
 
             if(self.configs["activatedMethod"]["REST"]):
@@ -183,7 +184,8 @@ class ServiceBase(object):
 
         try:
             url = "%s:%s/api/services/notify/persistent_notification" % (
-                self.configs["HomeAssistant"]["address"], self.configs["HomeAssistant"]["port"]
+                self.configs["HomeAssistant"]["address"], 
+                self.configs["HomeAssistant"]["port"]
             )
 
             headers = {

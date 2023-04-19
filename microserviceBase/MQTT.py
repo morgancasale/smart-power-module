@@ -12,12 +12,14 @@ class MQTTServer(Thread):
         self.threadID = threadID
         self.name = threadName
         self.events = events
-
+      
         self.configParams = sorted([
             "endPointID", "endPointName", "autoBroker", 
             "brokerAddress", "brokerPort", "subPub",
             "clientID", "MQTTTopics", "QOS"
         ])
+        
+        self.connected = False
         self.SubPub = ["sub", "pub"]
         self.isSub = False
        
@@ -52,7 +54,7 @@ class MQTTServer(Thread):
                
                 self.MQTTSubTopic =  [(topic, self.QOS)  for topic in self.configs["MQTTTopics"]["sub"]]              
 
-            if (init_func != None): init_func(self)
+            if (init_func != None): init_func()
 
             self.Client = MQTT.Client(self.clientID, True)
 
@@ -67,6 +69,14 @@ class MQTTServer(Thread):
             raise self.serverErrorHandler.InternalServerError(
                 "An error occurred while enabling MQTT server: \u0085\u0009" + str(e)
             )
+        
+    def openMQTTServer(self):
+        self.Client.connect(self.broker, self.brokerPort)
+       
+        self.Client.loop_start()
+        self.connected = True
+        self.events["stopEvent"].wait()
+        self.stop()    
     
     def run(self):
         try:
@@ -90,22 +100,56 @@ class MQTTServer(Thread):
     def OnMessageReceived(self, a, b, msg):
         self.subNotifier(msg.topic, msg.payload)
 
+    def publish(self, topics, msg):
+        while(not self.connected):
+            time.sleep(5)   
+        if(not isinstance(topics, list)):
+            topics = [topics] 
+        if (self.configs["subPub"]["pub"]):
+            for topic in topics:
+                self.checkTopic(topic, "pub")
+
+                print("Publishing '%s' at topic '%s'" % (msg, topic))
+                self.Client.publish(topic, json.dumps(msg), 2)
+        else:
+            raise self.clientErrorHandler.BadRequest(
+            "Publisher is not active for this service")
+
+    def subscribe(self, topics):
+        while(not self.connected):
+            time.sleep(5)                  
+        if(not isinstance(topics, list)):
+            topics = [topics]
+        if (self.configs["subPub"]["sub"]):
+            if (len(topics) >1):
+                MQTTTopics = []
+            self.topics = []
+            for topic in topics:
+                self.checkTopic(topic,"sub")
+                if (len(topics) ==1):
+                        MQTTTopics = (topic, 2)
+                else:
+                        MQTTTopics.append((topic, 2))
+                        self.topics.append(topic)
+            print("subscribing '%d' at topic '%s'" % (2,   MQTTTopics ))
+            self.Client.subscribe(MQTTTopics)
+            self.isSub = True
+        
+        else:
+            raise self.clientErrorHandler.BadRequest("Error subscriber not activated")
+       
     def unsubscribe(self):
         if (self.isSub):
             self.Client.unsubscribe(self.topics)
 
     def stop(self):
+        self.connected = False
         self.unsubscribe()
-
+        
         self.Client.loop_stop()
         self.Client.disconnect()
         
-    def openMQTTServer(self):
-        self.Client.connect(self.broker, self.brokerPort)
-        self.Client.loop_start()
-
-        self.events["stopEvent"].wait()
-        self.stop()
+  
 
     def updateConfigFile(self, dict):
         try:
@@ -120,46 +164,56 @@ class MQTTServer(Thread):
             )
     
     def Wildcards(self,topic, subpub):
-
+        
         topic = topic.split("/")
         hash_find = [i for i, x in enumerate(topic) if x == "#"]
         plus_find = [i for i, x in enumerate(topic) if x == "+"]
         subtopic = []
-        if (len(hash_find) > 1):
-            raise self.clientErrorHandler.BadRequest("Error # wildcard can't be more than one")
-    
-        if (len(plus_find) < 1):
-            subtopic.extend(topic[0:hash_find[0]])
+        
+        if(hash_find != []):
 
-        else:
-            if (plus_find[-1] > hash_find[0]):
-               raise self.clientErrorHandler.BadRequest("Error + wildcard can't be before #")
+            if (len(hash_find) > 1):
+                raise self.clientErrorHandler.BadRequest("Error # wildcard can't be more than one")
+        
+            if (len(plus_find) < 1):
+                subtopic.extend(topic[0:hash_find[0]])
+            
+            else:
+                if (plus_find[-1] > hash_find[0]):
+                    raise self.clientErrorHandler.BadRequest("Error + wildcard can't be before #")
+                temp = 0
+                for i in range(len(plus_find)): 
+                    subtopic.extend(topic[temp:plus_find[i]-1])
+                    temp = plus_find[i]+1
+                if (hash_find > 0):
+                    subtopic.extend(topic[temp:hash_find[0]]  )
+                else:
+                    subtopic.extend(topic[temp:])
+        elif (plus_find != []):
             temp = 0
             for i in range(len(plus_find)): 
-               subtopic.extend(topic[temp:plus_find[i]-1])
-               temp = plus_find[i]+1
-            if (hash_find > 0):
-                subtopic.extend(topic[temp:hash_find[0]]  )
-            else:
-                subtopic.extend(topic[temp:])
-          
+                subtopic.extend(topic[temp:plus_find[i]-1])
+                temp = plus_find[i]+1
+            subtopic.extend(topic[temp:])
         listTopic = []
     
 
         for i in range(len(self.configs["MQTTTopics"][subpub])):
             singleTopic = []
+
             if (len(plus_find) == 0):
                  
                  singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[0:hash_find[0]])
             else: 
                 temp = 0
-                for i in range(len(plus_find)): 
-                    singleTopic.extend(self.configs["MQTTTopics"][subpub][i][temp:plus_find[i]])
-                    temp = plus_find[i]+1
-                if (hash_find[0] > 0):
-                    singleTopic.extend(self.configs["MQTTTopics"][subpub][i][temp:hash_find[0]])
+                for j in range(len(plus_find)): 
+                    singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[temp:plus_find[j]-1])
+                    temp = plus_find[j]+1
+
+                if (hash_find != []):
+                    singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[temp:hash_find[0]])
                 else:
-                    singleTopic.extend(self.configs["MQTTTopics"][subpub][i][temp:])
+                    singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[temp:])
            
             listTopic.append(singleTopic)
         
@@ -170,13 +224,13 @@ class MQTTServer(Thread):
 
 
     def checkTopic(self,topic, subpub):
-        if (subpub == "pub"):
-            if (topic not in self.configs["MQTTTopics"][subpub]):
+        if ("+" not in topic and "#" not in topic):
+            if ( topic  not in self.configs["MQTTTopics"][subpub]):
                 raise self.clientErrorHandler.BadRequest("Error topic not in config file")
 
         else:   
            self.Wildcards(topic, subpub)
-        return True        
+        return True          
     
         
     def changeSubTopic(self, newtopic):
@@ -189,33 +243,8 @@ class MQTTServer(Thread):
             raise self.clientErrorHandler.BadRequest("Error subscriber not activated")
    
        
-    def subscribe(self, topics):
-        if(not isinstance(topics, list)):
-            topics = [topics]
-        if (self.configs["subPub"]["sub"]):
-            MQTTTopics = []
-            for topic in topics:
-               self.checkTopic(topic,"sub")
-               MQTTTopics.append((topic, self.QOS))
-            
-            self.Client.subscribe(topics)
-            self.isSub = True
-            self.topics = topics
-        else:
-             raise self.clientErrorHandler.BadRequest("Error subscriber not activated")
-
-    def publish(self, topics, msg):
-        if(not isinstance(topics, list)):
-            topics = [topics] 
-        if (self.configs["subPub"]["pub"]):
-            for topic in topics:
-                self.checkTopic(topic, "pub")
-
-                print("Publishing '%s' at topic '%s'" % (msg, topic))
-                self.Client.publish(topic, json.dumps(msg), 2)
-        else:
-            raise self.clientErrorHandler.BadRequest(
-            "Publisher is not active for this service")
+    
+    
 
     def checkParams(self):
         if (not self.configParams == sorted(self.configs.keys())):
@@ -298,10 +327,11 @@ class MQTTServer(Thread):
         try:
             self.checkParams()
             self.validateParams()
-            return True  
+            return True
         except HTTPError as e:
             raise HTTPError( status=e.status, message = "MQTT configs have errors: \u0085\u0009" + e._message)
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError(
                 "MQTT configs have errors: \u0085\u0009" + str(e)
             )
+        

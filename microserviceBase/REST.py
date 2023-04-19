@@ -124,16 +124,22 @@ class RESTServer(Thread):
                 case ("endPointID", "endPointName", "IPAddress"):
                     if(not isinstance(self.configs[key], str)):
                         raise self.clientErrorHandler.BadRequest(key + " parameter must be a string")
+                    match key:
+                        case "endPointID": self.endPointID = self.configs[key]
+                        case "endPointName": self.endPointName = self.configs[key]
+                        case "IPAddress": self.IPAddress = self.configs[key]
                 case "port":
                     if(not isinstance(self.configs[key], int)):
                         raise self.clientErrorHandler.BadRequest(key + " parameter must be a integer")
+                    self.port = self.configs[key]
                 case "CRUDMethods":
                     if(not any(key in self.CRUDMethods for key in self.configs["CRUDMethods"].keys())):
                         raise self.clientErrorHandler.BadRequest("At least one CRUD method must be specified")
                     for method in self.CRUDMethods:
                         if(method in self.configs["CRUDMethods"].keys()):
                             if(not isinstance(self.configs["CRUDMethods"][method], bool)):
-                                raise self.clientErrorHandler.BadRequest(method + " parameter value must be a boolean")        
+                                raise self.clientErrorHandler.BadRequest(method + " parameter value must be a boolean")
+                    self.CRUDMethods = self.configs["CRUDMethods"]        
 
     def check_and_loadConfigs(self):        
         try:

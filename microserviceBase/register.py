@@ -70,15 +70,25 @@ class Register(Thread):
                 case "enabled":
                     if(not isinstance(self.configs["enabled"], bool)):
                         raise self.clientErrorHandler.BadRequest("enabled parameter must be a boolean")
+                    self.enabled = self.configs["enabled"]
                 case ("serviceName", "serviceID", "catalogAddress"):
                     if(not isinstance(self.configs[key], str)):
                         raise self.clientErrorHandler.BadRequest(key + " parameter must be a string")
+                    match key:
+                        case "serviceID":
+                            self.serviceID = self.configs["serviceID"]
+                        case "serviceName":
+                            self.serviceName = self.configs["serviceName"]
+                        case "catalogAddress":
+                            self.catalogAddress = self.configs["catalogAddress"]
                 case "catalogPort":
                     if(not isinstance(self.configs["catalogPort"], int)): #TODO check port validity
                         raise self.clientErrorHandler.BadRequest("catalogPort parameter must be an integer")
+                    self.catalogPort = self.configs["catalogPort"]
                 case "T_Registration":
                     if(not isinstance(self.configs["T_Registration"], (int, float)) or self.configs["T_Registration"] < 0):
                         raise self.clientErrorHandler.BadRequest("T_Registration parameter must be a positive number")
+                    self.T_Registration = self.configs["T_Registration"]
     
     def updateConfigFile(self, key, dict):
         try:
@@ -186,16 +196,20 @@ class Register(Thread):
                     "serviceName" : self.configs["serviceName"]
                 }
                 
-                if(self.generalConfigs["CONFIG"]["houseID"] != None):
+                cond = "houseID" in self.generalConfigs["CONFIG"] and self.generalConfigs["CONFIG"]["houseID"] != None
+                if(cond):
                     service["houseID"] = self.generalConfigs["CONFIG"]["houseID"]
 
-                if(self.generalConfigs["CONFIG"]["userID"] != None):
+                cond = "houseID" in self.generalConfigs["CONFIG"] and self.generalConfigs["CONFIG"]["houseID"] != None
+                if(cond):
                     service["userID"] = self.generalConfigs["CONFIG"]["userID"]
 
-                if(self.generalConfigs["CONFIG"]["deviceID"] != None):
+                cond = "deviceID" in self.generalConfigs["CONFIG"] and self.generalConfigs["CONFIG"]["deviceID"] != None
+                if(cond):
                     service["deviceID"] = self.generalConfigs["CONFIG"]["deviceID"]
-                    
-                if(self.generalConfigs["CONFIG"]["resourceID"] != None):
+
+                cond = "resourceID" in self.generalConfigs["CONFIG"] and self.generalConfigs["CONFIG"]["resourceID"] != None    
+                if(cond):
                     service["resourceID"] = self.generalConfigs["CONFIG"]["resourceID"]
 
                 service["endPoints"] = self.endPoints
