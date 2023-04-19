@@ -41,7 +41,7 @@ class RESTServer(Thread):
                 self.PATCHHandler = PATCHHandler
                 allowedMethods.append("PATCH")
 
-            if(init_func != None): init_func()            
+            if(init_func != None): init_func(self)            
             
         except HTTPError as e:
             events["stopEvent"].set()

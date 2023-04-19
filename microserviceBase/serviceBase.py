@@ -173,10 +173,10 @@ class ServiceBase(object):
     def notifyHA(self, payload):
         r"""Allows to trigger a notification in Home Assistant
             The method expects a dictionary with the following structure:
-            {
-                "title": "Notification title",
-                "message": "Notification message"
-            }
+            >>> {
+            >>>    "title": "Notification title",
+            >>>    "message": "Notification message"
+            >>> }
         """
         if(not self.configs["HomeAssistant"]["enabled"]):
             raise self.clientErrorHandler.BadRequest("Home Assistant connection is not enabled")

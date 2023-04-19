@@ -13,6 +13,11 @@ class MQTTServer(Thread):
         self.name = threadName
         self.events = events
 
+        self.configParams = sorted([
+            "endPointID", "endPointName", "autoBroker", 
+            "brokerAddress", "brokerPort", "subPub",
+            "clientID", "MQTTTopics", "QOS"
+        ])
         self.SubPub = ["sub", "pub"]
         self.isSub = False
        
@@ -47,8 +52,7 @@ class MQTTServer(Thread):
                
                 self.MQTTSubTopic =  [(topic, self.QOS)  for topic in self.configs["MQTTTopics"]["sub"]]              
 
-            if (init_func != None):
-                init_func()
+            if (init_func != None): init_func(self)
 
             self.Client = MQTT.Client(self.clientID, True)
 
@@ -116,7 +120,7 @@ class MQTTServer(Thread):
             )
     
     def Wildcards(self,topic, subpub):
-        
+
         topic = topic.split("/")
         hash_find = [i for i, x in enumerate(topic) if x == "#"]
         plus_find = [i for i, x in enumerate(topic) if x == "+"]
@@ -214,7 +218,7 @@ class MQTTServer(Thread):
             "Publisher is not active for this service")
 
     def checkParams(self):
-        if (not all(key in self.configs for key in self.configs.keys())):
+        if (not self.configParams == sorted(self.configs.keys())):
             raise self.clientErrorHandler.BadRequest(
                 "Missing parameters in config file")
         
@@ -294,7 +298,10 @@ class MQTTServer(Thread):
         try:
             self.checkParams()
             self.validateParams()
-            return True
-
+            return True  
+        except HTTPError as e:
+            raise HTTPError( status=e.status, message = "MQTT configs have errors: \u0085\u0009" + e._message)
         except Exception as e:
-            print(e)
+            raise self.serverErrorHandler.InternalServerError(
+                "MQTT configs have errors: \u0085\u0009" + str(e)
+            )
