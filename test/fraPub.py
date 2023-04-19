@@ -17,7 +17,7 @@ if __name__ == "__main__":
     topics = ["/bro/99/1", "/morgy/99/1", "/ciao/97/1", "/bro/97/1"]
     while(True):
      
-        time.sleep(5)
+    
         service.MQTT.publish("/bro/99/1", "1")
         time.sleep(5)
         service.MQTT.publish("/morgy/99/1", "2")

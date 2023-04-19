@@ -117,28 +117,28 @@ class MQTTServer(Thread):
             time.sleep(5)    
 
     def subscribe(self, topics):
-        if(self.connected):  
-            if(not isinstance(topics, list)):
-             topics = [topics]
-            if (self.configs["subPub"]["sub"]):
-                if (len(topics) >1):
-                    MQTTTopics = []
-                self.topics = []
-                for topic in topics:
-                    self.checkTopic(topic,"sub")
-                    if (len(topics) ==1):
-                            MQTTTopics = (topic, 2)
-                    else:
-                            MQTTTopics.append((topic, 2))
-                            self.topics.append(topic)
-                print("subscribing '%d' at topic '%s'" % (2,   MQTTTopics ))
-                self.Client.subscribe(MQTTTopics)
-                self.isSub = True
-            
-            else:
-                raise self.clientErrorHandler.BadRequest("Error subscriber not activated")
+        while(not self.connected):
+            time.sleep(5)                  
+        if(not isinstance(topics, list)):
+            topics = [topics]
+        if (self.configs["subPub"]["sub"]):
+            if (len(topics) >1):
+                MQTTTopics = []
+            self.topics = []
+            for topic in topics:
+                self.checkTopic(topic,"sub")
+                if (len(topics) ==1):
+                        MQTTTopics = (topic, 2)
+                else:
+                        MQTTTopics.append((topic, 2))
+                        self.topics.append(topic)
+            print("subscribing '%d' at topic '%s'" % (2,   MQTTTopics ))
+            self.Client.subscribe(MQTTTopics)
+            self.isSub = True
+        
         else:
-            time.sleep(5)
+            raise self.clientErrorHandler.BadRequest("Error subscriber not activated")
+       
     def unsubscribe(self):
         if (self.isSub):
             self.Client.unsubscribe(self.topics)
@@ -248,7 +248,7 @@ class MQTTServer(Thread):
     
 
     def checkParams(self):
-         if (not self.configParams == sorted(self.configs.keys())):
+        if (not self.configParams == sorted(self.configs.keys())):
             raise self.clientErrorHandler.BadRequest(
                 "Missing parameters in config file")
         
