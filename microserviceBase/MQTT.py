@@ -101,20 +101,20 @@ class MQTTServer(Thread):
         self.subNotifier(msg.topic, msg.payload)
 
     def publish(self, topics, msg):
-        if  (self.connected):
-            if(not isinstance(topics, list)):
-                topics = [topics] 
-            if (self.configs["subPub"]["pub"]):
-                for topic in topics:
-                    self.checkTopic(topic, "pub")
+        while(not self.connected):
+            time.sleep(5)   
+        if(not isinstance(topics, list)):
+            topics = [topics] 
+        if (self.configs["subPub"]["pub"]):
+            for topic in topics:
+                self.checkTopic(topic, "pub")
 
-                    print("Publishing '%s' at topic '%s'" % (msg, topic))
-                    self.Client.publish(topic, json.dumps(msg), 2)
-            else:
-                raise self.clientErrorHandler.BadRequest(
-                "Publisher is not active for this service")    
+                print("Publishing '%s' at topic '%s'" % (msg, topic))
+                self.Client.publish(topic, json.dumps(msg), 2)
         else:
-            time.sleep(5)    
+            raise self.clientErrorHandler.BadRequest(
+            "Publisher is not active for this service")    
++    
 
     def subscribe(self, topics):
         while(not self.connected):
