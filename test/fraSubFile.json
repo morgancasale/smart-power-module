@@ -4,10 +4,17 @@
             "MQTT": true,
             "REST": false
         },
-        "houseID": null,
-        "userID": null,
-        "resourceID": null,
-        "deviceID": null
+        "houseID": ["H1", "H2"],
+        "userID": ["U1", "U2"],
+        "resourceID" : null,
+        "deviceID": null,
+        "HomeAssistant": {
+            "enabled": false,
+            "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU", 
+            "autoHA" : false,
+            "address" : "http://192.168.2.163",
+            "port" : 8123
+        }
     },
     "REST": {
         "endPointID": null,
@@ -23,7 +30,7 @@
         }
     },
     "MQTT": {
-        "endPointID": "ENDkxOT",
+        "endPointID": "ENTk2NT",
         "endPointName": "SubFRA",
         "autoBroker": false,
         "brokerAddress": "broker.emqx.io",
@@ -35,19 +42,24 @@
         "clientID": "SubFRA",
         "MQTTTopics": {
             "sub": [
-                "/bro/99/1"
+                "/bro/99/1",
+                "/morgy/99/1",
+                "/ciao/97/1",
+                "/bro/97/1"
             ],
             "pub": [
                 "/bro/99/1",
-                "/bro/ciao/pub"
+                "/morgy/99/1",
+                "/ciao/97/1",
+                "/bro/97/1"
             ]
         },
         "QOS": 0
     },
     "REGISTRATION": {
         "enabled": true,
-        "serviceID": "SMTUzOT",
-        "serviceName": "fraSub",
+        "serviceID": "SNDE2OD",
+        "serviceName": "SubFra",
         "catalogAddress": "http://127.0.0.1",
         "catalogPort": 8099,
         "T_Registration": 0.1

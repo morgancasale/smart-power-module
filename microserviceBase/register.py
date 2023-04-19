@@ -2,49 +2,48 @@ from requests import *
 import time
 import json
 
-from threading import Thread
+from threading import Thread, current_thread
 from queue import Queue
-import ctypes
 
 from .utility import *
 from .Error_Handler import *
 
 class Register(Thread):
-    def __init__(self, threadID, threadName, queues, generalConfigs, config_file):
+    def __init__(self, threadID, threadName, events, generalConfigs, config_file):
         Thread.__init__(self)
         self.threadID = threadID
         self.name = threadName
-        self.queues = queues
+        self.events = events
+
+        try:
+            self.configs = generalConfigs["REGISTRATION"]
+            self.generalConfigs = generalConfigs
+            self.config_file = config_file
+
+            self.clientErrorHandler = Client_Error_Handler()
+            self.serverErrorHandler = Server_Error_Handler()
+
+            self.check_and_loadConfigs()
+
+            self.endPoints = []
+            cond = (self.generalConfigs["REST"]["endPointID"] == None and self.generalConfigs["MQTT"]["endPointID"] == None)
+            if(self.generalConfigs["CONFIG"]["activatedMethod"]["REST"]) : self.generateRESTEndPoint()
+            if(self.generalConfigs["CONFIG"]["activatedMethod"]["MQTT"]) : self.generateMQTTEndPoint()
+                    
+            cond |= (self.generalConfigs["REST"]["endPointID"] == self.generalConfigs["MQTT"]["endPointID"])
+            cond &= self.generalConfigs["CONFIG"]["activatedMethod"]["REST"] and self.generalConfigs["CONFIG"]["activatedMethod"]["MQTT"]
+            if(cond):
+                self.joinEndPoints()
+
+            if(self.configs["serviceID"] == None):
+                self.configs["serviceID"] = self.generateServiceID()
         
-        self.configs = generalConfigs["REGISTRATION"]
-        self.generalConfigs = generalConfigs
-        self.config_file = config_file
-
-        self.clientErrorHandler = Client_Error_Handler()
-        self.serverErrorHandler = Server_Error_Handler()
-
-        self.check_and_loadConfigs()
-
-        self.endPoints = []
-        cond = (self.generalConfigs["REST"]["endPointID"] == None and self.generalConfigs["MQTT"]["endPointID"] == None)
-        if(self.generalConfigs["CONFIG"]["activatedMethod"]["REST"]) : self.generateRESTEndPoint()
-        if(self.generalConfigs["CONFIG"]["activatedMethod"]["MQTT"]) : self.generateMQTTEndPoint()
-                
-        cond |= (self.generalConfigs["REST"]["endPointID"] == self.generalConfigs["MQTT"]["endPointID"])
-        cond &= self.generalConfigs["CONFIG"]["activatedMethod"]["REST"] and self.generalConfigs["CONFIG"]["activatedMethod"]["MQTT"]
-        if(cond):
-            self.joinEndPoints()
-
-        if(self.configs["serviceID"] == None):
-            self.configs["serviceID"] = self.generateServiceID()
-
-    def stopAllThreads(self):
-        for thread_id in [2,3]:
-            res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id,
-                ctypes.py_object(SystemExit))
-            if res > 1:
-                ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
-                print('Exception raise failure')
+        except HTTPError as e:
+            self.events["stopEvent"].set()
+            raise HTTPError(status=e.status, message="An error occurred while initializing registration: \u0085\u0009" + e._message)
+        except Exception as e:
+            self.events["stopEvent"].set()
+            raise self.serverErrorHandler.InternalServerError("An error occurred while initializing registration: \u0085\u0009" + str(e))
 
     def run(self):
         self.KeepAlive()
@@ -54,9 +53,9 @@ class Register(Thread):
             self.checkParams()
             self.validateParams()
         except HTTPError as e:
-            raise HTTPError(status=e.status, message="An error occurred while loading registration configs: \n\t" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while loading registration configs: \u0085\u0009" + e._message)
         except Exception as e:
-            raise self.serverErrorHandler.InternalServerError("An error occurred while loading registration configs: \n\t" + str(e))
+            raise self.serverErrorHandler.InternalServerError("An error occurred while loading registration configs: \u0085\u0009" + str(e))
 
 
     def checkParams(self):
@@ -90,7 +89,7 @@ class Register(Thread):
                 json.dump(configs, file, indent=4)
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError(
-                "An error occurred while updating the configuration file: \n\t" + str(e)
+                "An error occurred while updating the configuration file: \u0085\u0009" + str(e)
             )
 
     def generateServiceID(self):
@@ -101,8 +100,8 @@ class Register(Thread):
             url = self.configs["catalogAddress"] + ":" + str(self.configs["catalogPort"])+ "/checkPresence"
             params = {
                 "table" : "Services",
-                "keyNames" : "serviceID",
-                "keyValues" : newID
+                "keyName" : "serviceID",
+                "keyValue" : newID
             }
 
             response = get(url, params=params)
@@ -123,8 +122,8 @@ class Register(Thread):
             url = self.configs["catalogAddress"] + ":" + str(self.configs["catalogPort"])+ "/checkPresence"
             params = {
                 "table" : "EndPoints",
-                "keyNames" : "endPointID",
-                "keyValues" : newID
+                "keyName" : "endPointID",
+                "keyValue" : newID
             }
 
             response = get(url, params=params)
@@ -179,7 +178,7 @@ class Register(Thread):
         serverErrorHandler = Server_Error_Handler()
 
         firstRun = True
-        while True:
+        while not self.events["stopEvent"].is_set():
             try:
                 url = self.configs["catalogAddress"] + ":" + str(self.configs["catalogPort"]) + "/setService"
                 service = {
@@ -208,15 +207,15 @@ class Register(Thread):
                     raise HTTPError(response.status_code, str(response.text))
                 
             except HTTPError as e:
-                self.stopAllThreads()
-                raise HTTPError(status = e.status, message="An error occurred while sending keep alive request: \n\t" + e._message)
+                self.events["stopEvent"].set()
+                raise HTTPError(status = e.status, message="An error occurred while sending keep alive request: \u0085\u0009" + e._message)
             except Exception as e:
-                self.stopAllThreads()
-                raise serverErrorHandler.InternalServerError("An error occurred while sending keep alive request: \n\t" + str(e))
+                self.events["stopEvent"].set()
+                raise serverErrorHandler.InternalServerError("An error occurred while sending keep alive request: \u0085\u0009" + str(e))
             
             if(firstRun):
                 firstRun = False
-                self.queues["REST"].put(True)
-                self.queues["MQTT"].put(True)
+                print("REGISTRATION - Thread %s registered service for the first time" % current_thread().ident)
+                self.events["startEvent"].set()
             
             time.sleep(self.configs["T_Registration"]*60)

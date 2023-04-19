@@ -72,9 +72,9 @@ class User:
 
             save_entry2DB(DBPath, "Users", self.to_dict())
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\u0085\u0009" + str(e))
 
     def updateDB(self, DBPath):
         deviceIDs = []
@@ -90,9 +90,9 @@ class User:
             
             update_entry_inDB(DBPath, "Users", "userID", self.to_dict())
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while updating user with ID \"" + self.userID + "\" in the DB:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while updating user with ID \"" + self.userID + "\" in the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while updating user with ID \"" + self.userID + "\" in the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while updating user with ID \"" + self.userID + "\" in the DB:\u0085\u0009" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
@@ -103,9 +103,9 @@ class User:
             Device.cleanDB(DBPath)
             delete_entry_fromDB(DBPath, "Users", "userID", params["userID"])
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB:\u0085\u0009" + str(e))
             
         return True
 
@@ -116,9 +116,9 @@ class User:
             else:
                 self.updateDB(DBPath)
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\u0085\u0009" + str(e))
 
     def DB_to_dict(DBPath, user, verbose = True):
         try:
@@ -142,6 +142,6 @@ class User:
 
             return userData
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while retrieving user with ID \"" + userID + "\" from the DB:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while retrieving user with ID \"" + userID + "\" from the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while retrieving user with ID \"" + userID + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while retrieving user with ID \"" + userID + "\" from the DB:\u0085\u0009" + str(e))

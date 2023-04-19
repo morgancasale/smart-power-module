@@ -53,7 +53,7 @@ class Service:
                         try:
                             self.endPoints.append(EndPoint(endPointData))
                         except HTTPError as e:
-                            raise HTTPError(e.status, "Service's endPoints with ID " + endPointData["endPointID"] + " is not valid:\n\t" + e._message)
+                            raise HTTPError(e.status, "Service's endPoints with ID " + endPointData["endPointID"] + " is not valid:\u0085\u0009" + e._message)
         
                 case _:
                     raise HTTPError(status=400, message="Unexpected key \"" + key + "\"")
@@ -98,10 +98,10 @@ class Service:
                 try:
                     endPoint.set2DB(DBPath)
                 except HTTPError as e:
-                    msg = "An error occurred while saving service's endPoints with ID " + endPoint.endPointID + " is not valid:\n\t" + e._message
+                    msg = "An error occurred while saving service's endPoints with ID " + endPoint.endPointID + " is not valid:\u0085\u0009" + e._message
                     raise HTTPError(e.status, msg)
                 except Exception as e:
-                    msg = "An error occurred while saving service's endPoints with ID " + endPoint.endPointID + " is not valid:\n\t" + str(e)
+                    msg = "An error occurred while saving service's endPoints with ID " + endPoint.endPointID + " is not valid:\u0085\u0009" + str(e)
                     raise HTTPError(500, msg)
                 
                 endPointIDs.append(endPoint.endPointID)
@@ -128,9 +128,9 @@ class Service:
 
             save_entry2DB(DBPath, "Services", self.to_dict())
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\u0085\u0009" + str(e))
 
     def updateDB(self, DBPath):
         endPointIDs = []
@@ -145,10 +145,10 @@ class Service:
                 try:
                     endPoint.set2DB(DBPath)
                 except HTTPError as e:
-                    msg = "An error occurred while updating service's endPoints with ID \"" + endPoint.endPointID +"\":\n\t" + e._message
+                    msg = "An error occurred while updating service's endPoints with ID \"" + endPoint.endPointID +"\":\u0085\u0009" + e._message
                     raise HTTPError(e.status, msg)
                 except Exception as e:
-                    msg = "An error occurred while saving service's endPoints with ID \"" + endPoint.endPointID + "\":\n\t" + str(e)
+                    msg = "An error occurred while saving service's endPoints with ID \"" + endPoint.endPointID + "\":\u0085\u0009" + str(e)
                     raise HTTPError(500, msg)
                 
                 endPointIDs.append(endPoint.endPointID)            
@@ -176,9 +176,9 @@ class Service:
             update_entry_inDB(DBPath, "Services", "serviceID", self.to_dict())
                 
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while updating service with ID \"" + self.serviceID + "\" in the DB:\u0085\u0009" + str(e))
 
     def deleteFromDB(DBPath, params):
         try:
@@ -191,9 +191,9 @@ class Service:
 
             delete_entry_fromDB(DBPath, "Services", "serviceID", params["serviceID"])
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while deleting service with ID \"" + params["serviceID"] + "\" from the DB:\u0085\u0009" + str(e))
         
         return True
 
@@ -205,9 +205,9 @@ class Service:
             else:
                 self.updateDB(DBPath)
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving service with ID \"" + self.serviceID + "\" to the DB:\u0085\u0009" + str(e))
 
     def DB_to_dict(DBPath, service, verbose=False):
         try:
@@ -261,9 +261,9 @@ class Service:
 
             return serviceData
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB:\n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            a = HTTPError(status=400, message="An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB:\n\t" + str(e))
+            a = HTTPError(status=400, message="An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB:\u0085\u0009" + str(e))
             raise a
 
     def setOnlineStatus(entries):

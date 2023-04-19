@@ -4,6 +4,8 @@ from .register import *
 
 from .Error_Handler import *
 
+from threading import Event
+
 class ServiceBase(object):
     def __init__(self, config_file=None, init_REST_func=None, init_MQTT_func = None, GET=None, POST=None, PUT=None, DELETE=None, PATCH=None, Notifier=None):
         try: 
@@ -11,32 +13,59 @@ class ServiceBase(object):
             self.serverErrorHandler = Server_Error_Handler()
             self.config_file = config_file
 
-            self.configParams = ["activatedMethod", "houseID", "userID", "deviceID", "resourceID"]
+            self.init_REST_func = init_REST_func
+            self.init_MQTT_func = init_MQTT_func
+
+            self.GET = GET
+            self.POST = POST
+            self.PUT = PUT
+            self.DELETE = DELETE
+            self.PATCH = PATCH
+
+            self.Notifier = Notifier
+
+            self.configParams = ["activatedMethod", "HomeAssistant", "houseID", "userID", "deviceID", "resourceID"]
 
             self.check_and_loadConfigs()
 
-            queues = {
-                "REST": Queue(),
-                "MQTT": Queue()
-            }
+            if(self.configs["HomeAssistant"]["enabled"] and self.configs["HomeAssistant"]["autoHA"]):
+                self.getHAEndpoint()
 
+            self.events = {
+                "startEvent" : Event(),
+                "stopEvent" : Event()
+            }
+        except HTTPError as e:
+            raise HTTPError(status=e.status, message="An error occurred while initializing the service: \u0085\u0009" + e._message)
+        
+    def start(self):
+        try:
             if(self.generalConfigs["REGISTRATION"]["enabled"]):
-                self.registerService = Register(1, "RegThread", queues, self.generalConfigs, config_file)
+                self.registerService = Register(1, "RegThread", self.events, self.generalConfigs, self.config_file)
                 self.registerService.start()
             else:
-                queues["REST"].put(True)
-                queues["MQTT"].put(True)
+                self.events["startEvent"].set()
 
             if(self.configs["activatedMethod"]["REST"]):
-                self.REST = RESTServer(2, "RESTThread", queues["REST"], self.generalConfigs["REST"], init_REST_func, GET, POST, PUT, DELETE, PATCH)
+                self.REST = RESTServer(
+                    2, "RESTThread", self.events, self.generalConfigs["REST"], 
+                    self.init_REST_func, self.GET, self.POST, self.PUT, self.DELETE, self.PATCH
+                )
                 self.REST.start()
             
             if(self.configs["activatedMethod"]["MQTT"]):
-                self.MQTT = MQTTServer(3, "MQTTThread", queues["MQTT"], self.generalConfigs["MQTT"], config_file, init_MQTT_func, Notifier)
+                self.MQTT = MQTTServer(
+                    3, "MQTTThread", self.events, self.generalConfigs["MQTT"], 
+                    self.config_file, self.init_MQTT_func, self.Notifier
+                )
                 self.MQTT.start()
-    
         except HTTPError as e:
-            raise HTTPError(status=e.status, message="An error occurred while enabling the servers: \n\t" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while enabling the service: \u0085\u0009" + e._message)
+        except Exception as e:
+            raise self.serverErrorHandler.InternalServerError("An error occurred while enabling the service: \u0085\u0009" + str(e))
+
+    def stop(self):
+        self.events["stopEvent"].set()
     
     def check_and_loadConfigs(self):
         try:
@@ -47,12 +76,10 @@ class ServiceBase(object):
             self.validateParams()
         
         except HTTPError as e:
-            raise HTTPError(status=e.status, message="An error occurred while loading configs: \n\t" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while loading configs: \u0085\u0009" + e._message)
         except Exception as e:
-            raise self.serverErrorHandler.InternalServerError("An error occurred while loading configs: \n\t" + str(e))
+            raise self.serverErrorHandler.InternalServerError("An error occurred while loading configs: \u0085\u0009" + str(e))
         
-    
-    
     def checkParams(self):
         if(not all(key in self.configParams for key in list(self.configs.keys()))):
             raise self.clientErrorHandler.BadRequest("Missing parameters in config file")
@@ -76,8 +103,102 @@ class ServiceBase(object):
                             raise self.clientErrorHandler.BadRequest(key + " parameter must be a list or null")
                         if(not all(isinstance(item, str) for item in self.configs[key])):
                             raise self.clientErrorHandler.BadRequest(key + " parameter must be a list of strings")
+                case "HomeAssistant":
+                    for key in self.configs["HomeAssistant"].keys():
+                        match key:
+                            case ("enabled" | "autoHA"):
+                                if(not isinstance(self.configs["HomeAssistant"]["enabled"], bool)):
+                                    raise self.clientErrorHandler.BadRequest("HomeAssistant enabled parameter must be a boolean")
+                            case "token":
+                                if(not isinstance(self.configs["HomeAssistant"][key], str)):
+                                    raise self.clientErrorHandler.BadRequest("HomeAssistant " + key + " parameter must be a string")
+                            case "address":
+                                cond = self.configs["HomeAssistant"][key] != None
+                                cond &= not isinstance(self.configs["HomeAssistant"][key], str)
+                                if(cond):
+                                    raise self.clientErrorHandler.BadRequest("HomeAssistant " + key + " parameter must be a string")
+                            case "port":
+                                if(self.configs["HomeAssistant"][key] != None):
+                                    cond = not isinstance(self.configs["HomeAssistant"]["port"], int)
+                                    cond |= self.configs["HomeAssistant"]["port"] < 0 or self.configs["HomeAssistant"]["port"] > 65535
+                                    if(cond):
+                                        raise self.clientErrorHandler.BadRequest("HomeAssistant port parameter must be an integer between 0 and 65535")
+                                
+                            case ("address" | "port"):
+                                cond = not self.configs["HomeAssistant"]["autoHA"]
+                                cond &= (self.configs["HomeAssistant"]["address"] == None or self.configs["HomeAssistant"]["port"] == None)
+                                if(cond):
+                                    raise self.clientErrorHandler.BadRequest("HomeAssistant address and port parameters must be specified if autoHA is not enabled")
 
-        
+    def updateConfigFile(self, keys, dict):
+        if(not isinstance(keys, list)): keys = [keys]
+        try:
+            with open(self.config_file, "r") as file:
+                configs = json.load(file)
+            config = configs
+            for key in keys:
+                config = config[key]
+            config.update(dict)
+            with open(self.config_file, "w") as file:
+                json.dump(configs, file, indent=4)
+        except Exception as e:
+            raise self.serverErrorHandler.InternalServerError(
+                "An error occurred while updating the configuration file: \u0085\u0009" + str(e)
+            )
+
+    def getHAEndpoint(self):
+        try:
+            url = self.generalConfigs["REGISTRATION"]["catalogAddress"] + ":" 
+            url += str(self.generalConfigs["REGISTRATION"]["catalogPort"])+ "/getInfo"
+            params = {
+                "table" : "EndPoints",
+                "keyName" : "endPointName",
+                "keyValue" : "HomeAssistant"
+            }
+
+            response = get(url, params=params)
+            if(response.status_code != 200):
+                raise HTTPError(response.status_code, str(response.text))
+            
+            response = response.json()[0]
+
+            self.updateConfigFile(["CONFIG", "HomeAssistant"], {"address": response["IPAddress"], "port": response["port"]})
+
+        except HTTPError as e:
+            raise HTTPError(status=e.status, message="An error occurred while getting Home Assistant endpoint: \u0085\u0009" + e._message)
+        except Exception as e:
+            raise self.serverErrorHandler.InternalServerError("An error occurred while getting Home Assistant endpoint: \u0085\u0009" + str(e))
+
+
+    def notifyHA(self, payload):
+        r"""Allows to trigger a notification in Home Assistant
+            The method expects a dictionary with the following structure:
+            {
+                "title": "Notification title",
+                "message": "Notification message"
+            }
+        """
+        if(not self.configs["HomeAssistant"]["enabled"]):
+            raise self.clientErrorHandler.BadRequest("Home Assistant connection is not enabled")
+
+        try:
+            url = "%s:%s/api/services/notify/persistent_notification" % (
+                self.configs["HomeAssistant"]["address"], self.configs["HomeAssistant"]["port"]
+            )
+
+            headers = {
+                "Authorization": "Bearer " + self.configs["HomeAssistant"]["token"],
+                'content-type': "application/json",
+            }
+
+            response = requests.post(url, headers=headers, data=json.dumps(payload))
+            if(response.status_code != 200):
+                raise HTTPError(response.status_code, str(response.text))
+        except HTTPError as e:            
+            raise HTTPError(status=e.status, message="An error occurred while notifying Home Assistant: \u0085\u0009" + e._message)
+        except Exception as e:
+            raise self.serverErrorHandler.InternalServerError("An error occurred while notifying Home Assistant: \u0085\u0009" + str(e))
+            
 
 
 if __name__ == "__main__":

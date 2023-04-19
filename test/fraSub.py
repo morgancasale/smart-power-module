@@ -12,13 +12,24 @@ def notify(topic, payload):
 
 
      
-a = ServiceBase("test/fraSubFile.json",Notifier = notify)
 
-clientErrorHandler = Client_Error_Handler()
-
-a.MQTT.subscribe("/bro/#")
 
 if __name__ == "__main__":
+    a = ServiceBase("test/fraSubFile.json", Notifier = notify)
+    a.start()
+    clientErrorHandler = Client_Error_Handler()
+    topics = [    "/bro/99/1",
+                "/morgy/99/1",
+                "/ciao/97/1",
+                "/bro/97/1"]
+    time.sleep(5)
+    a.MQTT.subscribe(topics)
+
+#testare errori:
+    #1. accettaere più topic
+    #2. autobrocker
+    #3. topic non in lista
+    #4. wildcards
     while(True):
        pass
        time.sleep(3)

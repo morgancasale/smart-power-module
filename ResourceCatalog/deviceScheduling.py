@@ -89,9 +89,9 @@ class DeviceSchedule:
                 save_entry2DB(DBPath, "DeviceScheduling", dictData)
 
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occured while saving device settings to DB:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occured while saving device settings to DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occured while saving device settings to DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occured while saving device settings to DB:\u0085\u0009" + str(e))
         
     def update2DB(self, DBPath):
         self.save2DB(DBPath)
@@ -106,9 +106,9 @@ class DeviceSchedule:
             delete_entry_fromDB(DBPath, "DeviceScheduling", list(params.keys()), list(params.values()))
         
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occured while deleting device settings from DB:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occured while deleting device settings from DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occured while deleting device settings from DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occured while deleting device settings from DB:\u0085\u0009" + str(e))
         
         return True   
 
@@ -122,9 +122,9 @@ class DeviceSchedule:
                     DeviceSchedule.deleteFromDB(DBPath, {"deviceID": entry["deviceID"]})
 
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while cleaning the DB from devices:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while cleaning the DB from devices:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while cleaning the DB from devices:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while cleaning the DB from devices:\u0085\u0009" + str(e))
     
     def DB_to_dict(DBPath, deviceID):
         query = "SELECT * FROM DeviceScheduling WHERE deviceID = '" + deviceID + "'"
@@ -143,9 +143,9 @@ class DeviceSchedule:
             return data
 
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while getting device scheduling from DB:\n\t" + str(e._message))
+            raise HTTPError(status=400, message="An error occurred while getting device scheduling from DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while getting device scheduling from DB:\n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while getting device scheduling from DB:\u0085\u0009" + str(e))
 
 
         

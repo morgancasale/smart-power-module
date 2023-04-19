@@ -44,9 +44,9 @@ class Appliance:
             save_entry2DB(DBPath, "AppliancesInfo", self.to_dict())
         
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while saving the appliance \"" + self.applianceType + "\" in DB: \n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while saving the appliance \"" + self.applianceType + "\" in DB: \u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while saving the appliance \"" + self.applianceType + "\" in DB: \n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while saving the appliance \"" + self.applianceType + "\" in DB: \u0085\u0009" + str(e))
     
     def updateDB(self, DBPath):
         try:
@@ -56,9 +56,9 @@ class Appliance:
             update_entry_inDB(DBPath, "AppliancesInfo", "applianceType", self.to_dict())
         
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while updating the appliance \"" + self.applianceType + "\" in DB: \n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while updating the appliance \"" + self.applianceType + "\" in DB: \u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while updating the appliance \"" + self.applianceType + "\" in DB: \n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while updating the appliance \"" + self.applianceType + "\" in DB: \u0085\u0009" + str(e))
     
     def set2DB(self, DBPath):
         try:
@@ -68,9 +68,9 @@ class Appliance:
                 self.updateDB(DBPath)
         
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while setting the appliance \"" + self.applianceType + "\" in DB: \n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while setting the appliance \"" + self.applianceType + "\" in DB: \u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while setting the appliance \"" + self.applianceType + "\" in DB: \n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while setting the appliance \"" + self.applianceType + "\" in DB: \u0085\u0009" + str(e))
     
     def deleteFromDB(DBPath, params):
         try:
@@ -80,9 +80,9 @@ class Appliance:
             delete_entry_fromDB(DBPath, "AppliancesInfo", params["applianceType"])
         
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while deleting the appliance \"" + params["applianceType"] + "\" from DB: \n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while deleting the appliance \"" + params["applianceType"] + "\" from DB: \u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while deleting the appliance \"" + params["applianceType"] + "\" from DB: \n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while deleting the appliance \"" + params["applianceType"] + "\" from DB: \u0085\u0009" + str(e))
 
     def DB_to_dict(DBPath, appliance):
         try:
@@ -91,6 +91,6 @@ class Appliance:
         
             return applianceData
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while retrieving the appliance \"" + appliance["applianceType"] + "\" from DB: \n\t" + e._message)
+            raise HTTPError(status=400, message="An error occurred while retrieving the appliance \"" + appliance["applianceType"] + "\" from DB: \u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while retrieving the appliance \"" + appliance["applianceType"] + "\" from DB: \n\t" + str(e))
+            raise HTTPError(status=400, message="An error occurred while retrieving the appliance \"" + appliance["applianceType"] + "\" from DB: \u0085\u0009" + str(e))
