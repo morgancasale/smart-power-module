@@ -71,7 +71,7 @@ class Register(Thread):
                     if(not isinstance(self.configs["enabled"], bool)):
                         raise self.clientErrorHandler.BadRequest("enabled parameter must be a boolean")
                     self.enabled = self.configs["enabled"]
-                case ("serviceName", "serviceID", "catalogAddress"):
+                case ("serviceName" | "serviceID" | "catalogAddress"):
                     if(not isinstance(self.configs[key], str)):
                         raise self.clientErrorHandler.BadRequest(key + " parameter must be a string")
                     match key:

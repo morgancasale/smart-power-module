@@ -56,7 +56,7 @@ class ServiceBase(object):
             
             if(self.configs["activatedMethod"]["MQTT"]):
                 self.MQTT = MQTTServer(
-                    3, "MQTTThread", self.events, self.generalConfigs["MQTT"], 
+                    3, "MQTTThread", self.events, self.generalConfigs["MQTT"], self.generalConfigs,
                     self.config_file, self.init_MQTT_func, self.Notifier
                 )
                 self.MQTT.start()

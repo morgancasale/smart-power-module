@@ -121,7 +121,7 @@ class RESTServer(Thread):
     def validateParams(self):
         for key in self.configParams:
             match key:
-                case ("endPointID", "endPointName", "IPAddress"):
+                case ("endPointID" | "endPointName" | "IPAddress"):
                     if(not isinstance(self.configs[key], str)):
                         raise self.clientErrorHandler.BadRequest(key + " parameter must be a string")
                     match key:
