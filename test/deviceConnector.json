@@ -39,7 +39,7 @@
             "sub": true,
             "pub": true
         },
-        "clientID": "deviceConnector",
+        "clientID": "deviceConnectort",
         "MQTTTopics": {
             "sub": [
                 "SmartSocket/temperature"
@@ -51,7 +51,7 @@
         "QOS": 0
     },
     "REGISTRATION": {
-        "enabled": true,
+        "enabled": false,
         "serviceID": "SNDE34",
         "serviceName": "deviceConnector",
         "catalogAddress": "http://127.0.0.1",

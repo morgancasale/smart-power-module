@@ -18,10 +18,8 @@ if __name__ == "__main__":
     a = ServiceBase("test/fraSubFile.json", Notifier = notify)
     a.start()
     clientErrorHandler = Client_Error_Handler()
-    topics = [    "/bro/99/1",
-                "/morgy/99/1",
-                "/ciao/97/1",
-                "/bro/97/1"]
+    topics = [    "/+/+/1",
+    ]
     time.sleep(5)
     a.MQTT.subscribe(topics)
 

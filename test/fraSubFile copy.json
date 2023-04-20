@@ -29,12 +29,12 @@
             "PATCH": true
         }
     },
-    "MQTT": {
-        "endPointID": "EODM2Mz",
+    "MQTT": { 
+        "endPointID": null,
         "endPointName": "SubFRA",
         "autoBroker": false,
-        "brokerAddress": "broker.hivemq.com",
-        "brokerPort": 1833,
+        "brokerAddress": "broker.emqx.io",
+        "brokerPort": 1883,
         "subPub": {
             "sub": false,
             "pub": true
@@ -55,7 +55,7 @@
             ]
         },
         "QOS": 0
-    },
+},
     "REGISTRATION": {
         "enabled": true,
         "serviceID": "SNDE3OD",
