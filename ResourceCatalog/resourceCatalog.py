@@ -12,6 +12,8 @@ from houseSettings import *
 
 from service import Service
 
+from socketClass import *
+
 from devSettings import *
 from appliance import *
 
@@ -77,6 +79,13 @@ class ResourceCatalog:
                         entry.save2DB(self.DBPath)
                     return "Device registration was successful"
                 
+                case "regSocket":
+                    for socketData in params:
+                        entry = Socket(socketData, newSocket = True)
+
+                        entry.save2DB(self.DBPath)
+                    return "Socket registration was successful"
+                
                 case "regEndPoint":
                     for endPointData in params:
                         entry = EndPoint(endPointData, newEndPoint = True)
@@ -94,6 +103,7 @@ class ResourceCatalog:
                         entry = Appliance(applianceData, newAppliance = True)
                         entry.save2DB(self.DBPath)
                     return "Appliance registration was successful"
+                
                     
                 case "exit":
                     exit()
@@ -102,6 +112,8 @@ class ResourceCatalog:
                     raise HTTPError(status=400, message="The command \"" + cmd + "\" is not valid")
         except HTTPError as e:
             raise HTTPError(status=400, message="An error occurred while handling the POST request:\u0085\u0009" + e._message)
+        except Exception as e:
+            raise HTTPError(status=400, message="An error occurred while handling the POST request:\u0085\u0009" + str(e))
 
     def handlePutRequest(self, *uri):
         cmd = uri[1]
@@ -137,6 +149,12 @@ class ResourceCatalog:
                     
                     Device.setOnlineStatus(entries)
                     return "Device update was successful"
+                
+                case "setSocket":
+                    for socketData in params:
+                        entry = Socket(socketData)
+                        entry.set2DB(self.DBPath)
+                    return "Socket update was successful"
                 
                 case "setService":
                     for serviceData in params:
@@ -216,6 +234,12 @@ class ResourceCatalog:
                         entry = Device(deviceData)
                         entry.updateDB(self.DBPath)
                     return "Device update was successful"
+                
+                case "updateSocket":
+                    for socketData in params:
+                        entry = Socket(socketData)
+                        entry.updateDB(self.DBPath)
+                    return "Socket update was successful"
 
                 case "updateService":
                     for serviceData in params:
@@ -268,6 +292,11 @@ class ResourceCatalog:
                     for entry in params:
                         Device.deleteFromDB(self.DBPath, entry)
                     return "Device deletion was successful"
+                
+                case "delSocket":
+                    for entry in params:
+                        Socket.deleteFromDB(self.DBPath, entry)
+                    return "Socket deletion was successful"
 
                 case "delService":
                     for entry in params:
@@ -322,6 +351,8 @@ class ResourceCatalog:
                         reconstructedData.append(User.DB_to_dict(self.DBPath, sel, verbose))
                     case "Devices":
                         reconstructedData.append(Device.DB_to_dict(self.DBPath, sel, verbose))
+                    case "Sockets":
+                        reconstructedData.append(Socket.DB_to_dict(self.DBPath, sel))
                     case "Resources":
                         reconstructedData.append(Resource.DB_to_dict(self.DBPath, sel, requestEntry))
                     case "EndPoints":

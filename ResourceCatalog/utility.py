@@ -2,6 +2,7 @@ import pandas as pd
 import sqlite3 as sq
 import json
 from datetime import datetime
+import re
 
 from cherrypy import HTTPError
 
@@ -247,4 +248,7 @@ def updateConnTable(DBPath, data, newStatus = None):
     except Exception as e:
         raise HTTPError(status=400, message="An error occured while updating the connection table:\u0085\u0009" + str(e))
 
-            
+def isaMAC(value):
+    pattern = re.compile(r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$')
+    return pattern.match(value)
+    
