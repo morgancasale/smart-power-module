@@ -7,10 +7,12 @@ import time
 class dev_conn_DB():
     
     def __init__(self, jsonfile):
-        self.conn = sq.connect("C:/Users/hp/Desktop/IOT/lab4_es4/data_m.sqlite")
-        self.cursor = self.conn.cursor()
-        self.module_and_switches = 'Devices'
-        self.database= 'data'
+        with sq.connect("C:/Users/hp/Desktop/IOT/lab4_es4/data_m.sqlite") as self.conn:
+        #self.conn = sq.connect("C:/Users/hp/Desktop/IOT/lab4_es4/data_m.sqlite")
+            self.cursor = self.conn.cursor()
+            self.module_and_switches = 'Devices'
+            self.database= 'data'
+            self.max_rows =382466 # un mese di dati prendendone 1 ogni 6 secondi
 
         
         conf = json.load(open(jsonfile))
@@ -20,24 +22,44 @@ class dev_conn_DB():
         self.module = conf["Data"]["Active"]["Module"]
         self.passive = conf["Data"]["Passive"]
         self.moduleID = conf["deviceID"]
+        print(self.moduleID)
         timedate=conf["timestamp"]
-        #timedate= "2019-03-01T12:00:00Z"
         self.timestamp = int(time.mktime(time.strptime(timedate, "%Y-%m-%dT%H:%M:%SZ")))
-   
-        
-        #self.timestamp = date_object.strftime("%Y-%m-%d %H:%M:%S")
 
-    def addEntryDB(self):
-        values= (modifyDB.moduleID, modifyDB.passive['Power'], modifyDB.passive['Voltage'],\
-                 modifyDB.passive['Current'], modifyDB.timestamp)
-        modifyDB.cursor.execute("""INSERT INTO {} 
+
+    def addNewEntryDB(self):
+        values= (self.moduleID, self.passive['Power'], self.passive['Voltage'],\
+                 self.passive['Current'], self.timestamp)
+        self.cursor.execute("""INSERT INTO {} 
                             (deviceID, power, voltage, current, timestamp) 
-                            VALUES (?,?,?,?,?)""".format(modifyDB.database), values)
-        modifyDB.conn.commit()
+                         VALUES (?,?,?,?,?)""".format(self.database), values)
+        self.conn.commit()
         print('updated')
-        modifyDB.cursor.close()
         
         
+        
+    def deleteOldestEntry(self):
+        self.cursor.execute("""SELECT COUNT(*)
+                            FROM {} 
+                            WHERE deviceID=?""".format(self.database), (self.moduleID,))
+        result = self.cursor.fetchone()[0]
+        if result > self.max_rows: 
+            self.cursor.execute("""
+                            DELETE 
+                            FROM data_prova
+                            WHERE timestamp = (
+                            SELECT MIN(timestamp)
+                            FROM data_prova
+                            WHERE deviceID=?
+                            )
+                            AND deviceID=?
+                        """, (self.moduleID, self.moduleID))
+            self.conn.commit()
+            print('updated')
+       
+        self.cursor.close()
+        
+    
     def updateDevices(self):
         self.cursor.execute("""
             UPDATE {} 
@@ -46,16 +68,16 @@ class dev_conn_DB():
         """.format(self.module_and_switches), (self.timestamp, self.module, self.switches, self.moduleID))
         self.conn.commit()
         print("Record updated")
+        
 
 if __name__ == "__main__":
+    #change path
+    #
     modifyDB = dev_conn_DB('C:/Users/hp/Desktop/IOT/lab4_es4/deviceConn_sens/device.json')
     modifyDB.updateDevices()
-    modifyDB.addEntryDB()
-    modifyDB.cursor.close()
+    modifyDB.addNewEntryDB()
+    modifyDB.deleteOldestEntry()
     
-
-
-
 
 
 
