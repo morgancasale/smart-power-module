@@ -90,6 +90,7 @@ class MQTTServer(Thread):
             print("MQTT - Thread %s waiting for registration..." % current_thread().ident)
             self.events["startEvent"].wait()
             self.openMQTTServer()
+            
 
 
         except HTTPError as e:
@@ -113,7 +114,7 @@ class MQTTServer(Thread):
     def OnMessageReceived(self, a, b, msg):
         self.subNotifier(msg.topic, msg.payload)
 
-    def publish(self, topics, msg):
+    def Publish(self, topics, msg):
         while(not self.connected):
             time.sleep(5)
         if(not isinstance(topics, list)):
@@ -129,7 +130,7 @@ class MQTTServer(Thread):
             "Publisher is not active for this service")
 
 
-    def subscribe(self, topics):
+    def Subscribe(self, topics):
         while(not self.connected):
             time.sleep(5)
         if(not isinstance(topics, list)):
@@ -142,6 +143,7 @@ class MQTTServer(Thread):
                 self.checkTopic(topic,"sub")
                 if (len(topics) ==1):
                         MQTTTopics = (topic, 2)
+                        self.topics = topic
                 else:
                         MQTTTopics.append((topic, 2))
                         self.topics.append(topic)
@@ -152,13 +154,13 @@ class MQTTServer(Thread):
         else:
             raise self.clientErrorHandler.BadRequest("Error subscriber not activated")
 
-    def unsubscribe(self):
+    def Unsubscribe(self):
         if (self.isSub):
             self.Client.unsubscribe(self.topics)
 
     def stop(self):
         self.connected = False
-        self.unsubscribe()
+        self.Unsubscribe()
 
         self.Client.loop_stop()
         self.Client.disconnect()
@@ -253,10 +255,10 @@ class MQTTServer(Thread):
 
     def changeSubTopic(self, newtopic):
         if (self.configs["subPub"]["sub"]):
-            self.Client.unsubscribe()
+            self.Unsubscribe()
             for topic in newtopic:
                self.checkTopic(topic,"sub")
-               self.subscribe(newtopic,self.QOS)
+               self.Subscribe(newtopic)
         else:
             raise self.clientErrorHandler.BadRequest("Error subscriber not activated")
 
