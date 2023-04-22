@@ -4,7 +4,7 @@ from cherrypy import HTTPError
 class Socket:
     def __init__(self, socketData, newSocket = True):
         self.socketKeys = sorted([
-            "socketID", "deviceID", "MAC", "hub", "masterMAC", "slaveMAC", "RSSI"
+            "socketID", "deviceID", "MAC", "masterNode", "RSSI"
         ])
         
         if(newSocket) : self.checkKeys(socketData)
@@ -24,24 +24,16 @@ class Socket:
                         case "socketID": self.socketID = socketData["socketID"]
                         case "deviceID": self.deviceID = socketData["deviceID"]
                         
-                case ("MAC" | "masterMAC" | "slaveMAC"):
+                case "MAC":
                     if(not isinstance(socketData[key], str) or not isaMAC(socketData[key])):
                         raise HTTPError(status=400, message="Socket's \"" + key + "\" value must be a valid MAC address")
                     match key:
                         case "MAC": self.MAC = socketData["MAC"]
-                        case "masterMAC": 
-                            if(not check_presence_inDB(DBPath, "Sockets", "MAC", socketData["masterMAC"])):
-                                raise HTTPError(status=400, message="The master MAC address does not exist in the DB")
-                            self.masterMAC = socketData["masterMAC"]
-                        case "slaveMAC": 
-                            if(not check_presence_inDB(DBPath, "Sockets", "MAC", socketData["slaveMAC"])):
-                                raise HTTPError(status=400, message="The slave MAC address does not exist in the DB")
-                            self.slaveMAC = socketData["slaveMAC"]
 
-                case "hub":
+                case "masterNode":
                     if(not isinstance(socketData[key], bool)):
                         raise HTTPError(status=400, message="Socket's \"" + key + "\" value must be boolean")
-                    self.hub = socketData["hub"]
+                    self.masterNode = socketData["masterNode"]
                 
                 case "RSSI":
                     if(not isinstance(socketData[key], (int, float))):

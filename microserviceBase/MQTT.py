@@ -31,23 +31,8 @@ class MQTTServer(Thread):
             self.serverErrorHandler = Server_Error_Handler()
 
             if (self.check_and_loadConfigs()):
-
-                url = self.generalConfigs["REGISTRATION"]["catalogAddress"] + ":"
-                url += str(self.generalConfigs["REGISTRATION"]["catalogPort"])+ "/getInfo"
-                params = {
-                    "table": "EndPoints",
-                    "keyName": "endPointName",
-                    "keyValue": "MQTTBroker"
-                }
-
-
-                if (self.configs["autoBroker"]): # sse personalizzo prendo broker da config, senno da resource catalogue
-                    response= requests.get(url, params=params)
-                    if(response.status_code != 200):
-                        raise HTTPError(response.status_code, str(response.text))
-
-
-                    broker_AddPort = response.json()[0]
+                if (self.configs["autoBroker"]): # sse personalizzo prendo broker da config, senno da resource catalogue                    
+                    broker_AddPort = self.getMQTTBroker()
 
                     self.broker = broker_AddPort["IPAddress"]
                     self.brokerPort = broker_AddPort["port"]
@@ -78,7 +63,6 @@ class MQTTServer(Thread):
             )
 
     def openMQTTServer(self):
-        
         self.Client.connect(self.broker, self.brokerPort)
 
         self.Client.loop_start()
@@ -182,6 +166,26 @@ class MQTTServer(Thread):
             raise self.serverErrorHandler.InternalServerError(
                 "An error occurred while updating the configuration file: \u0085\u0009" + str(e)
             )
+        
+    def getMQTTBroker(self):
+        try:
+            url = self.generalConfigs["REGISTRATION"]["catalogAddress"] + ":"
+            url += str(self.generalConfigs["REGISTRATION"]["catalogPort"])+ "/getInfo"
+            params = {
+                "table": "EndPoints",
+                "keyName": "endPointName",
+                "keyValue": "MQTTBroker"
+            }
+
+            response = requests.get(url, params=params)
+            if(response.status_code != 200):
+                raise HTTPError(response.status_code, str(response.text))
+            
+            return response.json()[0]
+        except HTTPError as e:
+            raise self.clientErrorHandler.BadRequest("An error occurred while getting MQTT broker: \u0085\u0009" + e._message)
+        except Exception as e:
+            raise self.serverErrorHandler.InternalServerError("An error occurred while getting MQTT broker: \u0085\u0009" + str(e))
 
     def Wildcards(self,topic, subpub):
 

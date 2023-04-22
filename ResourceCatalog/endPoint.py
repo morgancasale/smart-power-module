@@ -2,7 +2,9 @@ from utility import *
 
 class EndPoint:
     def __init__(self, endPointData, newEndPoint = False):
-        self.endPointKeys = ["endPointID", "endPointName", "protocols", "IPAddress", "port", "clientID", "CRUDMethods", "MQTTTopics", "QOS"]
+        self.endPointKeys = ["endPointID", "endPointName", "protocols", 
+                             "IPAddress", "port", "clientID", "CRUDMethods", 
+                             "MQTTTopics", "MQTTUser", "MQTTPassword", "QOS"]
         self.connTables = ["DeviceEndP_conn"]
         
         if(newEndPoint) : self.checkKeys(endPointData)
@@ -33,7 +35,7 @@ class EndPoint:
     def checkSaveValues(self, endPointData):
         for key in endPointData.keys():
             match key:
-                case ("endPointID" | "endPointName"):
+                case ("endPointID" | "endPointName" | "MQTTUser" | "MQTTPassword"):
                     if(not isinstance(endPointData[key], str)):
                         raise HTTPError(status=400, message="End-point's \"" + key + "\" value must be string")
                     match key:
@@ -41,6 +43,10 @@ class EndPoint:
                             self.endPointID = endPointData["endPointID"]
                         case "endPointName":
                             self.endPointName = endPointData["endPointName"]
+                        case "MQTTUser":
+                            self.MQTTUser = endPointData["MQTTUser"]
+                        case "MQTTPassword":
+                            self.MQTTPassword = endPointData["MQTTPassword"]
 
                 case "protocols":
                     if(not("MQTT" in endPointData[key] or "REST" in endPointData[key])):

@@ -1,6 +1,7 @@
 import cherrypy
 import cherrypy_cors
 import json
+import requests
 
 from threading import Thread, Event, current_thread
 
@@ -151,7 +152,25 @@ class RESTServer(Thread):
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError("An error ocurred while loading REST configs: \u0085\u0009" + str(e))
 
-    
+    def getMQTTBroker(self):
+        try:
+            url = self.generalConfigs["REGISTRATION"]["catalogAddress"] + ":"
+            url += str(self.generalConfigs["REGISTRATION"]["catalogPort"])+ "/getInfo"
+            params = {
+                "table": "EndPoints",
+                "keyName": "endPointName",
+                "keyValue": "MQTTBroker"
+            }
+
+            response = requests.get(url, params=params)
+            if(response.status_code != 200):
+                raise HTTPError(response.status_code, str(response.text))
+            
+            return response.json()[0]
+        except HTTPError as e:
+            raise self.clientErrorHandler.BadRequest("An error occurred while getting MQTT broker: \u0085\u0009" + e._message)
+        except Exception as e:
+            raise self.serverErrorHandler.InternalServerError("An error occurred while getting MQTT broker: \u0085\u0009" + str(e))
 
     def openRESTServer(self):
         conf={
