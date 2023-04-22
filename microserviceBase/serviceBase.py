@@ -7,7 +7,9 @@ from .Error_Handler import *
 from threading import Event
 
 class ServiceBase(object):
-    def __init__(self, config_file=None, init_REST_func=None, init_MQTT_func = None, GET=None, POST=None, PUT=None, DELETE=None, PATCH=None, Notifier=None):
+    def __init__(self, config_file=None, init_REST_func=None, init_MQTT_func = None, 
+                 GET=None, POST=None, PUT=None, DELETE=None, PATCH=None, 
+                 Notifier=None):
         try: 
             self.clientErrorHandler = Client_Error_Handler()
             self.serverErrorHandler = Server_Error_Handler()
@@ -49,7 +51,7 @@ class ServiceBase(object):
 
             if(self.configs["activatedMethod"]["REST"]):
                 self.REST = RESTServer(
-                    2, "RESTThread", self.events, self.generalConfigs["REST"], 
+                    2, "RESTThread", self.events, self.generalConfigs["REST"], self.generalConfigs,
                     self.init_REST_func, self.GET, self.POST, self.PUT, self.DELETE, self.PATCH
                 )
                 self.REST.start()

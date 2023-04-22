@@ -10,7 +10,9 @@ from .Error_Handler import *
 class RESTServer(Thread):
     global allowedMethods
 
-    def __init__(self, threadID, threadName, events, configs, init_func=None, GETHandler=None, POSTHandler=None, PUTHandler=None, DELETEHandler=None, PATCHHandler=None):
+    def __init__(self, threadID, threadName, events, configs, generalConfigs,
+                 init_func=None, GETHandler=None, POSTHandler=None, PUTHandler=None, 
+                 DELETEHandler=None, PATCHHandler=None):
         Thread.__init__(self)
         self.threadID = threadID
         self.name = threadName
@@ -23,6 +25,7 @@ class RESTServer(Thread):
             self.clientErrorHandler = Client_Error_Handler()
             self.serverErrorHandler = Server_Error_Handler()
             self.configs = configs
+            self.generalConfigs = generalConfigs
 
             self.check_and_loadConfigs()
 
