@@ -14,20 +14,20 @@ pwd = "oppioppi"
 Client = myMQTT(clientID, broker, brokerPort, usr, pwd)
 Client.start()
 
-discoveryTopic = "homeassistant/sensor/test/dev1/config"
+system = "smartSockets"
+deviceID = "SSCK1"
 
-pubTopic = "homeassistant/sensor/test/dev1/state"
+discoveryTopics = [
+    "homeassistant/sensor/"+ system + "/"+ deviceID,
+    "homeassistant/switch/"+ system + "/"+ deviceID
+]
 
-availableTopic = "homeassistant/sensor/test/dev1/status"
+device_classes = ["voltage", "current", "power", "energy"]
+for device_class in device_classes:
+    dT = discoveryTopics[0] + "_" + device_class + "/config"
+    print(Client.Publish(dT, "", retain=True))
 
-regPayload = {
-    "name": "dev1",
-    "state_topic": pubTopic,
-    "unit_of_measurement": "W",
-    "value_template": "{{ value_json.power|default(0) }}",
-    "availability_topic": availableTopic,
-    "payload_available": "online",
-    "payload_not_available": "offline"
-}
-
-print(Client.Publish(discoveryTopic, ""))
+plugs = [0, 1, 2]
+for plug in plugs:
+    dT = discoveryTopics[1] + "_" + str(plug) + "/config"
+    print(Client.Publish(dT, "", retain=True))
