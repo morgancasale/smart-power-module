@@ -7,7 +7,9 @@ from .Error_Handler import *
 from threading import Event
 
 class ServiceBase(object):
-    def __init__(self, config_file=None, init_REST_func=None, init_MQTT_func = None, 
+    def __init__(self, config_file=None, 
+                 init_REST_func=None, add_REST_funcs = None, 
+                 init_MQTT_func = None, add_MQTT_funcs = None, 
                  GET=None, POST=None, PUT=None, DELETE=None, PATCH=None, 
                  Notifier=None):
         try: 
@@ -16,7 +18,10 @@ class ServiceBase(object):
             self.config_file = config_file
 
             self.init_REST_func = init_REST_func
+            self.add_REST_funcs = add_REST_funcs
+
             self.init_MQTT_func = init_MQTT_func
+            self.add_MQTT_funcs = add_MQTT_funcs
 
             self.GET = GET
             self.POST = POST
@@ -52,14 +57,16 @@ class ServiceBase(object):
             if(self.configs["activatedMethod"]["REST"]):
                 self.REST = RESTServer(
                     2, "RESTThread", self.events, self.generalConfigs["REST"], self.generalConfigs,
-                    self.init_REST_func, self.GET, self.POST, self.PUT, self.DELETE, self.PATCH
+                    self.init_REST_func, self.add_REST_funcs,
+                    self.GET, self.POST, self.PUT, self.DELETE, self.PATCH
                 )
                 self.REST.start()
             
             if(self.configs["activatedMethod"]["MQTT"]):
                 self.MQTT = MQTTServer(
                     3, "MQTTThread", self.events, self.generalConfigs["MQTT"], self.generalConfigs,
-                    self.config_file, self.init_MQTT_func, self.Notifier
+                    self.config_file, self.init_MQTT_func, self.add_MQTT_funcs,
+                    self.Notifier
                 )
                 self.MQTT.start()
         except HTTPError as e:

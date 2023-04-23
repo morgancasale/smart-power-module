@@ -11,7 +11,8 @@ class RESTServer(Thread):
     global allowedMethods
 
     def __init__(self, threadID, threadName, events, configs, generalConfigs,
-                 init_func=None, GETHandler=None, POSTHandler=None, PUTHandler=None, 
+                 init_func=None, add_funcs = None,
+                 GETHandler=None, POSTHandler=None, PUTHandler=None, 
                  DELETEHandler=None, PATCHHandler=None):
         Thread.__init__(self)
         self.threadID = threadID
@@ -26,6 +27,11 @@ class RESTServer(Thread):
             self.serverErrorHandler = Server_Error_Handler()
             self.configs = configs
             self.generalConfigs = generalConfigs
+
+            self.checkInputFunctions(init_func, add_funcs,
+                GETHandler, POSTHandler, PUTHandler, 
+                DELETEHandler, PATCHHandler
+            )
 
             self.check_and_loadConfigs()
 
@@ -45,6 +51,7 @@ class RESTServer(Thread):
                 self.PATCHHandler = PATCHHandler
                 allowedMethods.append("PATCH")
 
+            if(add_funcs != None): self.add_funcs = add_funcs
             if(init_func != None): init_func(self)            
             
         except HTTPError as e:
@@ -70,7 +77,7 @@ class RESTServer(Thread):
         except Exception as e:
             self.events["stopEvent"].set()
             raise self.serverErrorHandler.InternalServerError("An error occurred while running REST server: \u0085\u0009" + str(e))
-        
+   
     def waitStop(self):
         self.events["stopEvent"].wait()
         cherrypy.engine.exit()
@@ -118,6 +125,36 @@ class RESTServer(Thread):
         else:
             raise self.clientErrorHandler.MethodNotAllowed("PATCH method is not allowed")
 
+    def checkInputFunctions(self,init_func, add_funcs,
+        GETHandler, POSTHandler, PUTHandler, 
+        DELETEHandler, PATCHHandler):
+        try:
+            if(init_func != None and not callable(init_func)):
+                raise self.clientErrorHandler.BadRequest("Parameter init_func must be a function")
+            
+            if(add_funcs != None):
+                if(not isinstance(add_funcs, dict)):
+                    raise self.clientErrorHandler.BadRequest("Parameter add_funcs must be a dictionary")
+                if(not all(callable(func) for func in add_funcs.values())):
+                    raise self.clientErrorHandler.BadRequest("Parameter add_funcs must be a dictionary of functions")
+                
+            if(GETHandler != None and not callable(GETHandler)):
+                raise self.clientErrorHandler.BadRequest("Parameter GETHandler must be a function")
+            if(POSTHandler != None and not callable(POSTHandler)):
+                raise self.clientErrorHandler.BadRequest("Parameter POSTHandler must be a function")
+            if(PUTHandler != None and not callable(PUTHandler)):
+                raise self.clientErrorHandler.BadRequest("Parameter PUTHandler must be a function")
+            if(DELETEHandler != None and not callable(DELETEHandler)):
+                raise self.clientErrorHandler.BadRequest("Parameter DELETEHandler must be a function")
+            if(PATCHHandler != None and not callable(PATCHHandler)):
+                raise self.clientErrorHandler.BadRequest("Parameter PATCHHandler must be a function")
+        except HTTPError as e:
+            raise HTTPError(status=e.status, message = e._message)
+        except Exception as e:
+            raise self.serverErrorHandler.InternalServerError("An error occurred while checking input functions: \u0085\u0009" + str(e))
+        
+
+
     def checkParams(self):
         if(not all(key in self.configParams for key in self.configs.keys())):
             raise self.clientErrorHandler.BadRequest("Missing parameters in config file")
@@ -147,6 +184,8 @@ class RESTServer(Thread):
 
     def check_and_loadConfigs(self):        
         try:
+
+
             self.checkParams()
             self.validateParams()
             
