@@ -16,7 +16,7 @@ class MQTTServer(Thread):
         self.configParams = sorted([
             "endPointID", "endPointName", "autoBroker",
             "brokerAddress", "brokerPort", "subPub",
-            "clientID", "MQTTTopics", "QOS"
+            "clientID", "MQTTTopics", "QOS","username","password"
         ])
 
         self.connected = False
@@ -51,11 +51,17 @@ class MQTTServer(Thread):
 
                     self.broker = broker_AddPort["IPAddress"]
                     self.brokerPort = broker_AddPort["port"]
+                    self.username = broker_AddPort["MQTTUser"]
+                    self.password = broker_AddPort["MQTTPassword"]
                     if (self.broker == None or self.brokerPort == None):
                         raise self.clientErrorHandler.BadRequest("Missing broker address or port in Resource Catalogue")
+                    if (self.username == None or self.password == None):
+                        raise self.clientErrorHandler.BadRequest("Missing broker username or password in Resource Catalogue")
                     
                     if(self.generalConfigs["MQTT"]["brokerAddress"] == None or self.generalConfigs["MQTT"]["brokerPort"] == None):
                           self.updateConfigFile( {"brokerAddress": self.broker, "brokerPort": self.brokerPort})
+                    if(self.generalConfigs["MQTT"]["username"] == None or self.generalConfigs["MQTT"]["password"] == None):
+                          self.updateConfigFile( {"username": self.username, "password": self.password})
 
                 self.subNotifier = Notifier
 
@@ -78,7 +84,7 @@ class MQTTServer(Thread):
             )
 
     def openMQTTServer(self):
-        
+        self.Client.username_pw_set(username=self.username, password=self.password)
         self.Client.connect(self.broker, self.brokerPort)
 
         self.Client.loop_start()
@@ -301,12 +307,29 @@ class MQTTServer(Thread):
             if (not isinstance(self.configs["brokerAddress"], str)):
                 raise self.clientErrorHandler.BadRequest(
                     "brokerAddress parameter must be a string")
-            self.broker = self.configs["brokerAddress"]
+     
 
-            if (not isinstance(self.configs["brokerPort"], int)):
+        if(not self.configs["username"]):
+            if (not isinstance(self.configs["username"], str)):
+                raise self.clientErrorHandler.BadRequest(
+                    "username parameter must be a string")
+       
+        
+
+        if(not self.configs["password"]):
+            if (not isinstance(self.configs["password"], str)):
+                raise self.clientErrorHandler.BadRequest(
+                    "password parameter must be a string")
+        if(not self.configs["autoBroker"]):
+            self.broker = self.configs["brokerAddress"]
+            self.username = self.configs["username"]    
+            self.password = self.configs["password"]
+            self.brokerPort = self.configs["brokerPort"]    
+
+        if (not isinstance(self.configs["brokerPort"], int)):
                 raise self.clientErrorHandler.BadRequest(
                     "brokerPort parameter must be a int")
-            self.brokerPort = self.configs["brokerPort"]
+        
 
         if(not isinstance(self.configs["subPub"], dict)):
             raise self.clientErrorHandler.BadRequest(
