@@ -218,10 +218,10 @@ class SocketHandler():
         }
 
         devicePayload = {
-            "unique_id": "smartSocket1",
+            "unique_id": deviceID,
             "device": {
-                "name": "Smart Socket 1",
-                "identifiers": ["smartSocket1"],
+                "name": "Smart Socket " + deviceID,
+                "identifiers": [deviceID],
             }
         }
 
