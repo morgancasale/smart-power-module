@@ -4,7 +4,7 @@ from cherrypy import HTTPError
 class Socket:
     def __init__(self, socketData, newSocket = True):
         self.socketKeys = sorted([
-            "socketID", "deviceID", "MAC", "masterNode", "RSSI"
+            "socketID", "deviceID", "HAID", "MAC", "masterNode", "RSSI"
         ])
         
         if(newSocket) : self.checkKeys(socketData)
@@ -17,12 +17,13 @@ class Socket:
     def checkSaveValues(self, socketData):
         for key in socketData.keys():
             match key:
-                case ("socketID" | "deviceID"):
+                case ("socketID" | "deviceID" | "HAID"):
                     if(not isinstance(socketData[key], str)):
                         raise HTTPError(status=400, message="Socket's \"" + key + "\" value must be string")
                     match key:
                         case "socketID": self.socketID = socketData["socketID"]
                         case "deviceID": self.deviceID = socketData["deviceID"]
+                        case "HAID": self.HAID = socketData["HAID"]
                         
                 case "MAC":
                     if(not isinstance(socketData[key], str) or not isaMAC(socketData[key])):

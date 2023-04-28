@@ -114,25 +114,31 @@ class ServiceBase(object):
                         if(not all(isinstance(item, str) for item in self.configs[key])):
                             raise self.clientErrorHandler.BadRequest(key + " parameter must be a list of strings")
                 case "HomeAssistant":
+                    params = sorted(["enabled", "token", "address", "port", "baseTopic", "system"])
+                    if(not params == sorted(list(self.configs["HomeAssistant"].keys()))):
+                        raise self.clientErrorHandler.BadRequest("Missing parameters in HomeAssistant configs")
                     for key in self.configs["HomeAssistant"].keys():
                         match key:
                             case ("enabled" | "autoHA"):
                                 if(not isinstance(self.configs["HomeAssistant"]["enabled"], bool)):
                                     raise self.clientErrorHandler.BadRequest("HomeAssistant enabled parameter must be a boolean")
-                            case "token":
+                            case ("token" | "baseTopic" | "system"):
                                 if(not isinstance(self.configs["HomeAssistant"][key], str)):
                                     raise self.clientErrorHandler.BadRequest("HomeAssistant " + key + " parameter must be a string")
+                                self.HAToken = self.configs["HomeAssistant"][key]
                             case "address":
                                 cond = self.configs["HomeAssistant"][key] != None
                                 cond &= not isinstance(self.configs["HomeAssistant"][key], str)
                                 if(cond):
                                     raise self.clientErrorHandler.BadRequest("HomeAssistant " + key + " parameter must be a string")
+                                self.HAIP = self.configs["HomeAssistant"][key]
                             case "port":
                                 if(self.configs["HomeAssistant"][key] != None):
                                     cond = not isinstance(self.configs["HomeAssistant"]["port"], int)
                                     cond |= self.configs["HomeAssistant"]["port"] < 0 or self.configs["HomeAssistant"]["port"] > 65535
                                     if(cond):
                                         raise self.clientErrorHandler.BadRequest("HomeAssistant port parameter must be an integer between 0 and 65535")
+                                self.HAPort = self.configs["HomeAssistant"][key]
                                 
                             case ("address" | "port"):
                                 cond = not self.configs["HomeAssistant"]["autoHA"]

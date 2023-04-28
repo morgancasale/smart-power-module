@@ -99,9 +99,9 @@ class SocketHandler():
         except Exception as e:
             raise HTTPError(status=500, message=str(e))
         
-    def regSocket(self, MAC, RSSI, catalogAddress, catalogPort):
+    def regSocket(catalogAddress, catalogPort, HAIP, HAPort, HAToken, MAC, RSSI, system, baseTopic):
         try:
-            url = "%s:%s/regSocket" % (
+            url = "%s:%s/setSocket" % (
                 catalogAddress,
                 str(catalogPort)
             )
@@ -110,10 +110,20 @@ class SocketHandler():
                 'content-type': "application/json",
             }
 
-            payload = self.genSocket(MAC, "D"+randomB64String(6), RSSI, catalogAddress, catalogPort)
+            payload = SocketHandler.genSocket(MAC, "D"+randomB64String(6), RSSI, catalogAddress, catalogPort)
             response = requests.post(url, headers=headers, data=json.dumps(payload))
             if(response.status_code != 200):
-                raise HTTPError(response.status_code, str(response.text))
+                raise HTTPError(response.status_code, str(response.text))            
+
+            SocketHandler.regSocket_toHA(payload["deviceID"], system, baseTopic)
+
+            HAID = SocketHandler.getHAID(payload["deviceID"], HAIP, HAPort, HAToken)
+
+            payload["HAID"] = HAID
+            response = requests.put(url, headers=headers, data=json.dumps(payload))
+            if(response.status_code != 200):
+                raise HTTPError(response.status_code, str(response.text))      
+            
             return payload
         except HTTPError as e:
             raise HTTPError(status=e.status, message=e._message)
@@ -149,9 +159,9 @@ class SocketHandler():
             data = {}
             out = {}
             if(SocketHandler.checkPresenceOfSocket(params["MAC"], catalogAddress, catalogPort)): # if the socket is already registered
-                data = self.getSocket(params["MAC"], catalogAddress, catalogPort)[0][0]
+                data = SocketHandler.getSocket(params["MAC"], catalogAddress, catalogPort)[0][0]
             else:
-                data = self.regSocket(params["MAC"], float(params["RSSI"]), catalogAddress, catalogPort)[0][0]
+                data = SocketHandler.regSocket( catalogAddress, catalogPort, self.HAIP, self.HAPort, self.HAToken, self.system, self.baseTopic, params["MAC"], float(params["RSSI"]))[0][0]
 
             out["socketID"] = data["socketID"]
             out["masterNode"] = data["masterNode"]
@@ -180,9 +190,9 @@ class SocketHandler():
                 "An error occurred while getting MQTT broker: \u0085\u0009" + str(e)
             )
 
-    def regSocket_toHA(self, deviceID):
-        stateSensorTopic = self.baseTopic + "sensor/" + self.system + "/" + deviceID + "/state"
-        availableSensorTopic = self.baseTopic + "sensor/" + self.system + "/" + deviceID + "/status"
+    def regSocket_toHA(self, deviceID, system, baseTopic):
+        stateSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID + "/state"
+        availableSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID + "/status"
 
         sensorsPayload = [
             {
@@ -225,9 +235,9 @@ class SocketHandler():
             }
         }
 
-        stateSwitchTopic = self.baseTopic + "switch/" + self.system + "/" + deviceID + "/state"
-        commandSwitchTopic = self.baseTopic + "switch/" + self.system + "/" + deviceID + "/control"
-        availableSwitchTopic = self.baseTopic + "switch/" + self.system + "/" + deviceID + "/status"
+        stateSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/state"
+        commandSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/control"
+        availableSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/status"
 
         switchesPayload = [
             {
@@ -262,7 +272,7 @@ class SocketHandler():
             sensor.update(sensorsGeneralPayload)
             sensor.update(devicePayload)
             sensor["unique_id"] = sensor["unique_id"] + "_" + sensor["device_class"]
-            discTopic = self.baseTopic + "sensor/" + self.system + "/" + deviceID + "_" + sensor["device_class"] + "/config"
+            discTopic = baseTopic + "sensor/" + system + "/" + deviceID + "_" + sensor["device_class"] + "/config" # homeassistant/sensor/smartSocket/
             print(self.service.MQTT.Publish(discTopic, json.dumps(sensor)))
 
         i = 0
@@ -270,14 +280,14 @@ class SocketHandler():
             switch.update(switchesGeneralPayload)
             switch.update(devicePayload)
             switch["unique_id"] = switch["unique_id"] + "_" + str(i)
-            discTopic = self.baseTopic + "switch/" + self.system + "/" + deviceID + "_" + str(i) + "/config"
+            discTopic = baseTopic + "switch/" + system + "/" + deviceID + "_" + str(i) + "/config"
             print(self.service.MQTT.Publish(discTopic, json.dumps(switch)))
             i+=1
 
-    def delSocket_fromHA(self, deviceID):
+    def delSocket_fromHA(self, deviceID, baseTopic, system):
         discoveryTopics = [
-            self.baseTopic + "sensor/" + self.system + "/"+ deviceID,
-            self.baseTopic + "switch/" + self.system + "/"+ deviceID
+            baseTopic + "sensor/" + system + "/"+ deviceID,
+            baseTopic + "switch/" + system + "/"+ deviceID
         ]
 
         device_classes = ["voltage", "current", "power", "energy"]
@@ -288,5 +298,53 @@ class SocketHandler():
         plugs = [0, 1, 2]
         for plug in plugs:
             dT = discoveryTopics[1] + "_" + str(plug) + "/config"
-            print(self.service.MQTT.Publish(dT, "", retain=True))    
+            print(self.service.MQTT.Publish(dT, "", retain=True))  
+
+    def getHAID(deviceID, HAIP, HAPort, HAToken):
+        try:
+            template = """{% set devices = states | map(attribute='entity_id') | map('device_id') | unique | reject('eq',None) | list %}
+                {%- set ns = namespace(devices = []) %}
+                {%- for """ + deviceID + """ in devices %}
+                {%- set ids = (device_attr(device, "identifiers") | list)[0] | list -%}
+                {%- if "mqtt" in ids %}
+                    {%- set entities = device_entities(device) | list %}
+                    {%- if entities %}
+                    {%- set ns.devices = ns.devices + 
+                    [ {
+                        "name": device_attr(device, "name"), "entities" : entities, "identifiers" : ids
+                        } ] %}
+                    {%- endif %}
+                {%- endif %}
+                {%- endfor %}
+                {{ ns.devices }}"""
+
+            url = "%s:%s/api/template" % (
+                HAIP, 
+                str(HAPort)
+            )
+
+            HAToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU"
+            headers = {
+                "Authorization": "Bearer " + HAToken,
+                'content-type': "application/json",
+            }
+
+            response = requests.post(url, headers=headers, data=json.dumps({"template": template}))
+
+            text = response.text.replace("\'", "\"")
+            response = json.loads(text)
+
+            return response[0]["entities"][0].split("_")[1]
+        except HTTPError as e:
+            msg = """
+                An error occurred while 
+                getting devices info from Home Assistant: \u0085\u0009
+            """ + e._message
+            raise HTTPError(status=e.status, message = msg)
+        except Exception as e:
+            msg = """
+                An error occurred while 
+                getting devices info from Home Assistant: \u0085\u0009
+            """ + str(e)
+            raise Server_Error_Handler.InternalServerError(message = msg)
     
