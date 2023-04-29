@@ -253,9 +253,12 @@ class MQTTServer(Thread):
         if ("+" not in topic and "#" not in topic):
             if ( topic  not in self.configs["MQTTTopics"][subpub]):
                 raise self.clientErrorHandler.BadRequest("Error topic not in config file")
-
+        
         else:
-           self.Wildcards(topic, subpub)
+           if(self.configs["subPub"]["pub"]):
+                 raise self.clientErrorHandler.BadRequest("Error: use of wildcards in pub topic ")
+           else:
+                 self.Wildcards(topic, subpub)
         return True
 
 
