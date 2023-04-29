@@ -128,9 +128,13 @@ class MQTTServer(Thread):
         if (self.configs["subPub"]["pub"]):
             for topic in topics:
                 self.checkTopic(topic, "pub")
-
-                print("Publishing '%s' at topic '%s'" % (msg, topic))
-                self.Client.publish(topic, json.dumps(msg), 2)
+                if(len(self.publishtopics)>0):
+                    for i in  range(len(self.publishtopics)):
+                         print("Publishing '%s' at topic '%s'" % (msg, self.publishtopics[i]))
+                         self.Client.publish(self.publishtopics[i], json.dumps(msg), 2)
+                else:
+                    print("Publishing '%s' at topic '%s'" % (msg, topic))
+                    self.Client.publish(topic, json.dumps(msg), 2)
         else:
             raise self.clientErrorHandler.BadRequest(
             "Publisher is not active for this service")
@@ -190,6 +194,7 @@ class MQTTServer(Thread):
             )
 
     def Wildcards(self,topic, subpub):
+        self.publishtopics = []
 
         topic = topic.split("/")
         hash_find = [i for i, x in enumerate(topic) if x == "#"]
@@ -244,6 +249,10 @@ class MQTTServer(Thread):
             listTopic.append(singleTopic)
 
         if( subtopic in listTopic):
+            if(subpub == "pub"):
+                indexpub =  [i for i, x in enumerate(listTopic) if x == subtopic]
+                for j in indexpub:
+                    self.publishtopics.append(self.configs["MQTTTopics"][subpub][j])
             return True
         else:
             raise self.clientErrorHandler.BadRequest("Error topic not in config file")
@@ -255,10 +264,11 @@ class MQTTServer(Thread):
                 raise self.clientErrorHandler.BadRequest("Error topic not in config file")
         
         else:
-           if(self.configs["subPub"]["pub"]):
-                 raise self.clientErrorHandler.BadRequest("Error: use of wildcards in pub topic ")
-           else:
-                 self.Wildcards(topic, subpub)
+           self.Wildcards(topic, subpub)
+           
+           
+                 
+                 
         return True
 
 
