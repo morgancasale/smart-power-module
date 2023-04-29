@@ -129,9 +129,9 @@ class MQTTServer(Thread):
             for topic in topics:
                 self.checkTopic(topic, "pub")
                 if(len(self.publishtopics)>0):
-                    for i in  range(len(self.publishtopics)):
-                         print("Publishing '%s' at topic '%s'" % (msg, self.publishtopics[i]))
-                         self.Client.publish(self.publishtopics[i], json.dumps(msg), 2)
+                    for publishtopic in  self.publishtopics:
+                         print("Publishing '%s' at topic '%s'" % (msg, publishtopic))
+                         self.Client.publish(publishtopic, json.dumps(msg), 2)
                 else:
                     print("Publishing '%s' at topic '%s'" % (msg, topic))
                     self.Client.publish(topic, json.dumps(msg), 2)
@@ -195,74 +195,88 @@ class MQTTServer(Thread):
 
     def Wildcards(self,topic, subpub):
         self.publishtopics = []
-
+        Topic = topic
         topic = topic.split("/")
         hash_find = [i for i, x in enumerate(topic) if x == "#"]
         plus_find = [i for i, x in enumerate(topic) if x == "+"]
         subtopic = []
+        if("#" in char for char in self.configs["MQTTTopics"][subpub]):
+             hash_topics = []
+             hash_input_topic = []
+             for topics in self.configs["MQTTTopics"][subpub]:
+                 if("#" in topics):
+                     hash_find_topics = [i for i, x in enumerate(topics.split("/")) if x == "#"]
+                     hash_topics.append(topics.split("/")[:hash_find_topics[0]])
+                     hash_input_topic.append(topic[:hash_find_topics[0]])
+             for i in range(len(hash_input_topic)):
+                if(hash_input_topic[i] in hash_topics):
+                    self.publishtopics.append(Topic)
+                    return True    
+        else:
 
-        if(hash_find != []):
+            if(hash_find != []):
 
-            if (len(hash_find) > 1):
-                raise self.clientErrorHandler.BadRequest("Error # wildcard can't be more than one")
+                if (len(hash_find) > 1):
+                    raise self.clientErrorHandler.BadRequest("Error # wildcard can't be more than one")
 
-            if (len(plus_find) < 1):
-                subtopic.extend(topic[0:hash_find[0]])
+                if (len(plus_find) < 1):
+                    subtopic.extend(topic[0:hash_find[0]])
 
-            else:
-                if (plus_find[-1] > hash_find[0]):
-                    raise self.clientErrorHandler.BadRequest("Error + wildcard can't be before #")
+                else:
+                    if (plus_find[-1] > hash_find[0]):
+                        raise self.clientErrorHandler.BadRequest("Error + wildcard can't be before #")
+                    temp = 0
+                    for i in range(len(plus_find)):
+                        subtopic.extend(topic[temp:plus_find[i]-1])
+                        temp = plus_find[i]+1
+                    if (hash_find > 0):
+                        subtopic.extend(topic[temp:hash_find[0]]  )
+                    else:
+                        subtopic.extend(topic[temp:])
+            elif (plus_find != []):
                 temp = 0
                 for i in range(len(plus_find)):
                     subtopic.extend(topic[temp:plus_find[i]-1])
                     temp = plus_find[i]+1
-                if (hash_find > 0):
-                    subtopic.extend(topic[temp:hash_find[0]]  )
+                subtopic.extend(topic[temp:])
+            listTopic = []
+
+
+            for i in range(len(self.configs["MQTTTopics"][subpub])):
+                singleTopic = []
+
+                if (len(plus_find) == 0):
+
+                    singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[0:hash_find[0]])
                 else:
-                    subtopic.extend(topic[temp:])
-        elif (plus_find != []):
-            temp = 0
-            for i in range(len(plus_find)):
-                subtopic.extend(topic[temp:plus_find[i]-1])
-                temp = plus_find[i]+1
-            subtopic.extend(topic[temp:])
-        listTopic = []
+                    temp = 0
+                    for j in range(len(plus_find)):
+                        singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[temp:plus_find[j]-1])
+                        temp = plus_find[j]+1
 
+                    if (hash_find != []):
+                        singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[temp:hash_find[0]])
+                    else:
+                        singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[temp:])
 
-        for i in range(len(self.configs["MQTTTopics"][subpub])):
-            singleTopic = []
+                listTopic.append(singleTopic)
 
-            if (len(plus_find) == 0):
-
-                 singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[0:hash_find[0]])
+            if( subtopic in listTopic):
+                if(subpub == "pub"):
+                    indexpub =  [i for i, x in enumerate(listTopic) if x == subtopic]
+                    for j in indexpub:
+                        self.publishtopics.append(self.configs["MQTTTopics"][subpub][j])
+                return True
             else:
-                temp = 0
-                for j in range(len(plus_find)):
-                    singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[temp:plus_find[j]-1])
-                    temp = plus_find[j]+1
-
-                if (hash_find != []):
-                    singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[temp:hash_find[0]])
-                else:
-                    singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[temp:])
-
-            listTopic.append(singleTopic)
-
-        if( subtopic in listTopic):
-            if(subpub == "pub"):
-                indexpub =  [i for i, x in enumerate(listTopic) if x == subtopic]
-                for j in indexpub:
-                    self.publishtopics.append(self.configs["MQTTTopics"][subpub][j])
-            return True
-        else:
-            raise self.clientErrorHandler.BadRequest("Error topic not in config file")
+                raise self.clientErrorHandler.BadRequest("Error topic not in config file")
 
 
     def checkTopic(self,topic, subpub):
-        if ("+" not in topic and "#" not in topic):
-            if ( topic  not in self.configs["MQTTTopics"][subpub]):
-                raise self.clientErrorHandler.BadRequest("Error topic not in config file")
-        
+        if(subpub == "sub"):   
+            if ("+" not in topic and "#" not in topic ):
+                if ( topic  not in self.configs["MQTTTopics"][subpub]):
+                    raise self.clientErrorHandler.BadRequest("Error topic not in config file")
+            
         else:
            self.Wildcards(topic, subpub)
            
