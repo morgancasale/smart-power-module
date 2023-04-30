@@ -29,9 +29,9 @@ def getSocketTopics():
         
         return response.json()[0]["MQTTTopics"]
     except HTTPError as e:
-        raise server.clientErrorHandler.BadRequest("An error occurred while getting MQTT broker: \u0085\u0009" + e._message)
+        raise server.clientErrorHandler.BadRequest(msg="An error occurred while getting MQTT broker: \u0085\u0009" + e._message)
     except Exception as e:
-        raise server.serverErrorHandler.InternalServerError("An error occurred while getting MQTT broker: \u0085\u0009" + str(e))
+        raise server.serverErrorHandler.InternalServerError(msg="An error occurred while getting MQTT broker: \u0085\u0009" + str(e))
 
 def GET(self, *uri, **params):
     try:
@@ -155,8 +155,7 @@ def genSocket(MAC, deviceID, RSSI):
         socket["MAC"] = MAC
         socket["deviceID"] = deviceID
         socket["masterNode"] = False
-        socket["masterMAC"] = "09:09:09:09:09:09"
-        socket["slaveMAC"] = "09:09:09:09:08:08"
+        socket["HAID"] = None
         socket["RSSI"] = RSSI
         return socket
     except HTTPError as e:

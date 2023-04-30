@@ -20,6 +20,7 @@ Client.start()
 baseTopic = "homeassistant/"
 system = "smartSockets"
 deviceID = "SSCK1"
+identifier = "SmartSocket"
 
 stateSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID + "/state"
 availableSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID + "/status"
@@ -58,10 +59,10 @@ sensorsGeneralPayload = {
 }
 
 devicePayload = {
-    "unique_id": "smartSocket1",
+    "unique_id": deviceID,
     "device": {
-        "name": "Smart Socket 1",
-        "identifiers": ["smartSocket1"],
+        "name": "Smart Socket " + deviceID,
+        "identifiers": [deviceID],
     }
 }
 

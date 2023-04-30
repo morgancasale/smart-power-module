@@ -14,8 +14,8 @@ pwd = "oppioppi"
 Client = myMQTT(clientID, broker, brokerPort, usr, pwd)
 Client.start()
 
-system = "smartSockets"
-deviceID = "SSCK1"
+system = "smartSocket"
+deviceID = "DMjk1Mw"
 
 discoveryTopics = [
     "homeassistant/sensor/"+ system + "/"+ deviceID,

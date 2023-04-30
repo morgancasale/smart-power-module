@@ -17,13 +17,17 @@ class Socket:
     def checkSaveValues(self, socketData):
         for key in socketData.keys():
             match key:
-                case ("socketID" | "deviceID" | "HAID"):
+                case ("socketID" | "deviceID"):
                     if(not isinstance(socketData[key], str)):
                         raise HTTPError(status=400, message="Socket's \"" + key + "\" value must be string")
                     match key:
                         case "socketID": self.socketID = socketData["socketID"]
                         case "deviceID": self.deviceID = socketData["deviceID"]
-                        case "HAID": self.HAID = socketData["HAID"]
+
+                case "HAID":
+                    if(socketData[key] != None and not isinstance(socketData[key], str)):
+                        raise HTTPError(status=400, message="Socket's \"" + key + "\" value must be string")
+                    self.HAID = socketData["HAID"]
                         
                 case "MAC":
                     if(not isinstance(socketData[key], str) or not isaMAC(socketData[key])):

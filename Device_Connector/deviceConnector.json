@@ -33,6 +33,8 @@
         "autoBroker": true,
         "brokerAddress": "broker.hivemq.com",
         "brokerPort": 1883,
+        "username": "",
+        "password": "",
         "subPub": {
             "sub": true,
             "pub": true
@@ -44,7 +46,8 @@
                 "pizzapazza/1"
             ],
             "pub": [
-                "smartSocket/control"
+                "smartSocket/control",
+                "homeassistant/#"
             ]
         },
         "QOS": 0
