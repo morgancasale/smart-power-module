@@ -1,5 +1,12 @@
+import os
+import sys
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+sys.path.append(PROJECT_ROOT)
+
 from utility import *
 import time
+
+from microserviceBase.Error_Handler import *
 class DeviceSchedule:
     def __init__(self, schedulingData, newSchedule = False):
         self.schedulingKeys = ["deviceID", "socketID", "mode", "startSchedule", "enableEndSchedule", "endSchedule", "repeat"]
@@ -14,41 +21,41 @@ class DeviceSchedule:
 
     def checkKeys(self, schedulingData):
         if(not all(key in self.schedulingKeys for key in schedulingData.keys())):
-            raise HTTPError(status=400, message="Missing one or more keys")
+            raise Client_Error_Handler.BadRequest(message="Missing one or more keys")
         
     def checkSaveValues(self, schedulingData):
         for key in schedulingData.keys():
             match key:
                 case ("deviceID" | "mode"):
                     if(not isinstance(schedulingData[key], str)):
-                        raise HTTPError(status=400, message="Scheduling's \"" + key + "\" value must be a string")
+                        raise Client_Error_Handler.BadRequest(message="Scheduling's \"" + key + "\" value must be string")
                     match key:
                         case "deviceID": self.deviceID = schedulingData["deviceID"]
                         case "socketID": self.socketID = schedulingData["socketID"]
                         case "mode":
                             if(not schedulingData["mode"] in ["ON", "OFF"]):
-                                raise HTTPError(status=400, message="Scheduling's \"" + key + "\" value must be \"ON\" or \"OFF\"") 
+                                raise Client_Error_Handler.BadRequest(message="Scheduling's \"" + key + "\" value must be \"ON\" or \"OFF\"")
                             self.mode = schedulingData["mode"]
 
                 case ("socketID" | "repeat"):
                     if(not isinstance(schedulingData[key], int) or schedulingData[key] < 0):
-                        raise HTTPError(status=400, message="Scheduling's \"" + key + "\" value must be a positive integer")
+                        raise Client_Error_Handler.BadRequest(message="Scheduling's \"" + key + "\" value must be a positive number")
                     match key:
                         case "socketID": 
                             if(schedulingData["socketID"] not in [0, 1, 2]):
-                                raise HTTPError(status=400, message="Scheduling's \"" + key + "\" value must be 0, 1 or 2")
+                                raise Client_Error_Handler.BadRequest(message="Scheduling's \"" + key + "\" value must be 0, 1 or 2")
                             self.socketID = schedulingData["socketID"]
                         case "repeat": 
                             self.repeat = schedulingData["repeat"]
 
                 case "enableEndSchedule":
                     if(not isinstance(schedulingData[key], bool)):
-                        raise HTTPError(status=400, message="Scheduling's \"" + key + "\" value must be a boolean")
+                        raise Client_Error_Handler.BadRequest(message="Scheduling's \"" + key + "\" value must be boolean")
                     self.enableEndSchedule = schedulingData["enableEndSchedule"]
                 
                 case ("startSchedule"):
                     if(not istimeinstance(schedulingData[key])):
-                        raise HTTPError(status=400, message="Scheduling's \"" + key + "\" value must be feasible timestamp")
+                        raise Client_Error_Handler.BadRequest(message="Scheduling's \"" + key + "\" value must be feasible timestamp")
                     
                     if(len(schedulingData[key].split("/")[0])<4):
                         timestamp = datetime.strptime(schedulingData[key], "%d-%m-%Y %H:%M")
@@ -60,7 +67,7 @@ class DeviceSchedule:
                 case "endSchedule":
                     if(self.enableEndSchedule):
                         if(not istimeinstance(schedulingData[key])):
-                            raise HTTPError(status=400, message="Scheduling's \"" + key + "\" value must be feasible timestamp")
+                            raise Client_Error_Handler.BadRequest(message="Scheduling's \"" + key + "\" value must be feasible timestamp")
                         
                         if(len(schedulingData[key].split("/")[0])<4):
                             timestamp = datetime.strptime(schedulingData[key], "%d/%m/%Y %H:%M")
@@ -70,14 +77,19 @@ class DeviceSchedule:
                         self.endSchedule = timestamp
                     
                 case _:
-                    raise HTTPError(status=400, message="Unexpected key \"" + key + "\"")
+                    raise Client_Error_Handler.BadRequest(message="Unexpected key \"" + key + "\"")
                 
     def to_dict(self):
         result = {}
-        for key in self.schedulingKeys:
-            if(getattr(self, key)!=None) : result[key] = getattr(self, key)
-            
-        return result
+        try:
+            for key in self.schedulingKeys:
+                if(getattr(self, key)!=None) : result[key] = getattr(self, key)
+                
+            return result
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(
+                message="An error occured while converting device settings to dictionary:\u0085\u0009" + str(e)
+            )
     
     def save2DB(self, DBPath):
         try: 
@@ -89,9 +101,11 @@ class DeviceSchedule:
                 save_entry2DB(DBPath, "DeviceScheduling", dictData)
 
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occured while saving device settings to DB:\u0085\u0009" + str(e._message))
+            raise HTTPError(status=e.status, message="An error occured while saving device settings to DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occured while saving device settings to DB:\u0085\u0009" + str(e))
+            raise Server_Error_Handler.InternalServerError(
+                message="An error occured while saving device settings to DB:\u0085\u0009" + str(e)
+            )
         
     def update2DB(self, DBPath):
         self.save2DB(DBPath)
@@ -106,9 +120,11 @@ class DeviceSchedule:
             delete_entry_fromDB(DBPath, "DeviceScheduling", list(params.keys()), list(params.values()))
         
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occured while deleting device settings from DB:\u0085\u0009" + str(e._message))
+            raise HTTPError(status=e.status, message="An error occured while deleting device settings from DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occured while deleting device settings from DB:\u0085\u0009" + str(e))
+            raise Server_Error_Handler.InternalServerError(
+                message="An error occured while deleting device settings from DB:\u0085\u0009" + str(e)
+            )
         
         return True   
 
@@ -122,9 +138,11 @@ class DeviceSchedule:
                     DeviceSchedule.deleteFromDB(DBPath, {"deviceID": entry["deviceID"]})
 
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while cleaning the DB from devices:\u0085\u0009" + str(e._message))
+            raise HTTPError(status=e.status, message="An error occurred while cleaning the DB from devices:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while cleaning the DB from devices:\u0085\u0009" + str(e))
+            raise Server_Error_Handler.InternalServerError(
+                message="An error occurred while cleaning the DB from devices:\u0085\u0009" + str(e)
+            )
     
     def DB_to_dict(DBPath, deviceID):
         query = "SELECT * FROM DeviceScheduling WHERE deviceID = '" + deviceID + "'"
@@ -143,9 +161,11 @@ class DeviceSchedule:
             return data
 
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while getting device scheduling from DB:\u0085\u0009" + str(e._message))
+            raise HTTPError(status=e.status, message="An error occurred while getting device scheduling from DB:\u0085\u0009" + str(e._message))
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while getting device scheduling from DB:\u0085\u0009" + str(e))
+            raise Server_Error_Handler.InternalServerError(
+                message="An error occurred while getting device scheduling from DB:\u0085\u0009" + str(e)
+            )
 
 
         

@@ -1,3 +1,8 @@
+import os
+import sys
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+sys.path.append(PROJECT_ROOT)
+
 import pandas as pd
 import sqlite3 as sq
 import json
@@ -9,6 +14,7 @@ from cherrypy import HTTPError
 DBPath = "ResourceCatalog/db.sqlite"
 broker = "broker.hivemq.com"
 
+from microserviceBase.serviceBase import *
 
 def check_presence_inDB(DBPath, table, keyName, keyValue):
     try:
@@ -23,7 +29,7 @@ def check_presence_inDB(DBPath, table, keyName, keyValue):
         query = "SELECT COUNT(*)>0 as result FROM " + table + " WHERE " + keyName + " = " + keyValue
         return bool(DBQuery_to_dict(DBPath, query)[0]["result"]) #True if the keyValue is present in the DB
     except Exception as e:
-        raise HTTPError(status=400, message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
+        raise Server_Error_Handler.InternalServerError(message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
     
 
 def check_presence_ofColumnInDB(DBPath, table, columnName):
@@ -31,14 +37,14 @@ def check_presence_ofColumnInDB(DBPath, table, columnName):
         query = "SELECT COUNT(*)>0 AS result FROM pragma_table_info(\"" + table + "\") WHERE name=\"" + columnName + "\""
         return bool(DBQuery_to_dict(DBPath, query)[0]["result"])
     except Exception as e:
-        raise HTTPError(status=400, message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
+        raise Server_Error_Handler.InternalServerError(message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
 
 def check_presence_ofTableInDB(DBPath, table):
     try:
         query = "SELECT COUNT(*)>0 AS result FROM sqlite_master WHERE (type, name) = (\"table\", \"" + table + "\")"
         return bool(DBQuery_to_dict(DBPath, query)[0]["result"])
     except Exception as e:
-        raise HTTPError(status=400, message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
+        raise Server_Error_Handler.InternalServerError(message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
 
 def check_presence_inConnectionTables(DBPath, tables, keyName, keyValue):
     try:
@@ -47,9 +53,11 @@ def check_presence_inConnectionTables(DBPath, tables, keyName, keyValue):
             if(check_presence_ofColumnInDB(DBPath, table, keyName)):
                 result &= check_presence_inDB(DBPath, table, keyName, keyValue)
         
-        return result               
+        return result
+    except HTTPError as e:
+        raise HTTPError(status=e.status, message="An error occured while checking presence in DB:\u0085\u0009" + e._message)
     except Exception as e:
-        raise HTTPError(status=400, message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
+        raise Server_Error_Handler.InternalServerError(message="An error occured while checking presence in DB:\u0085\u0009" + str(e))
 
 def save_entry2DB(DBPath, table, entryData):
     try:
@@ -81,7 +89,7 @@ def save_entry2DB(DBPath, table, entryData):
         conn.commit()
         conn.close()
     except Exception as e:
-        raise HTTPError(status=400, message="An error occured while saving data to DB:\u0085\u0009" + str(e))
+        raise Server_Error_Handler.InternalServerError(message="An error occured while saving data to DB:\u0085\u0009" + str(e))
 
 def update_entry_inDB(DBPath, table, primaryKeyNames, entryData):
     r"""
@@ -135,7 +143,7 @@ def update_entry_inDB(DBPath, table, primaryKeyNames, entryData):
         conn.commit()
         conn.close()
     except Exception as e:
-        raise HTTPError(status=400, message=str(e))
+        raise Server_Error_Handler.InternalServerError(message=str(e))
 
 def delete_entry_fromDB(DBPath, table, keyName, keyValue):
     try:
@@ -154,7 +162,7 @@ def delete_entry_fromDB(DBPath, table, keyName, keyValue):
         conn.commit()
         conn.close()
     except Exception as e:
-        raise HTTPError(status=400, message="An error occured while deleting data from DB:\u0085\u0009" + str(e))
+        raise Server_Error_Handler.InternalServerError(message="An error occured while deleting data from DB:\u0085\u0009" + str(e))
 
 def nested_dict_pairs_iterator(dict_obj):
     ''' This function accepts a nested dictionary as argument
@@ -182,17 +190,20 @@ def fixJSONString(string):
     return string
 
 def DBQuery_to_dict(DBPath, query):
-    conn = sq.connect(DBPath)
-    result = pd.read_sql_query(query, conn)
-    conn.close()
+    try:
+        conn = sq.connect(DBPath)
+        result = pd.read_sql_query(query, conn)
+        conn.close()
 
-    data = result.to_json(orient="records")
-    data = json.loads(fixJSONString(data))
-    if(not isinstance(data, list)):
-        data = [data]
-    if (len(data) == 0):
-        return [None]
-    return data
+        data = result.to_json(orient="records")
+        data = json.loads(fixJSONString(data))
+        if(not isinstance(data, list)):
+            data = [data]
+        if (len(data) == 0):
+            return [None]
+        return data
+    except Exception as e:
+        raise Server_Error_Handler.InternalServerError(message="An error occured while querying DB:\u0085\u0009" + str(e))
 
 def getIDs_fromDB(DBPath, table, keyName):
     query = "SELECT " + keyName + " FROM " + table
@@ -221,14 +232,14 @@ def updateConnTable(DBPath, data, newStatus = None):
         connValues = data["connValues"]
 
         if(not check_presence_ofTableInDB(DBPath, table)):
-            raise HTTPError(status=400, message="Table \"" + table + "\" does not exist.")
+            raise Client_Error_Handler.NotFound(message="Table \"" + table + "\" does not exist.")
         
         for keyName in [refID, connID]:
             if(not check_presence_ofColumnInDB(DBPath, table, keyName)):
-                raise HTTPError(status=400, message="The column \"" + keyName + "\" does not exist in the table \"" + table + "\"")
+                raise Client_Error_Handler.NotFound(message="The column \"" + keyName + "\" does not exist in the table \"" + table + "\"")
             
         if(not check_presence_inDB(DBPath, table, refID, refValue)):
-            raise HTTPError(status=400, message="The entry \"" + refValue + "\" of column \"" + refID + "\" does not exist in the table \"" + table + "\"")
+            raise Client_Error_Handler.NotFound(status=400, message="The entry \"" + refValue + "\" of column \"" + refID + "\" does not exist in the table \"" + table + "\"")
         
         for connValue in connValues:
             entry = {
@@ -246,7 +257,7 @@ def updateConnTable(DBPath, data, newStatus = None):
     except HTTPError as e:
         raise HTTPError(status=e.status, message="An error occured while updating the connection table:\u0085\u0009" + e._message)
     except Exception as e:
-        raise HTTPError(status=400, message="An error occured while updating the connection table:\u0085\u0009" + str(e))
+        raise Server_Error_Handler.InternalServerError(message="An error occured while updating the connection table:\u0085\u0009" + str(e))
 
 def isaMAC(value):
     pattern = re.compile(r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$')

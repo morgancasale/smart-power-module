@@ -42,6 +42,6 @@ class Server_Error_Handler:
         #server non può eseguire la richiesta, nome sbagliato o metodo non supportato
         return HTTPError(status=501, message=msg)
     def ServiceUnavailable(self=None, msg=None):
-        #server non può eseguire la richiesta,server not ready is down or overloaded
+        #server non può eseguire la richiesta, fserver not ready is down or overloaded
         return HTTPError(status=503, message=msg)
     

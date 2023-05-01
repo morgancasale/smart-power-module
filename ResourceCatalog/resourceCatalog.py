@@ -10,8 +10,6 @@ sys.path.append(PROJECT_ROOT)
 from house import *
 from houseSettings import *
 
-from service import Service
-
 from socketClass import *
 
 from devSettings import *
@@ -50,9 +48,12 @@ class ResourceCatalog:
                     return self.exit(self.filename)
 
                 case _:
-                    raise HTTPError(status=400, message="Unexpected invalid command")
+                    raise Server_Error_Handler.NotImplemented(message="The command \"" + cmd + "\" is not valid")
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while handling the GET request:\u0085\u0009" + e._message)
+            raise HTTPError(status=e.status, message = "An error occurred while handling the GET request:\u0085\u0009" + e._message)
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(message="An error occurred while handling the GET request:\u0085\u0009" + e._message)
+        
 
     def handlePostRequest(self, *uri):
         cmd = uri[1]
@@ -109,11 +110,11 @@ class ResourceCatalog:
                     exit()
 
                 case _:
-                    raise HTTPError(status=400, message="The command \"" + cmd + "\" is not valid")
+                    raise Server_Error_Handler.NotImplemented(message="The command \"" + cmd + "\" is not valid")
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while handling the POST request:\u0085\u0009" + e._message)
+            raise HTTPError(status=e.status, message ="An error occurred while handling the POST request:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while handling the POST request:\u0085\u0009" + str(e))
+            raise Server_Error_Handler.InternalServerError(message="An error occurred while handling the POST request:\u0085\u0009" + str(e))
 
     def handlePutRequest(self, *uri):
         cmd = uri[1]
@@ -207,9 +208,11 @@ class ResourceCatalog:
                     exit()
 
                 case _:
-                    raise HTTPError(status=400, message="Unexpected invalid command")
+                    raise Server_Error_Handler.NotImplemented(message="The command \"" + cmd + "\" is not valid")
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while handling the PUT request:\u0085\u0009" + e._message)
+            raise HTTPError(status=e.status, message = "An error occurred while handling the PUT request:\u0085\u0009" + e._message)
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(message="An error occurred while handling the PUT request:\u0085\u0009" + str(e))
 
     def handlePatchRequest(self, *uri):
         cmd = uri[1]
@@ -268,9 +271,11 @@ class ResourceCatalog:
                     exit()
 
                 case _:
-                    raise HTTPError(status=400, message="Unexpected invalid command")
+                    raise Server_Error_Handler.NotImplemented(message="The command \"" + cmd + "\" is not valid")
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while handling the PATCH request:\u0085\u0009" + e._message)
+            raise HTTPError(status=e.status, message = "An error occurred while handling the PATCH request:\u0085\u0009" + e._message)
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(message="An error occurred while handling the PATCH request:\u0085\u0009" + str(e))
 
     def handleDeleteRequest(self, *uri):
         cmd = uri[1]
@@ -332,9 +337,11 @@ class ResourceCatalog:
                     exit()
 
                 case _:
-                    raise HTTPError(status=400, message="Unexpected invalid command")
+                    raise Server_Error_Handler.NotImplemented(message="The command \"" + cmd + "\" is not valid")
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while handling the DELETE request:\u0085\u0009" + e._message)        
+            raise HTTPError(status=e.status, message = "An error occurred while handling the DELETE request:\u0085\u0009" + e._message)
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(message="An error occurred while handling the DELETE request:\u0085\u0009" + str(e))   
 
     def reconstructJson(self, table, selectedData, requestEntry, verbose = False):
         reconstructedData = []
@@ -364,13 +371,13 @@ class ResourceCatalog:
                     case "AppliancesInfo":
                         reconstructedData.append(Appliance.DB_to_dict(self.DBPath, sel))
                     case _:
-                        raise HTTPError(status=400, message="Unexpected invalid table")
+                        raise Server_Error_Handler.NotImplemented(message="Unexpected invalid table")
+                    
+            return reconstructedData
         except HTTPError as e:
-            raise e
+            raise HTTPError(status=e.status, message = "An error occurred while reconstructing data:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message=e)
-
-        return reconstructedData
+            raise Server_Error_Handler.InternalServerError(message="An error occurred while reconstructing data:\u0085\u0009" + str(e))
     
     def checkPresence(self, entry): # check if an entry is present in the DB
         try:
@@ -379,65 +386,67 @@ class ResourceCatalog:
             keyValue = entry["keyValue"]
             
             return json.dumps({"result" : check_presence_inDB(self.DBPath, table, keyName, keyValue)})
+        except HTTPError as e:
+            raise HTTPError(status=e.status, message = "An error occurred while checking the presence of an entry in the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while checking the presence of an entry in the DB:\u0085\u0009" + str(e))            
+            raise Server_Error_Handler.InternalServerError(message="An error occurred while checking the presence of an entry in the DB:\u0085\u0009" + str(e))         
 
     def extractByKey(self, entry):
-        table = entry["table"]
-        keyName = entry["keyName"]
-        keyValue = entry["keyValue"]
-        verbose = False
-        if("verbose" in entry.keys()): verbose = entry["verbose"]        
-
-        selectedData = None
-
-        if(not isinstance(keyValue, list)) : keyValue = [keyValue]
-
-        if(not isinstance(keyName, str)):
-            raise HTTPError(status=400, message="Key name must be a single string") 
-        if(not all(isinstance(keyV, str) for keyV in keyValue)):
-            raise HTTPError(status=400, message="Key values must be string")       
-        if(not isinstance(table, str)):
-            raise HTTPError(status=400, message="Table name must be single string")
-
-        if(not isinstance(keyValue, list)) : keyValue = [keyValue]
-
         try:
-            conn = sq.connect(self.DBPath)       
-            if(keyValue[0] == "*"):
-                query = "SELECT * FROM " + table
-            else:
-                query = "SELECT * FROM " + table + " WHERE " + keyName + " IN (\"" + "\", \"".join(keyValue) + "\")"
+            table = entry["table"]
+            keyName = entry["keyName"]
+            keyValue = entry["keyValue"]
+            verbose = False
+            if("verbose" in entry.keys()): verbose = entry["verbose"]        
+
+            selectedData = None
+
+            if(not isinstance(keyValue, list)) : keyValue = [keyValue]
+
+            if(not isinstance(keyName, str)):
+                raise Client_Error_Handler.BadRequest(message="Key name must be a single string") 
+            if(not all(isinstance(keyV, str) for keyV in keyValue)):
+                raise Client_Error_Handler.BadRequest(message="Key values must be string")       
+            if(not isinstance(table, str)):
+                raise Client_Error_Handler.BadRequest(message="Table name must be single string")
+
+            if(not isinstance(keyValue, list)) : keyValue = [keyValue]
+
+            try:
+                conn = sq.connect(self.DBPath)       
+                if(keyValue[0] == "*"):
+                    query = "SELECT * FROM " + table
+                else:
+                    query = "SELECT * FROM " + table + " WHERE " + keyName + " IN (\"" + "\", \"".join(keyValue) + "\")"
+                
+                selectedData = pd.read_sql_query(query, conn).to_dict(orient="records")
+                conn.close()
+            except Exception as e:
+                raise Server_Error_Handler.InternalServerError(message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
+
+            if len(selectedData) == 0:
+                message = "No entry found in table \"" + table
+                message += "\" with key " + keyName + " and values " + "[\"" + "\", \"".join(keyValue) + "\"]"
+                raise Client_Error_Handler.NotFound(message=message)
+
+            reconstructedData = None
+            reconstructedData = ResourceCatalog.reconstructJson(self, table, selectedData, entry, verbose=verbose)
             
-            selectedData = pd.read_sql_query(query, conn).to_dict(orient="records")
-            conn.close()
-        except Exception as e:
-            raise HTTPError(status=400, message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
-
-        if len(selectedData) == 0:
-            msg = "No entry found in table \"" + table
-            msg += "\" with key " + keyName + " and values " + "[\"" + "\", \"".join(keyValue) + "\"]"
-            raise HTTPError(status=400, message=msg)
-
-        reconstructedData = None
-        try:
-            reconstructedData = ResourceCatalog.reconstructJson(self, table, selectedData, entry, verbose=verbose) 
+            return json.dumps(reconstructedData)
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occured while reconstructing data:\u0085\u0009" + e._message)
+            raise HTTPError(status=e.status, message = "An error occurred while extracting data from DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occured while reconstructing data:\u0085\u0009" + str(e))
-        
-        return json.dumps(reconstructedData)
+            raise Server_Error_Handler.InternalServerError(message="An error occurred while extracting data from DB:\u0085\u0009" + str(e))
         
 
     def updateConnStatus(self, connData): #TODO check integrity of request
         try:
             if(not check_presence_ofTableInDB(self.DBPath, connData["table"])): 
-                raise HTTPError(status=400, message="The table \"" + connData["table"] + "\" does not exist")
+                raise Client_Error_Handler.NotFound(message="The table \"" + connData["table"] + "\" does not exist")
             
             for keyName in connData["keyName"]:
                 if(not check_presence_ofColumnInDB(self.DBPath, connData["table"], keyName)):
-                    raise HTTPError(status=400, message="The column \"" + keyName + "\" does not exist in the table \"" + connData["table"] + "\"")
+                    raise Client_Error_Handler.NotFound(message="The column \"" + keyName + "\" does not exist in the table \"" + connData["table"] + "\"")
             
             for conn in connData["conns"]:               
                 if(conn["new_status"]):
@@ -448,16 +457,16 @@ class ResourceCatalog:
                 
                 else:
                     if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyName"], conn["keyValue"])):
-                        msg = "The entry (\"" + conn["keyValue"][0] +", " + conn["keyValue"][1]
-                        msg += "\") does not exist in the table \"" + connData["table"] + "\""
-                        raise HTTPError(status=400, message=msg)
+                        message = "The entry (\"" + conn["keyValue"][0] +", " + conn["keyValue"][1]
+                        message += "\") does not exist in the table \"" + connData["table"] + "\""
+                        Client_Error_Handler.NotFound(message=message)
 
                     delete_entry_fromDB(self.DBPath, connData["table"], connData["keyName"], conn["keyValue"])
 
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while updating a connection:\u0085\u0009" + e._message)
+            raise HTTPError(status=e.status, message ="An error occurred while updating a connection:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while updating a connection:\u0085\u0009" + str(e))
+            raise Server_Error_Handler.InternalServerError(message="An error occurred while updating a connection:\u0085\u0009" + str(e))
         
 
 if __name__ == "__main__":

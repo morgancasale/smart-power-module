@@ -17,14 +17,14 @@ class User:
     
     def checkKeys(self, userData):
         if(not all(key in self.userKeys for key in userData.keys())):
-            raise HTTPError(status=400, message="Missing one or more keys")
+            raise Client_Error_Handler.BadRequest(message="Missing one or more keys")
 
     def checkSaveValues(self, userData):
         for key in userData.keys():
             match key:
                 case ("userID" | "Name" | "Surname" | "Email"):
                     if(not isinstance(userData[key], str)):
-                        raise HTTPError(status=400, message="User's \"" + key + "\"'s value must be a string")
+                        raise Client_Error_Handler.BadRequest(message="User's \"" + key + "\"'s value must be a string")
                     match key:
                         case "userID":
                             self.userID = userData["userID"]
@@ -35,16 +35,16 @@ class User:
                 case "Email":
                     email_pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
                     if(re.match(email_pattern, userData["Email"]) == None): 
-                        raise HTTPError(status=400, message=userData["Email"] +" isn't a valid email address")
+                        raise Client_Error_Handler.BadRequest(message=userData["Email"] +" isn't a valid email address")
                     self.email = userData["Email"]
                 case "deviceID":
                     if(not all(isinstance(deviceID, str) for deviceID in userData["deviceID"])):
-                        raise HTTPError(status=400, message="User's \"deviceID\" value must be a list of strings")
+                        raise Client_Error_Handler.BadRequest(message="User's \"deviceID\" value must be a list of strings")
                     self.deviceID = userData["deviceID"]
 
 
                 case _:
-                    raise HTTPError(status=400, message="Unexpected key \"" + key + "\"")
+                    raise Client_Error_Handler.BadRequest(message="Unexpected key \"" + key + "\"")
         
 
     def to_dict(self):
@@ -60,27 +60,33 @@ class User:
     def save2DB(self, DBPath):
         try:
             if(check_presence_inDB(DBPath, "Users", "userID", self.userID)):
-                raise HTTPError(status=400, message="A user with ID \"" + self.userID + "\" already exists in the database")
+                raise Client_Error_Handler.BadRequest(message="A user with ID \"" + self.userID + "\" already exists in the database")
             
             if("deviceID" in self.userData.keys()):
                 for deviceID in self.deviceID:
                     if(not check_presence_inDB(DBPath, "Devices", "deviceID", deviceID)):
-                        raise HTTPError(status=400, message="A device with ID \"" + deviceID + "\" does not exist in the database")
+                        raise Client_Error_Handler.NotFound(message="A device with ID \"" + deviceID + "\" does not exist in the database")
 
                     self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
                     save_entry2DB(DBPath, "UserDevice_conn", {"userID": self.userID, "deviceID": deviceID, "lastUpdate": self.lastUpdate})
 
             save_entry2DB(DBPath, "Users", self.to_dict())
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\u0085\u0009" + e._message)
+            raise HTTPError(
+                status=e.status, message="An error occurred while saving user with ID \"" + 
+                self.userID + "\" to the DB:\u0085\u0009" + e._message
+            )
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\u0085\u0009" + str(e))
+            raise Server_Error_Handler.InternalServerError(
+                message="An error occurred while saving user with ID \"" + 
+                self.userID + "\" to the DB:\u0085\u0009" + str(e)
+            )
 
     def updateDB(self, DBPath):
         deviceIDs = []
         try:
             if(not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
-                raise HTTPError(status=400, message="A user with ID \"" + self.userID + "\" does not exist in the database")
+                raise Client_Error_Handler.BadRequest(message="A user with ID \"" + self.userID + "\" does not exist in the database")
             
             self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
@@ -90,9 +96,12 @@ class User:
             
             update_entry_inDB(DBPath, "Users", "userID", self.to_dict())
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while updating user with ID \"" + self.userID + "\" in the DB:\u0085\u0009" + e._message)
+            raise HTTPError(status=e.status, message="An error occurred while updating user with ID \"" + self.userID + "\" in the DB:\u0085\u0009" + e._message)
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while updating user with ID \"" + self.userID + "\" in the DB:\u0085\u0009" + str(e))
+            raise Server_Error_Handler.InternalServerError(
+                message="An error occurred while updating user with ID \"" + 
+                self.userID + "\" in the DB:\u0085\u0009" + str(e)
+            )
 
     def deleteFromDB(DBPath, params):
         try:
@@ -103,9 +112,15 @@ class User:
             Device.cleanDB(DBPath)
             delete_entry_fromDB(DBPath, "Users", "userID", params["userID"])
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB:\u0085\u0009" + e._message)
+            raise HTTPError(
+                status=e.status, message="An error occurred while deleting user with ID \"" + 
+                params["userID"] + "\" from the DB:\u0085\u0009" + e._message
+            )
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while deleting user with ID \"" + params["userID"] + "\" from the DB:\u0085\u0009" + str(e))
+            raise Server_Error_Handler.InternalServerError(
+                message="An error occurred while deleting user with ID \"" + 
+                params["userID"] + "\" from the DB:\u0085\u0009" + str(e)
+            )
             
         return True
 
@@ -116,9 +131,15 @@ class User:
             else:
                 self.updateDB(DBPath)
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\u0085\u0009" + str(e._message))
+            raise HTTPError(
+                status=e.status, message="An error occurred while saving user with ID \"" + 
+                self.userID + "\" to the DB:\u0085\u0009" + str(e._message)
+            )
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while saving user with ID \"" + self.userID + "\" to the DB:\u0085\u0009" + str(e))
+            raise Server_Error_Handler.InternalServerError(
+                message="An error occurred while saving user with ID \"" + 
+                self.userID + "\" to the DB:\u0085\u0009" + str(e)
+            )
 
     def DB_to_dict(DBPath, user, verbose = True):
         try:
@@ -142,6 +163,12 @@ class User:
 
             return userData
         except HTTPError as e:
-            raise HTTPError(status=400, message="An error occurred while retrieving user with ID \"" + userID + "\" from the DB:\u0085\u0009" + e._message)
+            raise HTTPError(
+                status=e.status, message="An error occurred while retrieving user with ID \"" + 
+                userID + "\" from the DB:\u0085\u0009" + e._message
+            )
         except Exception as e:
-            raise HTTPError(status=400, message="An error occurred while retrieving user with ID \"" + userID + "\" from the DB:\u0085\u0009" + str(e))
+            raise Server_Error_Handler.InternalServerError(
+                message="An error occurred while retrieving user with ID \"" +
+                userID + "\" from the DB:\u0085\u0009" + str(e)
+            )

@@ -1,5 +1,6 @@
 /ResourceCatalog/__pycache__
 /ResourceCatalog/test.py
+/ResourceCatalog/server.py
 
 /microserviceBase/__pycache__
 /microserviceBase/test.py
