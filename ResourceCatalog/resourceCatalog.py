@@ -15,6 +15,8 @@ from socketClass import *
 from devSettings import *
 from appliance import *
 
+from service import *
+
 from microserviceBase.serviceBase import *
 from cherrypy import HTTPError
 
@@ -95,7 +97,7 @@ class ResourceCatalog:
                 
                 case "regService":
                     for serviceData in params:
-                        entry = Resource(serviceData, newService = True)
+                        entry = Service(serviceData, newService = True)
                         entry.save2DB(self.DBPath)
                     return "Service registration was successful"
                 

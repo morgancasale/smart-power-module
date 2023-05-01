@@ -10,6 +10,8 @@ sys.path.append(PROJECT_ROOT)
 from microserviceBase.Error_Handler import *
 from microserviceBase import randomB64String
 
+from cherrypy import request as cherrypyRequest
+
 class SocketHandler():
     def checkPresenceOfSocket(MAC, catalogAddress, catalogPort):
         try:
@@ -176,55 +178,81 @@ class SocketHandler():
             
             return response.json()["result"]
         except HTTPError as e:
-            raise Client_Error_Handler.BadRequest(msg="An error occurred while getting MQTT broker: \u0085\u0009" + e._message)
+            raise Client_Error_Handler.BadRequest(msg="An error occurred while checking the presence of the Master node: \u0085\u0009" + e._message)
         except Exception as e:
-            raise Server_Error_Handler.InternalServerError(msg="An error occurred while getting MQTT broker: \u0085\u0009" + str(e))
+            raise Server_Error_Handler.InternalServerError(msg="An error occurred while checking the presence of the Master node: \u0085\u0009" + str(e))
 
     def giveRole_toSocket(self, *uri, **params): #self è il self di REST
-        catalogAddress = self.generalConfigs["REGISTRATION"]["catalogAddress"]
-        catalogPort = self.generalConfigs["REGISTRATION"]["catalogPort"]
+        match uri[1]:
+            case "getRole":
+                catalogAddress = self.generalConfigs["REGISTRATION"]["catalogAddress"]
+                catalogPort = self.generalConfigs["REGISTRATION"]["catalogPort"]
+                try:
+                    data = {}
+                    out = {}
+                    if(SocketHandler.checkPresenceOfSocket(params["MAC"], catalogAddress, catalogPort)): # if the socket is already registered
+                        data = SocketHandler.getSocket(params["MAC"], catalogAddress, catalogPort)[0][0]
+                        data["masterNode"] = bool(data["masterNode"])
+                    else:
+                        HAIP = self.generalConfigs["CONFIG"]["HomeAssistant"]["address"]
+                        HAPort = self.generalConfigs["CONFIG"]["HomeAssistant"]["port"]
+                        HAToken = self.generalConfigs["CONFIG"]["HomeAssistant"]["token"]
+                        system = self.generalConfigs["CONFIG"]["HomeAssistant"]["system"]
+                        baseTopic = self.generalConfigs["CONFIG"]["HomeAssistant"]["baseTopic"]
+                        data = SocketHandler.regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, params["MAC"], float(params["RSSI"]))
+
+                    out["socketID"] = data["socketID"]
+                    out["masterNode"] = data["masterNode"]
+
+                    if(params["autoBroker"]):
+                        broker = self.getMQTTBroker()
+                        out["brokerIP"] = broker["IPAddress"]
+                        out["brokerPort"] = broker["port"]
+                        out["brokerUser"] = broker["MQTTUser"]
+                        out["brokerPassword"] = broker["MQTTPassword"]
+
+                    if(params["autoTopics"]):
+                        topics = SocketHandler.getSocketTopics(catalogAddress, catalogPort)
+                        out["subTopic"] = topics["sub"]
+                        out["pubTopic"] = topics["pub"]
+
+                    return json.dumps(out)
+                except HTTPError as e:
+                    msg = """
+                        An error occurred while 
+                        registering socket to catalog: \u0085\u0009
+                    """ + e._message
+                    raise HTTPError(status=e.status, message = msg)
+                except Exception as e:
+                    raise Server_Error_Handler.InternalServerError(msg=
+                        "An error occurred while getting MQTT broker: \u0085\u0009" + str(e)
+                    )
+            case _:
+                raise Server_Error_Handler.NotImplemented(message="Method not implemented")
+        
+    def checkIfMasterNode(catalogAddress, catalogPort, deviceID): #TODO Test this 
         try:
-            data = {}
-            out = {}
-            if(SocketHandler.checkPresenceOfSocket(params["MAC"], catalogAddress, catalogPort)): # if the socket is already registered
-                data = SocketHandler.getSocket(params["MAC"], catalogAddress, catalogPort)[0][0]
-                data["masterNode"] = bool(data["masterNode"])
-            else:
-                HAIP = self.generalConfigs["CONFIG"]["HomeAssistant"]["address"]
-                HAPort = self.generalConfigs["CONFIG"]["HomeAssistant"]["port"]
-                HAToken = self.generalConfigs["CONFIG"]["HomeAssistant"]["token"]
-                system = self.generalConfigs["CONFIG"]["HomeAssistant"]["system"]
-                baseTopic = self.generalConfigs["CONFIG"]["HomeAssistant"]["baseTopic"]
-                data = SocketHandler.regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, params["MAC"], float(params["RSSI"]))
-
-            out["socketID"] = data["socketID"]
-            out["masterNode"] = data["masterNode"]
-
-            if(params["autoBroker"]):
-                broker = self.getMQTTBroker()
-                out["brokerIP"] = broker["IPAddress"]
-                out["brokerPort"] = broker["port"]
-                out["brokerUser"] = broker["MQTTUser"]
-                out["brokerPassword"] = broker["MQTTPassword"]
-
-            if(params["autoTopics"]):
-                topics = SocketHandler.getSocketTopics(catalogAddress, catalogPort)
-                out["subTopic"] = topics["sub"]
-                out["pubTopic"] = topics["pub"]
-
-            return json.dumps(out)
-        except HTTPError as e:
-            msg = """
-                An error occurred while 
-                registering socket to catalog: \u0085\u0009
-            """ + e._message
-            raise HTTPError(status=e.status, message = msg)
-        except Exception as e:
-            raise Server_Error_Handler.InternalServerError(msg=
-                "An error occurred while getting MQTT broker: \u0085\u0009" + str(e)
+            url = "%s:%s/checkPresence" % (
+                catalogAddress,
+                str(catalogPort)
             )
+            params = {
+                "table": "Sockets",
+                "keyName": "deviceID",
+                "keyValue": deviceID
+            }
 
-    def regSocket_toHA(self, system, baseTopic, deviceID, masterNode):
+            response = requests.get(url, params=params)
+            if(response.status_code != 200):
+                raise HTTPError(response.status_code, str(response.text))
+            
+            return response.json()["masterNode"]
+        except HTTPError as e:
+            raise Client_Error_Handler.BadRequest(msg="An error occurred while checking id socket is the Master node: \u0085\u0009" + e._message)
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(msg="An error occurred while checking id socket is the Master node: \u0085\u0009" + str(e))
+
+    def regSocket_toHA(self, system, baseTopic, deviceID, masterNode, deviceName=None):
         try:
             baseTopic += "/"
             stateSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID + "/state"
@@ -263,7 +291,8 @@ class SocketHandler():
                 "state_topic": stateSensorTopic
             }
 
-            name = "Smart Socket " + ("Master " if bool(masterNode) else "") + deviceID
+            if(deviceName == None) : name = "Smart Socket " + ("Master " if bool(masterNode) else "") + deviceID
+            else : name = deviceName + (" Master " if bool(masterNode) else "")
 
             devicePayload = {
                 "unique_id": deviceID,
@@ -336,6 +365,38 @@ class SocketHandler():
                 registering socket to HomeAssistant: \u0085\u0009
             """ + str(e)
             raise Server_Error_Handler.InternalServerError(msg=msg)
+        
+    def updateSocketName_onHA(self, *uri): #TODO Test this 
+        try:
+            match uri[1]:
+                case "updateDeviceName":
+                    params = cherrypyRequest.json
+                    deviceID = params["deviceID"]
+                    deviceName = params["deviceName"]
+
+                    system = self.generalConfigs["CONFIG"]["HomeAssistant"]["system"]
+                    baseTopic = self.generalConfigs["CONFIG"]["HomeAssistant"]["baseTopic"]
+                    catalogAddress = self.generalConfigs["REGISTRATION"]["catalogAddress"]
+                    catalogPort = self.generalConfigs["REGISTRATION"]["catalogPort"]
+                    masterNode = self.checkIfMasterNode(catalogAddress, catalogPort, deviceID)
+
+                    SocketHandler.regSocket_toHA(self, system, baseTopic, deviceID, masterNode, deviceName)
+                
+                case _:
+                    raise Server_Error_Handler.NotImplemented("Method not implemented")
+        except HTTPError as e:
+            msg = """
+                An error occurred while 
+                updating socket name on HomeAssistant: \u0085\u0009
+            """ + e._message
+            raise HTTPError(status=e.status, message = msg)
+        except Exception as e:
+            msg = """
+                An error occurred while
+                updating socket name on HomeAssistant: \u0085\u0009
+            """ + str(e)
+            raise Server_Error_Handler.InternalServerError(message=msg)
+
 
     def delSocket_fromHA(self, deviceID, baseTopic, system):
         try:

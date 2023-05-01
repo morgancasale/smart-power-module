@@ -119,6 +119,37 @@ class DeviceSettings:
             
         return result
 
+    def updateNameinHA(self): #TODO Test this 
+        try:
+            query = "SELECT * FROM DeviceSettings WHERE deviceID = \"" + self.deviceID + "\""
+            devSettings = DBQuery_to_dict(DBPath, query)[0]
+
+            if(devSettings["deviceName"] != self.deviceName):
+                query = "SELECT * FROM EndPoints WHERE endPointName = \"deviceConnector\""
+                deviceConnector = DBQuery_to_dict(DBPath, query)[0]
+
+                url = "http://%s:%s/updateDeviceName" % (deviceConnector["IPAddress"], deviceConnector["port"])
+                headers = {"Content-Type": "application/json"}
+                data = {"deviceID": self.deviceID, "deviceName": self.deviceName}
+
+                response = requests.put(url, headers=headers, data=json.dumps(data))
+                if(response.status_code != 200):
+                    raise HTTPError(status=response.status_code, message=response.text)
+                
+        except HTTPError as e:
+            raise HTTPError(
+                status=e.status, message="An error occurred while updating device name for device with ID \"" + 
+                self.deviceID + "\" in HA:\u0085\u0009" + str(e._message)
+            )
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(
+                "An error occurred while updating device name for device with ID \"" + 
+                self.deviceID + "\" in HA:\u0085\u0009" + str(e)
+            )
+
+
+        
+    
     def save2DB(self, DBPath):
         try:
             if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
@@ -128,6 +159,9 @@ class DeviceSettings:
                 sched.save2DB(DBPath)
 
             update_entry_inDB(DBPath, "DeviceSettings", "deviceID", self.to_dict())
+            
+            
+
             update_entry_inDB(DBPath, "Devices", "deviceID", {"deviceID": self.deviceID, "deviceName": self.deviceName})
 
         except HTTPError as e:

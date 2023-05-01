@@ -12,13 +12,14 @@ class DeviceConnector():
         self.baseTopic = "homeassistant/"
         self.system = "smartSockets" #self.system mi fa schifo come termine centra nulla
          
-        self.regSocket_toCatalog = SocketHandler.giveRole_toSocket # mi salvo queste funzioni 
-        self.regSocket_toHA = SocketHandler.regSocket_toHA         # perchè utilizzano i metodi
-        self.delSocket_fromHA = SocketHandler.delSocket_fromHA     # del servizio
+        self.regSocket_toCatalog = SocketHandler.giveRole_toSocket 
+        self.handleUpdate_toHA = SocketHandler.updateSocketName_onHA # mi salvo queste funzioni 
+        self.regSocket_toHA = SocketHandler.regSocket_toHA           # perchè utilizzano i metodi
+        self.delSocket_fromHA = SocketHandler.delSocket_fromHA       # del servizio
 
         notifier = None
 
-        self.service = ServiceBase("Device_Connector/deviceConnector.json", GET=self.regSocket_toCatalog, Notifier=notifier)
+        self.service = ServiceBase("Device_Connector/deviceConnector.json", GET=self.regSocket_toCatalog, PUT=self.handleUpdate_toHA, Notifier=notifier)
 
         self.service.start()
 
