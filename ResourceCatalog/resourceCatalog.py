@@ -269,6 +269,11 @@ class ResourceCatalog:
                         self.updateConnStatus(connData)
                     return "Connection update was successful"
                 
+                case "updateOnlineStatus":
+                    for entry in params:
+                        updateOnlineStatus(self.DBPath, entry)
+                    return "Online status update was successful"
+                
                 case "exit":
                     exit()
 
@@ -279,10 +284,8 @@ class ResourceCatalog:
         except Exception as e:
             raise Server_Error_Handler.InternalServerError(message="An error occurred while handling the PATCH request:\u0085\u0009" + str(e))
 
-    def handleDeleteRequest(self, *uri):
+    def handleDeleteRequest(self, *uri, **params): #TODO : streamline using the same method for all classes
         cmd = uri[1]
-        params = cherrypy.request.json
-        if(not isinstance(params, list)) : params = [params]
         try:
             match cmd:
                 case "delHouse":
@@ -468,8 +471,7 @@ class ResourceCatalog:
         except HTTPError as e:
             raise HTTPError(status=e.status, message ="An error occurred while updating a connection:\u0085\u0009" + e._message)
         except Exception as e:
-            raise Server_Error_Handler.InternalServerError(message="An error occurred while updating a connection:\u0085\u0009" + str(e))
-        
+            raise Server_Error_Handler.InternalServerError(message="An error occurred while updating a connection:\u0085\u0009" + str(e))        
 
 if __name__ == "__main__":
     resourceCatalog = ResourceCatalog("ResourceCatalog/db.sqlite")

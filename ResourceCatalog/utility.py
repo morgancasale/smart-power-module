@@ -262,4 +262,20 @@ def updateConnTable(DBPath, data, newStatus = None):
 def isaMAC(value):
     pattern = re.compile(r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$')
     return pattern.match(value)
+
+def updateOnlineStatus(DBPath, params):
+    try:
+        table = params["table"]
+
+        if(not check_presence_ofTableInDB(DBPath, table)): 
+            raise Client_Error_Handler.NotFound(message="The table \"" + table + "\" does not exist")
+        
+        query = "UPDATE " + table + " SET Online = 0 WHERE lastUpdate > " + time.time() + ";"
+        query += "UPDATE " + table + " SET lastUpdate = " + time.time() + ";"
+
+        DBQuery_to_dict(DBPath, query)
+    except HTTPError as e:
+        raise HTTPError(status=e.status, message ="An error occurred while updating the online status:\u0085\u0009" + e._message)
+    except Exception as e:
+        raise Server_Error_Handler.InternalServerError(message="An error occurred while updating the online status:\u0085\u0009" + str(e))
     

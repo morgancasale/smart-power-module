@@ -426,7 +426,32 @@ class SocketHandler():
                 deleting socket from HomeAssistant: \u0085\u0009
             """ + str(e)
             raise Server_Error_Handler.InternalServerError(msg=msg)
+        
+    '''def handleDeleteSocket_byHA(topic, payload):
+        try:
+            if(payload==""):
+                deviceID = topic.split("/")[-2]
 
+                url = "http://%s:%s/delSocket" % (self.generalConfigs["REGISTRATION"]["catalogAddress"], self.generalConfigs["REGISTRATION"]["catalogPort"])
+                params = {"table": "Sockets", "keyName" : "deviceID", "keyValue" : deviceID}
+
+                response = requests.delete(url, params=params)
+                if(response.status_code != 200):
+                    raise HTTPError(status=response.status_code, message = response.text)
+
+        except HTTPError as e:
+            msg = """
+                An error occurred while 
+                handling Deletion of Device initiated by HomeAssistant: \u0085\u0009
+            """ + e._message
+            raise HTTPError(status=e.status, message = msg)
+        except Exception as e:
+            msg = """
+                An error occurred while
+                handling Deletion of Device initiated by HomeAssistant: \u0085\u0009
+            """ + str(e)
+            raise Server_Error_Handler.InternalServerError(message=msg)'''
+    
     def getHAID(HAIP, HAPort, HAToken, deviceID):
         try:
             template = """{% set devices = states | map(attribute='entity_id') | map('device_id') | unique | reject('eq',None) | list %}

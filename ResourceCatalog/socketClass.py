@@ -129,21 +129,21 @@ class Socket:
                 self.socketID + "\" in the DB:\u0085\u0009" + str(e)
             )
         
-    def deleteFromDB(self, DBPath):
+    def deleteFromDB(DBPath, entry):
         try:
-            if(not check_presence_inDB(DBPath, "Sockets", "socketID", self.socketID)):
-                raise Client_Error_Handler.NotFound(message="Socket ID not found in DB")
+            if(not check_presence_inDB(DBPath, entry["table"], entry["keyName"], entry["keyValue"])):
+                raise Client_Error_Handler.NotFound(message="Socket not found in DB")
             
-            delete_entry_fromDB(DBPath, "Sockets", "socketID", self.socketID)
+            delete_entry_fromDB(DBPath, entry["table"], entry["keyName"], entry["keyValue"])
         except HTTPError as e:
             raise HTTPError(
-                status=e.status, message="An error occurred while deleting socket with ID \"" + 
-                self.socketID + "\" from the DB:\u0085\u0009" + e._message
+                status=e.status, message="An error occurred while deleting socket with" + entry["keyName"] + " \"" + 
+                entry["keyValue"] + "\" from the DB:\u0085\u0009" + e._message
             )
         except Exception as e:
             raise Server_Error_Handler.InternalServerError(
-                message="An error occurred while deleting socket with ID \"" + 
-                self.socketID + "\" from the DB:\u0085\u0009" + str(e)
+                message="An error occurred while deleting socket with" + entry["keyName"] + " \"" + 
+                entry["keyValue"] + "\" from the DB:\u0085\u0009" + str(e)
             )
         
     def DB_to_dict(DBPath, socket):
