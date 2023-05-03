@@ -4,5 +4,9 @@
 
 /microserviceBase/__pycache__
 /microserviceBase/test.py
+
+HomeAssistant_Connector/
+
 test.py
+test/
 
