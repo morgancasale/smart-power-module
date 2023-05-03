@@ -28,7 +28,7 @@
     "MQTT": {
         "endPointID": null,
         "endPointName": null,
-        "brokerAddress":  "broker.emqx.io",
+        "brokerAddress": "",
         "brokerPort": 1883,
         "subPub": {
             "sub": false,
