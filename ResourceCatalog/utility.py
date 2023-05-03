@@ -279,3 +279,31 @@ def updateOnlineStatus(DBPath, params):
     except Exception as e:
         raise Server_Error_Handler.InternalServerError(message="An error occurred while updating the online status:\u0085\u0009" + str(e))
     
+def setOnlineStatus(DBPath, params):
+    try:
+        table = params["table"]
+        keyName = params["keyName"]
+        keyValue = params["keyValue"]
+        status = params["status"]
+
+        if(not check_presence_ofTableInDB(DBPath, table)): 
+            raise Client_Error_Handler.NotFound(message="The table \"" + table + "\" does not exist")
+        
+        if(not check_presence_ofColumnInDB(DBPath, table, keyName)):
+            raise Client_Error_Handler.NotFound(message="The column \"" + keyName + "\" does not exist in the table \"" + table + "\"")
+        
+        if(not check_presence_inDB(DBPath, table, keyName, keyValue)):
+            raise Client_Error_Handler.NotFound(message="The entry \"" + keyValue + "\" of column \"" + keyName + "\" does not exist in the table \"" + table + "\"")
+        
+        if(not (status in [0,1] or isinstance(status, bool))):
+            raise Client_Error_Handler.BadRequest(message="The status must be either 0 or 1 or boolean")
+        
+        if(isinstance(status, bool)):
+            status = int(status)
+        
+        query = "UPDATE " + table + " SET (Online, lastUpdate) = (" + str(status) + ", " + str(time.time()) + " WHERE " + keyName + " = " + keyValue
+        DBQuery_to_dict(DBPath, query)
+    except HTTPError as e:
+        raise HTTPError(status=e.status, message ="An error occurred while setting the online status:\u0085\u0009" + e._message)
+    except Exception as e:
+        raise Server_Error_Handler.InternalServerError(message="An error occurred while setting the online status:\u0085\u0009" + str(e))

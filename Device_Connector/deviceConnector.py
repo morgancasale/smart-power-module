@@ -48,6 +48,24 @@ class DeviceConnector():
             raise Server_Error_Handler.InternalServerError(
                 message = "An error occurred while updating devices online status" + str(e)
             )
+        
+    def setOnlineStatus(self, deviceID, status):
+        try:
+            url = "http://%s:%s/setOnlineStatus"%(self.catalogAddress, self.catalogPort)
+            params = [{"table" : "Devices", "keyName" : "deviceID", "keyValue" : deviceID, "status" : status}]
+
+            response = requests.put(url, data=json.dumps(params))
+            if(response.status_code != 200):
+                raise HTTPError(response.status_code, response.text)
+        except HTTPError as e:
+            raise HTTPError(
+                e.code, "An error occurred while updating devices online status" + e._message
+            ) 
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(
+                message = "An error occurred while updating devices online status" + str(e)
+            )
+            
 
 
 service = DeviceConnector()
