@@ -206,6 +206,11 @@ class ResourceCatalog:
                         entry.set2DB(self.DBPath)
                     return "Appliance update was successful"
                 
+                case "setOnlineStatus":
+                    for entry in params:
+                        setOnlineStatus(entry)
+                    return "Online status update was successful"
+                
                 case "exit":
                     exit()
 

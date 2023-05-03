@@ -9,7 +9,7 @@ from microserviceBase.Error_Handler import *
 class Socket:
     def __init__(self, socketData, newSocket = True):
         self.socketKeys = sorted([
-            "socketID", "deviceID", "HAID", "MAC", "masterNode", "RSSI"
+            "deviceID", "HAID", "MAC", "masterNode", "RSSI"
         ])
         
         if(newSocket) : self.checkKeys(socketData)
@@ -22,12 +22,12 @@ class Socket:
     def checkSaveValues(self, socketData):
         for key in socketData.keys():
             match key:
-                case ("socketID" | "deviceID"):
+                case ("deviceID"):
                     if(not isinstance(socketData[key], str)):
                         raise Client_Error_Handler.BadRequest(message="Socket's \"" + key + "\" value must be string")
-                    match key:
-                        case "socketID": self.socketID = socketData["socketID"]
-                        case "deviceID": self.deviceID = socketData["deviceID"]
+                    if(not check_presence_inDB(DBPath, "Devices", "deviceID", socketData[key])):
+                        raise Client_Error_Handler.BadRequest(message="Socket's deviceID not found in DB")
+                    self.deviceID = socketData["deviceID"]
 
                 case "HAID":
                     if(socketData[key] != None and not isinstance(socketData[key], str)):
@@ -58,13 +58,7 @@ class Socket:
         return result
     
     def save2DB(self, DBPath):
-        try:
-            '''if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
-                raise HTTPError(status=400, message="Device ID not found in DB")'''
-            
-            if(check_presence_inDB(DBPath, "Sockets", "socketID", self.socketID)):
-                raise Client_Error_Handler.BadRequest(message="Socket ID already exists in DB")
-            
+        try:            
             if(check_presence_inDB(DBPath, "Sockets", "deviceID", self.deviceID)):
                 raise Client_Error_Handler.BadRequest(message="Socket already connected to a device")
             
@@ -74,20 +68,17 @@ class Socket:
             save_entry2DB(DBPath, "Sockets", self.to_dict())
         except HTTPError as e:
             raise HTTPError(
-                status=e.status, message="An error occurred while saving socket with ID \""
-                + self.socketID + "\" to the DB:\u0085\u0009" + e._message
+                status=e.status, message="An error occurred while saving socket with deviceID \""
+                + self.deviceID + "\" to the DB:\u0085\u0009" + e._message
             )
         except Exception as e:
             raise Server_Error_Handler.InternalServerError(
-                message="An error occurred while saving socket with ID \"" + 
-                self.socketID + "\" to the DB:\u0085\u0009" + str(e)
+                message="An error occurred while saving socket with deviceID \""
+                + self.deviceID + "\" to the DB:\u0085\u0009" + str(e)
             )
         
     def updateDB(self, DBPath):
-        try:
-            if(not check_presence_inDB(DBPath, "Sockets", "socketID", self.socketID)):
-                raise Client_Error_Handler.NotFound(message="Socket ID not found in DB")
-            
+        try:            
             if(check_presence_inDB(DBPath, "Sockets", "deviceID", self.deviceID)):
                 query = "SELECT socketID FROM Sockets WHERE deviceID = \"" + self.deviceID + "\""
                 result = DBQuery_to_dict(DBPath, query)
@@ -100,10 +91,10 @@ class Socket:
                 if(not result[0]["socketID"] == self.socketID):
                     raise Client_Error_Handler.BadRequest(message="Socket already connected to another MAC address")
             
-            update_entry_inDB(DBPath, "Sockets", "socketID", self.to_dict())
+            update_entry_inDB(DBPath, "Sockets", "deviceID", self.to_dict())
         except HTTPError as e:
             raise HTTPError(
-                status=e.status, message="An error occurred while updating socket with ID \"" + 
+                status=e.status, message="An error occurred while updating socket with deviceID \"" + 
                 self.socketID + "\" in the DB:\u0085\u0009" + e._message
             )
         except Exception as e:

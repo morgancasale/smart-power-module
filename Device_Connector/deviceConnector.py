@@ -52,7 +52,10 @@ class DeviceConnector():
     def setOnlineStatus(self, deviceID, status):
         try:
             url = "http://%s:%s/setOnlineStatus"%(self.catalogAddress, self.catalogPort)
-            params = [{"table" : "Devices", "keyName" : "deviceID", "keyValue" : deviceID, "status" : status}]
+            params = [
+                {"table" : "Devices", "keyName" : "deviceID", "keyValue" : deviceID, "status" : status},
+                {"table" : "DeviceResource_conn", "keyName" : "deviceID", "keyValue" : deviceID, "status" : status}
+            ]
 
             response = requests.put(url, data=json.dumps(params))
             if(response.status_code != 200):

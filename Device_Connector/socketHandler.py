@@ -35,7 +35,9 @@ class SocketHandler():
         except HTTPError as e:
             raise HTTPError(status=e.status, message=e._message)
         except Exception as e:
-            raise HTTPError(status=500, message=str(e))
+            raise Server_Error_Handler.InternalServerError(
+                message = "An error occurred while checking the presence of the socket: " + str(e)
+            )
     
     def getSocket(MAC, catalogAddress, catalogPort):
         try:
@@ -58,9 +60,11 @@ class SocketHandler():
         except HTTPError as e:
             raise HTTPError(status=e.status, message=e._message)
         except Exception as e:
-            raise HTTPError(status=500, message=str(e))
+            raise Server_Error_Handler.InternalServerError(
+                message = "An error occurred while getting the socket: " + str(e)
+            )
         
-    def genSocketID(catalogAddress, catalogPort):
+    '''def genSocketID(catalogAddress, catalogPort):
         try:
             existence = True
             while(existence):
@@ -86,14 +90,57 @@ class SocketHandler():
         except HTTPError as e:
             raise HTTPError(status=e.status, message=e._message)
         except Exception as e:
-            raise HTTPError(status=500, message=str(e))
+            raise Server_Error_Handler.InternalServerError(
+                message = "An error occurred while generating the socket ID: " + str(e)
+            )'''
         
+    def genDeviceID(catalogAddress, catalogPort):
+        try:
+            existence = True
+            while(existence):
+                newID = "D" + randomB64String(6)
+
+                url = "%s:%s/checkPresence" % (
+                    catalogAddress,
+                    str(catalogPort)
+                )
+                params = {
+                    "table" : "Devices",
+                    "keyName" : "deviceID",
+                    "keyValue" : newID
+                }
+
+                response = requests.get(url, params=params)
+                if(response.status_code != 200):
+                    raise HTTPError(response.status_code, str(response.text))
+                
+                existence = json.loads(response.text)["result"]
+
+            return newID
+        except HTTPError as e:
+            raise HTTPError(status=e.status, message=e._message)
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(
+                message = "An error occurred while generating the device ID: " + str(e)
+            )
+        
+    def genDevice(deviceID, deviceName):
+        try:
+            device = {}
+            device["deviceID"] = deviceID
+            device["deviceName"] = deviceName
+            return device
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(
+                message = "An error occurred while generating the device: " + str(e)
+            )
+    
     def genSocket(MAC, deviceID, RSSI, catalogAddress, catalogPort):
         socket = {}
         try:
-            socket["socketID"] = SocketHandler.genSocketID(catalogAddress, catalogPort)
-            socket["MAC"] = MAC
+            #socket["socketID"] = SocketHandler.genSocketID(catalogAddress, catalogPort)
             socket["deviceID"] = deviceID
+            socket["MAC"] = MAC
             socket["masterNode"] = False
             socket["HAID"] = None
             socket["RSSI"] = RSSI
@@ -101,42 +148,83 @@ class SocketHandler():
         except HTTPError as e:
             raise HTTPError(status=e.status, message=e._message)
         except Exception as e:
-            raise HTTPError(status=500, message=str(e))
+            raise Server_Error_Handler.InternalServerError(
+                message = "An error occurred while generating the socket: " + str(e)
+            )
         
-    def regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, MAC, RSSI):
+    def delDevice_fromCatalog(deviceID, catalogAddress, catalogPort):
         try:
-            url = "%s:%s/setSocket" % (
+            url = "%s:%s/delDevice" % (
                 catalogAddress,
                 str(catalogPort)
             )
+            params = {
+                "deviceID" : deviceID
+            }
 
+            response = requests.delete(url, params=params)
+            if(response.status_code != 200):
+                raise HTTPError(response.status_code, str(response.text))
+            return True
+        except HTTPError as e:
+            raise HTTPError(status=e.status, message=e._message)
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(
+                message = "An error occurred while deleting the device from the catalog: " + str(e)
+            )
+        
+    def regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, MAC, RSSI):
+        try:
             headers = {
                 'content-type': "application/json",
             }
 
-            payload = SocketHandler.genSocket(MAC, "D"+randomB64String(6), RSSI, catalogAddress, catalogPort)
-            response = requests.put(url, headers=headers, data=json.dumps(payload))
+            masterNode = not SocketHandler.checkPresenceOfMasterNode(catalogAddress, catalogPort)
+
+            deviceID = SocketHandler.genDeviceID(catalogAddress, catalogPort)
+
+            deviceName = "Smart Socket " + ("Master " if bool(masterNode) else "") + deviceID
+
+            url = "%s:%s/setDevice" % (
+                catalogAddress,
+                str(catalogPort)
+            )
+            deviceData = SocketHandler.genDevice(deviceID, deviceName)
+            response = requests.put(url, headers=headers, data=json.dumps(deviceData))
+            if(response.status_code != 200):
+                raise HTTPError(response.status_code, str(response.text))
+
+            url = "%s:%s/setSocket" % (
+                catalogAddress,
+                str(catalogPort)
+            )
+            socketData = SocketHandler.genSocket(MAC, deviceID, RSSI, catalogAddress, catalogPort)
+            response = requests.put(url, headers=headers, data=json.dumps(socketData))
             if(response.status_code != 200):
                 raise HTTPError(response.status_code, str(response.text))
             
-            payload["masterNode"] = not SocketHandler.checkPresenceOfMasterNode(catalogAddress, catalogPort)
+            socketData["masterNode"] = masterNode
 
-            SocketHandler.regSocket_toHA(self, system, baseTopic, payload["deviceID"], payload["masterNode"])
+            SocketHandler.regSocket_toHA(self, system, baseTopic, deviceID, socketData["masterNode"])
 
-            HAID = SocketHandler.getHAID(HAIP, HAPort, HAToken, payload["deviceID"])
-            payload["HAID"] = HAID
+            HAID = SocketHandler.getHAID(HAIP, HAPort, HAToken, deviceID)
+            deviceData["HAID"] = HAID
             
-            response = requests.put(url, headers=headers, data=json.dumps(payload))
+            response = requests.put(url, headers=headers, data=json.dumps(deviceData))
             if(response.status_code != 200):
                 raise HTTPError(response.status_code, str(response.text))      
             
-            return payload
+            return socketData
         except HTTPError as e:
-            SocketHandler.delSocket_fromHA(self, payload["deviceID"], baseTopic, system)
-            raise HTTPError(status=e.status, message=e._message)
+            SocketHandler.delSocket_fromHA(self, deviceID, baseTopic, system)
+            SocketHandler.delDevice_fromCatalog(deviceID, catalogAddress, catalogPort)
+            raise HTTPError(status=e.status, message = "An error occurred while registering the socket: " + e._message)
         except Exception as e:
-            SocketHandler.delSocket_fromHA(self, payload["deviceID"], baseTopic, system)
-            raise HTTPError(status=500, message=str(e))
+            SocketHandler.delSocket_fromHA(self, deviceID, baseTopic, system)
+            SocketHandler.delDevice_fromCatalog(deviceID, catalogAddress, catalogPort)
+            raise Server_Error_Handler.InternalServerError(
+                message = "An error occurred while registering the socket: " + str(e)
+            )
         
     def getSocketTopics(catalogAddress, catalogPort):
         try:
@@ -201,7 +289,6 @@ class SocketHandler():
                         baseTopic = self.generalConfigs["CONFIG"]["HomeAssistant"]["baseTopic"]
                         data = SocketHandler.regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, params["MAC"], float(params["RSSI"]))
 
-                    out["socketID"] = data["socketID"]
                     out["masterNode"] = data["masterNode"]
 
                     if(params["autoBroker"]):
