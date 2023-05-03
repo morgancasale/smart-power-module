@@ -118,7 +118,7 @@ class MQTTServer(Thread):
             )
 
     def OnMessageReceived(self, a, b, msg):
-        self.subNotifier(msg.topic, msg.payload)
+        self.subNotifier(self, msg.topic, msg.payload)
 
     def Publish(self, topics, msg, retain=False):
         while(not self.connected):
