@@ -17,12 +17,13 @@ if __name__ == "__main__":
     topics = ["/bro/99/1", "/morgy/99/1", "/ciao/97/1", "/bro/97/1"]
     while(True):
      
-    
-        service.MQTT.publish("/bro/99/1", "1")
-        time.sleep(5)
-        service.MQTT.publish("/morgy/99/1", "2")
-        time.sleep(5)
-        service.MQTT.publish("/ciao/97/1", "3")
-        time.sleep(5)
-        service.MQTT.publish("/bro/97/1", "4")
+        #fixedData={"socketID":id,"Voltage": 1, "Current":2, "Power":3,"Energy": 4}
+         
+        service.MQTT.Publish("/bro/ciccio/ciacci","ciao" )
+        time.sleep(1)
+        service.MQTT.Publish("/morgy/99/1", "2")
+        time.sleep(1)
+        service.MQTT.Publish("/ciao/97/1", "3")
+        time.sleep(1)
+        service.MQTT.Publish("/bra", "4")
         time.sleep(10)

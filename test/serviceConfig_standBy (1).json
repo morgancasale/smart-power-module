@@ -1,9 +1,13 @@
 {
     "CONFIG": {
         "activatedMethod": {
-            "MQTT": false,
-            "REST": true
+            "MQTT": true,
+            "REST": false
         },
+        "houseID": null,
+        "userID": null,
+        "resourceID": null,
+        "deviceID": null,
         "HomeAssistant": {
             "enabled": false,
             "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU", 
@@ -26,28 +30,35 @@
         }
     },
     "MQTT": {
-        "endPointID": null,
-        "endPointName": null,
-        "brokerAddress":  "broker.emqx.io",
+        "endPointID": "E55",
+        "endPointName": "nndi",
+        "autoBroker": true,
+        "brokerAddress": "mqtt.eclipseprojects.io",
         "brokerPort": 1883,
         "subPub": {
-            "sub": false,
-            "pub": false
+            "sub": true,
+            "pub": true
         },
-        "clientID": "string",
+        "clientID": "provaprogettoprovaprova",
         "MQTTTopics": {
             "sub": [
-                "string"
+                "SmartModule/H1/dev/D1",
+                "casa1/dev/dev2",
+                "prova/prova/msmartmod"
+                
             ],
             "pub": [
-                "string"
+                "SmartModule/H1/dev/D1",
+                "casa1/dev/dev2",
+                "prova/prova/msmartmod"
+
             ]
         },
-        "QOS": 0
+        "QOS": 2
     },
     "REGISTRATION": {
         "enabled": false,
-        "serviceID": "S1",
+        "serviceID": "StandByPowerDetection",
         "serviceName": "ResourceCatalog",
         "catalogAddress": "http://192.168.2.145",
         "catalogPort": 8099,

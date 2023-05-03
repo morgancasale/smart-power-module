@@ -18,10 +18,11 @@ if __name__ == "__main__":
     a = ServiceBase("test/fraSubFile.json", Notifier = notify)
     a.start()
     clientErrorHandler = Client_Error_Handler()
-    topics = [    "/+/+/1",
+    topics = [ "homeassistant/sensor/smartSocket/1/status"
     ]
-    time.sleep(5)
-    a.MQTT.subscribe(topics)
+    a.MQTT.Subscribe(topics)
+    time.sleep(10)
+    a.MQTT.changeSubTopic(["/ciao/97/1"])
 
 #testare errori:
     #1. accettaere più topic

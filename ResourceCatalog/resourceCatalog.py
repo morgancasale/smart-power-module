@@ -1,4 +1,4 @@
-import json
+
 import pandas as pd
 import sqlite3 as sq
 
@@ -16,7 +16,6 @@ from devSettings import *
 from appliance import *
 
 from microserviceBase.serviceBase import *
-from cherrypy import HTTPError
 
 class ResourceCatalog:
     def __init__(self, DBPath):

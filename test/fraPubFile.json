@@ -33,6 +33,8 @@
         "endPointID": "EODAzOD",
         "endPointName": "PubFRA",
         "autoBroker": false,
+        "username":"pippo",
+        "password":"babbo",
         "brokerAddress": "broker.emqx.io",
         "brokerPort": 1883,
         "subPub": {
@@ -48,10 +50,10 @@
                 "/bro/97/1"
             ],
             "pub": [
-                "/bro/99/1",
+                
                 "/morgy/99/1",
                 "/ciao/97/1",
-                "/bro/97/1"
+                "/bro/#"
             ]
         },
         "QOS": 0
