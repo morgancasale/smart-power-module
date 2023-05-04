@@ -48,12 +48,14 @@
                 "/morgy/99/1",
                 "/ciao/97/1",
                 "/bro/97/1"
+
             ],
             "pub": [
                 
                 "/morgy/99/1",
                 "/ciao/97/1",
-                "/bro/#"
+                "/bro/#",
+                "smartSocket/data"
             ]
         },
         "QOS": 0

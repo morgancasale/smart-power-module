@@ -9,19 +9,24 @@ from microserviceBase.serviceBase import *
 from microserviceBase.Error_Handler import * 
 
 from socketHandler import SocketHandler
+from dataHandler import *
 
 class DeviceConnector():
     def __init__(self):
-        self.baseTopic = "homeassistant/"
+        self.ESP = "smartSocket/data"
+        self.baseTopic = "homeassistant"
         self.system = "smartSockets" #self.system mi fa schifo come termine centra nulla
-         
-        self.regSocket_toCatalog = SocketHandler.giveRole_toSocket 
-        self.handleUpdate_toHA = SocketHandler.updateSocketName_onHA # mi salvo queste funzioni 
-        self.regSocket_toHA = SocketHandler.regSocket_toHA           # perchè utilizzano i metodi
-        self.delSocket_fromHA = SocketHandler.delSocket_fromHA       # del servizio
+        self.dataESP_toHA = DataHandler.DataESP_sub
+       # self.regSocket_toCatalog = SocketHandler.giveRole_toSocket 
+      #  self.handleUpdate_toHA = SocketHandler.updateSocketName_onHA # mi salvo queste funzioni 
+       # self.regSocket_toHA = SocketHandler.regSocket_toHA           # perchè utilizzano i metodi
+        #self.delSocket_fromHA = SocketHandler.delSocket_fromHA       # del servizio
         #self.handleDelete_byHA = SocketHandler.handleDeleteSocket_byHA
 
-        self.service = ServiceBase("Device_Connector/deviceConnector.json", GET=self.regSocket_toCatalog, PUT=self.handleUpdate_toHA, Notifier=None)
+        self.service = ServiceBase(
+            "Device_Connector/deviceConnector.json", GET=self.regSocket_toCatalog, PUT=self.handleUpdate_toHA, 
+            Notifier=DataHandler.notify_fromESP
+        )
 
         self.catalogAddress = self.service.generalConfigs["REGISTRATION"]["catalogAddress"]
         self.catalogPort = self.service.generalConfigs["REGISTRATION"]["catalogPort"]

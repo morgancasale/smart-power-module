@@ -12,6 +12,7 @@
             "port": 8123,
             "baseTopic": "homeassistant",
             "system": "smartSocket"
+            
         }
     },
     "REST": {

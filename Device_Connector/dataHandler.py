@@ -9,52 +9,69 @@ from microserviceBase.serviceBase import *
 from microserviceBase.Error_Handler import *
 from microserviceBase import randomB64String
 
-def notify(topic, payload):
-         print("Topic: %s, Payload: %s" % (topic, payload))
-         DataHandler.checkPresenceOfIDSocket(payload["socketID"])
-         DataHandler.checkpayload(payload)
-         DataHandler.FixData_fromESP(payload["socketID"],payload["Voltage"],payload["Current"],payload["Power"], payload["Energy"])
 
+        
 class DataHandler():
       
-     def regData_toHa():
-          
-          DataHandler.subData_fromESP()
-          
+      def notify_fromESP(self,topic, payload):
+         print("Topic: %s, Payload: %s" % (topic, payload))
+         self.regData_toHa(topic,payload)
+         
+      def DataESP_sub(self): #self è il self di REST
+                try:
+                    
+                    self.system = self.generalConfigs["CONFIG"]["HomeAssistant"]["system"]
+                    self.baseTopic = self.generalConfigs["CONFIG"]["HomeAssistant"]["baseTopic"]
+                    self.ESP = "smartSocket/data"
+                    self.MQTTService.Client.subscribe(self.ESP)
 
-     
-     def subData_fromESP():
-          
-          a.MQTT.Subscribe("smartSocket/data")
-          while(True):
-               time.sleep(1000)
-     
-     
-     def checkPresenceOfIDSocket(socketID, catalogAddress, catalogPort):
-        try:
-            url = "%s:%s/checkPresence" % (
-                catalogAddress,
-                str(catalogPort)
-            )
-            params = {
-                "table": "Sockets",
-                "keyName": "socketID",
-                "keyValue": socketID
-            }
 
-            response = requests.get(url, params=params)
-            if(response.status_code != 200):
-                raise HTTPError(response.status_code, str(response.text))
-            result = json.loads(response.text)
+                   
+
+                   
+                except HTTPError as e:
+                    msg = """
+                        An error occurred while 
+                        getting data socket: \u0085\u0009
+                    """ + e._message
+                    raise HTTPError(status=e.status, message = msg)
+                except Exception as e:
+                    raise Server_Error_Handler.InternalServerError(msg=
+                        "An error occurred while getting MQTT broker: \u0085\u0009" + str(e)
+                    )
             
-
-            return result["result"]
+      
+      def regData_toHa(self, topic, payload):
+        try:
+            if(DataHandler.checkPresenceOfIDSocket(payload["deviceID"])): 
+                if(not DataHandler.setStatusDevice(payload["deviceID"], "ONLINE")):
+                    raise Server_Error_Handler.InternalServerError(
+                        message = "An error occurred while updating device status"
+                    )
+                self.baseTopic += "/"
+                stateSensorTopic = self.baseTopic + "/sensor/" + self.system + "/" + payload["deviceID"] + "/state"
+            else: 
+                raise Client_Error_Handler.NotFound("Device that sending data is not registered")
+            DataHandler.checkpayload(payload)
+            datafixed = {"Voltage": payload["VOltage"], "Current":payload["Current"], "Power":payload["Power"],"Energy": payload["Energy"]  }   
+            self.MQTTService.Client.Publish(stateSensorTopic, json.dumps(datafixed))     
+                 
         except HTTPError as e:
-            raise HTTPError(status=e.status, message=e._message)
+            msg = """
+                An error occurred while 
+                registering DATA to HomeAssistant: \u0085\u0009
+            """ + e._message
+            raise HTTPError(status=e.status, message = msg)
         except Exception as e:
-            raise HTTPError(status=500, message=str(e))
+            msg = """
+                An error occurred while
+                registering DATA to HomeAssistant: \u0085\u0009
+            """ + str(e)
+            raise Server_Error_Handler.InternalServerError(msg=msg)          
+         
+     
 
-     def checkpayload(payload):
+      def checkpayload(payload):
         configParams = sorted["socketID", "Voltage", "Current","Power","Energy"]
        
         if(not configParams == sorted(payload.keys())):
@@ -83,23 +100,55 @@ class DataHandler():
 
         if (not isinstance(payload["Energy"], float)):
             raise Server_Error_Handler.BadRequest(
-                "Energy parameter must be a float")
-       
-             
-
-     def FixData_fromESP(payload,Voltage,Current,Power, Energy): 
-         fixedData={"Voltage": Voltage, "Current":Current, "Power":Power,"Energy": Energy}
-         DataHandler.SendFixData(payload["socketID"],fixedData=fixedData)
-
-     def SendFixData(socketID,fixedData):
-        
-          a.MQTT.Publish("homeassistant/sensor/smartSocket/"+ socketID +"/status", json.dumps(fixedData))
-        
+                "Energy parameter must be a float") 
+     
+      def checkPresenceOfIDSocket(deviceID, catalogAddress, catalogPort):
+        try:
+            url = "%s:%s/checkPresence" % (
+                catalogAddress,
+                str(catalogPort)
+            )
+            params = {
+                "table": "Sockets",
+                "keyName": "deviceID",
+                "keyValue": deviceID
             
-      
-if __name__ == "__main__":
+            }
 
-    a = ServiceBase("DEVConnector/fraSubFile.json", Notifier = notify)
-    a.start()
-    reg = DataHandler()
-    reg.regData_toHa()
+            response = requests.get(url, params=params)
+            if(response.status_code != 200):
+                raise HTTPError(response.status_code, str(response.text))
+            result = json.loads(response.text)
+            
+
+            return result["result"]
+        except HTTPError as e:
+            raise HTTPError(status=e.status, message=e._message)
+        except Exception as e:
+            raise HTTPError(status=500, message=str(e))
+          
+            
+      def setStatusDevice(deviceID, status, catalogAddress, catalogPort):
+        try:
+            url = "%s:%s/setStatus" % (
+                catalogAddress,
+                str(catalogPort)
+            )
+            params = {
+                "table": "Sockets",
+                "keyName": "deviceID",
+                "keyValue": deviceID,
+                "status": status
+            }
+
+            response = requests.get(url, params=params)
+            if(response.status_code != 200):
+                raise HTTPError(response.status_code, str(response.text))
+            result = json.loads(response.text)
+            
+
+            return result["result"]
+        except HTTPError as e:
+            raise HTTPError(status=e.status, message=e._message)
+        except Exception as e:
+            raise HTTPError(status=500, message=str(e))
