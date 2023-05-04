@@ -31,7 +31,7 @@
         "endPointID": "ENTYzMz",
         "endPointName": "deviceConnector",
         "autoBroker": false,
-        "brokerAddress": "broker.hivemq.com",
+        "brokerAddress": "broker.emqx.io",
         "brokerPort": 1883,
         "username": "",
         "password": "",
@@ -42,7 +42,7 @@
         "clientID": "deviceConnector",
         "MQTTTopics": {
             "sub": [
-                "smartSocket/data",
+                "/smartSocket/data",
                 "pizzapazza/1"
             ],
             "pub": [

@@ -133,10 +133,10 @@ class MQTTServer(Thread):
                 if(len(self.publishtopics)>0):
                     for publishtopic in  self.publishtopics:
                          print("Publishing '%s' at topic '%s'" % (msg, publishtopic))
-                         self.Client.publish(publishtopic, json.dumps(msg), 2, retain)
+                         self.Client.publish(publishtopic, json.dumps(msg), 0, retain)
                 else:
                     print("Publishing '%s' at topic '%s'" % (msg, topic))
-                    self.Client.publish(topic, json.dumps(msg), 2, retain)
+                    self.Client.publish(topic, json.dumps(msg), 0, retain)
         else:
             raise self.clientErrorHandler.BadRequest(
             "Publisher is not active for this service")
