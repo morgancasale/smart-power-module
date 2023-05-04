@@ -8,17 +8,16 @@
             "enabled": false,
             "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU",
             "autoHA": false,
-            "address": "http://192.168.2.163",
+            "address": "127.0.0.1",
             "port": 8123,
             "baseTopic": "homeassistant",
             "system": "smartSocket"
-            
         }
     },
     "REST": {
         "endPointID": "ENTYzMz",
         "endPointName": "deviceConnector",
-        "IPAddress": "192.168.2.145",
+        "IPAddress": "127.0.0.1",
         "port": 8067,
         "CRUDMethods": {
             "GET": true,
@@ -31,7 +30,7 @@
     "MQTT": {
         "endPointID": "ENTYzMz",
         "endPointName": "deviceConnector",
-        "autoBroker": true,
+        "autoBroker": false,
         "brokerAddress": "broker.hivemq.com",
         "brokerPort": 1883,
         "username": "",
@@ -54,7 +53,7 @@
         "QOS": 0
     },
     "REGISTRATION": {
-        "enabled": true,
+        "enabled": false,
         "serviceID": "SNTk3MD",
         "serviceName": "deviceConnector",
         "catalogAddress": "http://127.0.0.1",

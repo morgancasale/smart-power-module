@@ -5,9 +5,10 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir
 sys.path.append(PROJECT_ROOT)
 
 from microserviceBase.serviceBase import *
+from dataHandler import *
 
     
-def notify(topic, payload):
+def notify(self,topic, payload):
     print("Topic: %s, Payload: %s" % (topic, payload))
 
 
@@ -15,13 +16,13 @@ def notify(topic, payload):
 
 
 if __name__ == "__main__":
-    a = ServiceBase("test/fraSubFile.json", Notifier = notify)
+    a = ServiceBase("test/fraSubFile.json", Notifier = DataHandler.regData_toHa)
     a.start()
     clientErrorHandler = Client_Error_Handler()
-    topics = [ "homeassistant/sensor/smartSocket/1/status"
+    topics = [ "homeassistant/sensor/smartSockets/id/state"
     ]
-    a.MQTT.Subscribe(topics)
-    time.sleep(10)
+    a.MQTT.Subscribe("smartSocket/data")
+    time.sleep(5*10)
     a.MQTT.changeSubTopic(["/ciao/97/1"])
 
 #testare errori:

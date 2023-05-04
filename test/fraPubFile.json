@@ -61,7 +61,7 @@
         "QOS": 0
     },
     "REGISTRATION": {
-        "enabled": true,
+        "enabled": false,
         "serviceID": "SODgxNz",
         "serviceName": "PubFra",
         "catalogAddress": "http://127.0.0.1",

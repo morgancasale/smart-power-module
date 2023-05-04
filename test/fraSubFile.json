@@ -32,7 +32,7 @@
     "MQTT": {
         "endPointID": "EODM2Mz",
         "endPointName": "SubFRA",
-        "autoBroker": true,
+        "autoBroker": false,
         "username":"pippo",
         "password":"babbo",
         "brokerAddress": "broker.emqx.io",
@@ -47,7 +47,10 @@
                 "/bro/99/1",
                 "/morgy/99/1",
                 "/ciao/97/1",
-                "/bro/97/1"
+                "/bro/97/1",
+                "homeassistant/sensor/smartSockets/id/state",
+                "smartSocket/data"
+
             ],
             "pub": [
                 "/bro/99/1",
@@ -59,7 +62,7 @@
         "QOS": 2
     },
     "REGISTRATION": {
-        "enabled": true,
+        "enabled": false,
         "serviceID": "SNDE3OD",
         "serviceName": "SubFra",
         "catalogAddress": "http://127.0.0.1",
