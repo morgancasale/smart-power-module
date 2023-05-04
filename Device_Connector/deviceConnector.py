@@ -28,8 +28,8 @@ class DeviceConnector():
  
         self.service.start()
 
-        OnlineStatusTracker = Thread(target=self.OnlineStatusTracker, args=(self.catalogAddress, self.catalogPort))
-        OnlineStatusTracker.start()
+        '''OnlineStatusTracker = Thread(target=self.OnlineStatusTracker, args=(self.catalogAddress, self.catalogPort))
+        OnlineStatusTracker.start()'''
         
         #self.service.MQTT.Subscribe("%s+/%s/+/config"%(self.baseTopic, self.system))
 

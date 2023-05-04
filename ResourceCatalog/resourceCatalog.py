@@ -23,13 +23,15 @@ from cherrypy import HTTPError
 class ResourceCatalog:
     def __init__(self, DBPath):
         if(not os.path.isfile(DBPath)):
-            raise cherrypy.HTTPError(status=400, message="Database file not found")
+            raise Server_Error_Handler.InternalServerError(message="The DB file does not exist")
         self.DBPath = DBPath
 
-        self.server = ServiceBase("ResourceCatalog/serviceConfig.json", 
-                                  GET=self.handleGetRequest, POST=self.handlePostRequest, 
-                                  PUT=self.handlePutRequest, PATCH=self.handlePatchRequest,
-                                  DELETE=self.handleDeleteRequest)
+        self.server = ServiceBase(
+            "ResourceCatalog/serviceConfig.json", 
+            GET=self.handleGetRequest, POST=self.handlePostRequest, 
+            PUT=self.handlePutRequest, PATCH=self.handlePatchRequest,
+            DELETE=self.handleDeleteRequest
+        )
         self.server.start()
         
     
@@ -150,7 +152,7 @@ class ResourceCatalog:
                         entries.append(entry)
                         entry.set2DB(self.DBPath)
                     
-                    Device.setOnlineStatus(entries)
+                    #Device.setOnlineStatus(entries)
                     return "Device update was successful"
                 
                 case "setSocket":
@@ -185,7 +187,7 @@ class ResourceCatalog:
                         entries.append(entry)
                         entry.set2DB(self.DBPath)
                     
-                    Service.setOnlineStatus(entries)
+                    #Service.setOnlineStatus(entries)
                     return "Device update was successful"
                 
                 case "setDeviceSettings":
@@ -461,7 +463,7 @@ class ResourceCatalog:
             for conn in connData["conns"]:               
                 if(conn["new_status"]):
                     entry = dict(zip(connData["keyName"], conn["keyValue"]))
-                    entry["lastUpdate"] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    entry["lastUpdate"] = time.time()
                     if(not check_presence_inDB(self.DBPath, connData["table"], connData["keyName"], conn["keyValue"])):
                         save_entry2DB(DBPath, connData["table"], entry)
                 

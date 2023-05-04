@@ -43,7 +43,7 @@ class Register(Thread):
             raise HTTPError(status=e.status, message="An error occurred while initializing registration: \u0085\u0009" + e._message)
         except Exception as e:
             self.events["stopEvent"].set()
-            raise self.serverErrorHandler.InternalServerError(msg="An error occurred while initializing registration: \u0085\u0009" + str(e))
+            raise self.serverErrorHandler.InternalServerError(message="An error occurred while initializing registration: \u0085\u0009" + str(e))
 
     def run(self):
         self.KeepAlive()
@@ -55,25 +55,25 @@ class Register(Thread):
         except HTTPError as e:
             raise HTTPError(status=e.status, message="An error occurred while loading registration configs: \u0085\u0009" + e._message)
         except Exception as e:
-            raise self.serverErrorHandler.InternalServerError(msg="An error occurred while loading registration configs: \u0085\u0009" + str(e))
+            raise self.serverErrorHandler.InternalServerError(message="An error occurred while loading registration configs: \u0085\u0009" + str(e))
 
 
     def checkParams(self):
         self.config_params = ["enabled", "serviceName", "serviceID", "catalogAddress", "catalogPort", "T_Registration"]
 
         if(not all(param in self.configs for param in self.config_params)):
-            raise self.clientErrorHandler.BadRequest(msg="Missing parameters in config file")
+            raise self.clientErrorHandler.BadRequest(message="Missing parameters in config file")
     
     def validateParams(self):
         for key in self.config_params:
             match key:
                 case "enabled":
                     if(not isinstance(self.configs["enabled"], bool)):
-                        raise self.clientErrorHandler.BadRequest(msg="enabled parameter must be a boolean")
+                        raise self.clientErrorHandler.BadRequest(message="enabled parameter must be a boolean")
                     self.enabled = self.configs["enabled"]
                 case ("serviceName" | "serviceID" | "catalogAddress"):
                     if(not isinstance(self.configs[key], str)):
-                        raise self.clientErrorHandler.BadRequest(msg=key + " parameter must be a string")
+                        raise self.clientErrorHandler.BadRequest(message=key + " parameter must be a string")
                     match key:
                         case "serviceID":
                             self.serviceID = self.configs["serviceID"]
@@ -83,11 +83,11 @@ class Register(Thread):
                             self.catalogAddress = self.configs["catalogAddress"]
                 case "catalogPort":
                     if(not isinstance(self.configs["catalogPort"], int)): #TODO check port validity
-                        raise self.clientErrorHandler.BadRequest(msg="catalogPort parameter must be an integer")
+                        raise self.clientErrorHandler.BadRequest(message="catalogPort parameter must be an integer")
                     self.catalogPort = self.configs["catalogPort"]
                 case "T_Registration":
                     if(not isinstance(self.configs["T_Registration"], (int, float)) or self.configs["T_Registration"] < 0):
-                        raise self.clientErrorHandler.BadRequest(msg="T_Registration parameter must be a positive number")
+                        raise self.clientErrorHandler.BadRequest(message="T_Registration parameter must be a positive number")
                     self.T_Registration = self.configs["T_Registration"]
     
     def updateConfigFile(self, key, dict):
@@ -98,7 +98,7 @@ class Register(Thread):
             with open(self.config_file, "w") as file:
                 json.dump(configs, file, indent=4)
         except Exception as e:
-            raise self.serverErrorHandler.InternalServerError(msg=
+            raise self.serverErrorHandler.InternalServerError(message=
                 "An error occurred while updating the configuration file: \u0085\u0009" + str(e)
             )
 
@@ -225,7 +225,7 @@ class Register(Thread):
                 raise HTTPError(status = e.status, message="An error occurred while sending keep alive request: \u0085\u0009" + e._message)
             except Exception as e:
                 self.events["stopEvent"].set()
-                raise serverErrorHandler.InternalServerError(msg="An error occurred while sending keep alive request: \u0085\u0009" + str(e))
+                raise serverErrorHandler.InternalServerError(message="An error occurred while sending keep alive request: \u0085\u0009" + str(e))
             
             if(firstRun):
                 firstRun = False

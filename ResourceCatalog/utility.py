@@ -245,7 +245,7 @@ def updateConnTable(DBPath, data, newStatus = None):
             entry = {
                 refID : refValue,
                 connID : connValue,
-                "lastUpdate" : datetime.now().strftime("%d/%m/%Y %H:%M")
+                "lastUpdate" : time.time()
             }
             if(newStatus != None):
                 entry["Online"] = newStatus

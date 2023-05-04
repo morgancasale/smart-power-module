@@ -117,10 +117,10 @@ class MQTTServer(Thread):
                 "no conncetion to broker"
             )
 
-    def OnMessageReceived(self, a, b, msg):
-        self.subNotifier(self, msg.topic, msg.payload)
+    def OnMessageReceived(self, a, b, message):
+        self.subNotifier(self, message.topic, message.payload)
 
-    def Publish(self, topics, msg, retain=False):
+    def Publish(self, topics, message, retain=False):
         while(not self.connected):
             time.sleep(5)
         if(not isinstance(topics, list)):
@@ -130,11 +130,11 @@ class MQTTServer(Thread):
                 self.checkTopic(topic, "pub")
                 if(len(self.publishtopics)>0):
                     for publishtopic in  self.publishtopics:
-                         print("Publishing '%s' at topic '%s'" % (msg, publishtopic))
-                         self.Client.publish(publishtopic, json.dumps(msg), 2, retain)
+                         print("Publishing '%s' at topic '%s'" % (message, publishtopic))
+                         self.Client.publish(publishtopic, json.dumps(message), 2, retain)
                 else:
-                    print("Publishing '%s' at topic '%s'" % (msg, topic))
-                    self.Client.publish(topic, json.dumps(msg), 2, retain)
+                    print("Publishing '%s' at topic '%s'" % (message, topic))
+                    self.Client.publish(topic, json.dumps(message), 2, retain)
         else:
             raise self.clientErrorHandler.BadRequest(
             "Publisher is not active for this service")

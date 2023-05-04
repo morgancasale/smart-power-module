@@ -8,9 +8,11 @@ from utility import *
 from microserviceBase.Error_Handler import *
 class EndPoint:
     def __init__(self, endPointData, newEndPoint = False):
-        self.endPointKeys = ["endPointID", "endPointName", "protocols", 
-                             "IPAddress", "port", "clientID", "CRUDMethods", 
-                             "MQTTTopics", "MQTTUser", "MQTTPassword", "QOS"]
+        self.endPointKeys = sorted([
+            "endPointID", "endPointName", "protocols", 
+            "IPAddress", "port", "clientID", "CRUDMethods", 
+            "MQTTTopics", "MQTTUser", "MQTTPassword", "QOS"
+        ])
         self.connTables = ["DeviceEndP_conn"]
         
         if(newEndPoint) : self.checkKeys(endPointData)
@@ -20,7 +22,7 @@ class EndPoint:
 
         if(newEndPoint):
             self.Online = self.Ping()
-            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = time.time()
 
 
     def to_dict(self):
@@ -35,14 +37,14 @@ class EndPoint:
         return result
 
     def checkKeys(self, endPointData):
-        if(not all(key in self.endPointKeys for key in endPointData.keys())):
-            raise HTTPError(status=400, message="Missing one or more keys")
+        if(self.endPointKeys != sorted(endPointData.keys())):
+            raise Client_Error_Handler.BadRequest(message="Missing one or more keys")
 
     def checkSaveValues(self, endPointData):
         for key in endPointData.keys():
             match key:
                 case ("endPointID" | "endPointName" | "MQTTUser" | "MQTTPassword"):
-                    if(not isinstance(endPointData[key], str)):
+                    if(endPointData[key] != None and not isinstance(endPointData[key], str)):
                         raise Client_Error_Handler.BadRequest(message="End-point's \"" + key + "\" value must be string")
                     match key:
                         case "endPointID":
@@ -103,31 +105,33 @@ class EndPoint:
 
                 case "CRUDMethods":
                     methods = endPointData[key]
-                    if(not isinstance(methods, list)):
-                        raise Client_Error_Handler.BadRequest(message="\"CRUDMethods\" value must be a list")
-                    if(not all(isinstance(method, str) for method in methods)):
-                        raise Client_Error_Handler.BadRequest(message="\"CRUDMethods\" value must be a list of strings")
-                    if(not all(method in ["GET", "POST", "PUT", "DELETE", "PATCH"] for method in methods)):
-                        raise Client_Error_Handler.BadRequest(message="Unexpected method in \"" + key +"\".")
-
+                    if("REST" in endPointData["protocols"]):
+                        if(not isinstance(methods, list)):
+                            raise Client_Error_Handler.BadRequest(message="\"CRUDMethods\" value must be a list")
+                        if(not all(isinstance(method, str) for method in methods)):
+                            raise Client_Error_Handler.BadRequest(message="\"CRUDMethods\" value must be a list of strings")
+                        if(not all(method in ["GET", "POST", "PUT", "DELETE", "PATCH"] for method in methods)):
+                            raise Client_Error_Handler.BadRequest(message="Unexpected method in \"" + key +"\".")
+                        self.CRUDMethods = methods
                 case "MQTTTopics":
                     topics = endPointData[key]
-                    if(not isinstance(topics, dict)):
-                        raise Client_Error_Handler.BadRequest(message="\"" + key + "\" must be a dictionary")
-                    if(not all(key in ["pub", "sub"] for key in topics.keys())):
-                        raise Client_Error_Handler.BadRequest(message="\"" + key + "\" must have parameters \"pub\" and \"sub\"")
-                    
-                    if(topics["sub"] != None and not isinstance(topics["sub"], list)):
-                        raise Client_Error_Handler.BadRequest(message="Subscription \"" + key + "\" must be a list")
-                    if(topics["sub"] != None and not all(isinstance(topic, str) for topic in topics["sub"])):
-                        raise Client_Error_Handler.BadRequest(message="Subscription \"" + key + "\" must be a list of strings")
-                    
-                    if(topics["pub"] != None and not isinstance(topics["pub"], list)):
-                        raise Client_Error_Handler.BadRequest(message="Publication \"" + key + "\" must be a list")
-                    if(topics["pub"] != None and not all(isinstance(topic, str) for topic in topics["pub"])):
-                        raise Client_Error_Handler.BadRequest(message="Publication \"" + key + "\" must be a list of strings")
-                    
-                    self.MQTTTopics = endPointData[key]
+                    if("MQTT" in endPointData["protocols"]):
+                        if(not isinstance(topics, dict)):
+                            raise Client_Error_Handler.BadRequest(message="\"" + key + "\" must be a dictionary")
+                        if(not all(key in ["pub", "sub"] for key in topics.keys())):
+                            raise Client_Error_Handler.BadRequest(message="\"" + key + "\" must have parameters \"pub\" and \"sub\"")
+                        
+                        if(topics["sub"] != None and not isinstance(topics["sub"], list)):
+                            raise Client_Error_Handler.BadRequest(message="Subscription \"" + key + "\" must be a list")
+                        if(topics["sub"] != None and not all(isinstance(topic, str) for topic in topics["sub"])):
+                            raise Client_Error_Handler.BadRequest(message="Subscription \"" + key + "\" must be a list of strings")
+                        
+                        if(topics["pub"] != None and not isinstance(topics["pub"], list)):
+                            raise Client_Error_Handler.BadRequest(message="Publication \"" + key + "\" must be a list")
+                        if(topics["pub"] != None and not all(isinstance(topic, str) for topic in topics["pub"])):
+                            raise Client_Error_Handler.BadRequest(message="Publication \"" + key + "\" must be a list of strings")
+                        
+                        self.MQTTTopics = endPointData[key]
                     
                 case _:
                     raise Client_Error_Handler.BadRequest(message="Unexpected key \"" + key + "\"")
@@ -175,12 +179,12 @@ class EndPoint:
                     raise Client_Error_Handler.BadRequest(message="An end-point with ID \"" + self.endPointID + "\" is already used in another connection")
             else:
                 foundEndPoints = []
-                if("IPAddress" in self.endPointData.keys()):
+                if("IPAddress" in self.endPointData.keys() and self.endPointData["IPAddress"] != None):
                     foundEndPoints = DBQuery_to_dict(DBPath, "SELECT * FROM endPoints WHERE (\"IPAddress\", \"port\") = (\"" + self.IPAddress + "\", \"" + str(self.port) + "\")")
                 if(len(foundEndPoints) > 0 and foundEndPoints[0] != None and foundEndPoints[0]["endPointID"] != self.endPointID):
                     raise HTTPError(status=400, message="IP Address \"" + self.IPAddress + "\" and port \"" + str(self.port) + "\" are already used by another end-point")
                 self.Online = self.Ping()
-                self.lastUpdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                self.lastUpdate = time.time()
                 save_entry2DB(DBPath, "endPoints", self.to_dict())
         except HTTPError as e:
             raise HTTPError(
@@ -204,7 +208,7 @@ class EndPoint:
                     raise Client_Error_Handler.BadRequest(message="IP Address \"" + self.IPAddress + "\" and port \"" + str(self.port) + "\" are already used by another end-point")
 
             self.Online = self.Ping()
-            self.lastUpdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.lastUpdate = time.time()
             update_entry_inDB(DBPath, "endPoints", "endPointID", self.to_dict())
 
             entry = {
@@ -292,7 +296,7 @@ class EndPoint:
 
             missingEPIDs = list(set(allEPIDs) - set(newEPIDs))
 
-            entry = {"endPointID": missingEPIDs, "Online": False, "lastUpdate": datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+            entry = {"endPointID": missingEPIDs, "Online": False, "lastUpdate": time.time()}
 
             update_entry_inDB(DBPath, "EndPoints", "endPointID", entry)
         except HTTPError as e:

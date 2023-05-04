@@ -78,46 +78,40 @@ class Socket:
             )
         
     def updateDB(self, DBPath):
-        try:            
-            if(check_presence_inDB(DBPath, "Sockets", "deviceID", self.deviceID)):
-                query = "SELECT socketID FROM Sockets WHERE deviceID = \"" + self.deviceID + "\""
-                result = DBQuery_to_dict(DBPath, query)
-                if(not result[0]["socketID"] == self.socketID):
-                    raise Client_Error_Handler.BadRequest(message="Socket already connected to a device")
-            
+        try: 
             if(check_presence_inDB(DBPath, "Sockets", "MAC", self.MAC)):
-                query = "SELECT socketID FROM Sockets WHERE MAC = \"" + self.MAC + "\""
+                query = "SELECT deviceID FROM Sockets WHERE MAC = \"" + self.MAC + "\""
                 result = DBQuery_to_dict(DBPath, query)
-                if(not result[0]["socketID"] == self.socketID):
+                if(not result[0]["deviceID"] == self.deviceID):
                     raise Client_Error_Handler.BadRequest(message="Socket already connected to another MAC address")
             
             update_entry_inDB(DBPath, "Sockets", "deviceID", self.to_dict())
         except HTTPError as e:
             raise HTTPError(
                 status=e.status, message="An error occurred while updating socket with deviceID \"" + 
-                self.socketID + "\" in the DB:\u0085\u0009" + e._message
+                self.deviceID + "\" in the DB:\u0085\u0009" + e._message
             )
         except Exception as e:
             raise Server_Error_Handler.InternalServerError(
                 message="An error occurred while updating socket with ID \"" + 
-                self.socketID + "\" in the DB:\u0085\u0009" + str(e)
+                self.deviceID + "\" in the DB:\u0085\u0009" + str(e)
             )
         
     def set2DB(self, DBPath):
         try:
-            if(check_presence_inDB(DBPath, "Sockets", "socketID", self.socketID)):
+            if(check_presence_inDB(DBPath, "Sockets", "deviceID", self.deviceID)):
                 self.updateDB(DBPath)
             else:
                 self.save2DB(DBPath)
         except HTTPError as e:
             raise HTTPError(
-                status=e.status, message="An error occurred while setting socket with ID \"" + 
-                self.socketID + "\" in the DB:\u0085\u0009" + e._message
+                status=e.status, message="An error occurred while setting socket with deviceID \"" + 
+                self.deviceID + "\" in the DB:\u0085\u0009" + e._message
             )
         except Exception as e:
             raise Server_Error_Handler.InternalServerError(
-                message="An error occurred while setting socket with ID \"" + 
-                self.socketID + "\" in the DB:\u0085\u0009" + str(e)
+                message="An error occurred while setting socket with deviceID \"" + 
+                self.deviceID + "\" in the DB:\u0085\u0009" + str(e)
             )
         
     def deleteFromDB(DBPath, entry):
@@ -139,18 +133,18 @@ class Socket:
         
     def DB_to_dict(DBPath, socket):
         try:
-            socketID = socket["socketID"]
-            query = "SELECT * FROM Sockets WHERE socketID = \"" + socketID + "\""
+            deviceID = socket["deviceID"]
+            query = "SELECT * FROM Sockets WHERE deviceID = \"" + deviceID + "\""
             result = DBQuery_to_dict(DBPath, query)
 
             return result
         except HTTPError as e:
             raise HTTPError(
-                status=e.status, message="An error occurred while retrieving socket with ID \"" + 
-                socketID + "\" from the DB:\u0085\u0009" + e._message
+                status=e.status, message="An error occurred while retrieving socket with deviceID \"" + 
+                deviceID + "\" from the DB:\u0085\u0009" + e._message
             )
         except Exception as e:
             raise Server_Error_Handler.InternalServerError(
-                message="An error occurred while retrieving socket with ID \"" +
-                socketID + "\" from the DB:\u0085\u0009" + str(e)
+                message="An error occurred while retrieving socket with deviceID \"" +
+                deviceID + "\" from the DB:\u0085\u0009" + str(e)
             )

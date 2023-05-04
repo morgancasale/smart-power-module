@@ -64,36 +64,6 @@ class SocketHandler():
                 message = "An error occurred while getting the socket: " + str(e)
             )
         
-    '''def genSocketID(catalogAddress, catalogPort):
-        try:
-            existence = True
-            while(existence):
-                newID = "SKT" + randomB64String(6)
-
-                url = "%s:%s/checkPresence" % (
-                    catalogAddress,
-                    str(catalogPort)
-                )
-                params = {
-                    "table" : "Sockets",
-                    "keyName" : "socketID",
-                    "keyValue" : newID
-                }
-
-                response = requests.get(url, params=params)
-                if(response.status_code != 200):
-                    raise HTTPError(response.status_code, str(response.text))
-                
-                existence = json.loads(response.text)["result"]
-
-            return newID
-        except HTTPError as e:
-            raise HTTPError(status=e.status, message=e._message)
-        except Exception as e:
-            raise Server_Error_Handler.InternalServerError(
-                message = "An error occurred while generating the socket ID: " + str(e)
-            )'''
-        
     def genDeviceID(catalogAddress, catalogPort):
         try:
             existence = True
@@ -124,24 +94,128 @@ class SocketHandler():
                 message = "An error occurred while generating the device ID: " + str(e)
             )
         
-    def genDevice(deviceID, deviceName):
+    def genEndPointID(catalogAddress, catalogPort):
+        try:
+            existence = True
+            while(existence):
+                newID = "EP" + randomB64String(6)
+
+                url = "%s:%s/checkPresence" % (
+                    catalogAddress,
+                    str(catalogPort)
+                )
+                params = {
+                    "table" : "EndPoints",
+                    "keyName" : "endPointID",
+                    "keyValue" : newID
+                }
+
+                response = requests.get(url, params=params)
+                if(response.status_code != 200):
+                    raise HTTPError(response.status_code, str(response.text))
+                
+                existence = json.loads(response.text)["result"]
+            
+            return newID
+        except HTTPError as e:
+            raise HTTPError(
+                status=e.status, message="An error occurred while generating an endPointID: " + e._message
+            )
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(
+                message = "An error occurred while generating an endPointID: " + str(e)
+            )
+
+    def genResources():
+        return [
+            {
+                "resourceID" : "RVOLT",
+                "resourceName" : "Voltage",
+                "resourceMode" : "read",
+                "resourceType" : "float",
+                "resourceUnit" : "V"
+            },
+            {
+                "resourceID" : "RCURR",
+                "resourceName" : "Current",
+                "resourceMode" : "read",
+                "resourceType" : "float",
+                "resourceUnit" : "A"
+            },
+            {
+                "resourceID" : "RPOW",
+                "resourceName" : "Power",
+                "resourceMode" : "read",
+                "resourceType" : "float",
+                "resourceUnit" : "W"
+            },
+            {
+                "resourceID" : "RPOWH",
+                "resourceName" : "Energy",
+                "resourceMode" : "read",
+                "resourceType" : "float",
+                "resourceUnit" : "Wh"
+            },
+            {
+                "resourceID" : "RSW0",
+                "resourceName" : "Left_switch",
+                "resourceMode" : "write",
+                "resourceType" : "int",
+                "resourceUnit" : "bool"
+            },
+            {
+                "resourceID" : "RSW1",
+                "resourceName" : "Center_switch",
+                "resourceMode" : "write",
+                "resourceType" : "int",
+                "resourceUnit" : "bool"
+            },
+            {
+                "resourceID" : "RSW2",
+                "resourceName" : "Right_switch",
+                "resourceMode" : "write",
+                "resourceType" : "int",
+                "resourceUnit" : "bool"
+            }
+        ]
+    
+    def genEndpoints(catalogAddress, catalogPort, system, baseTopic, deviceID):
+        endPoint = {}
+        endPoint["endPointID"] = SocketHandler.genEndPointID(catalogAddress, catalogPort)
+        endPoint["endPointName"] = "Socket " + deviceID +" EndPoint"
+        endPoint["protocols"] = ["MQTT"]
+        endPoint["clientID"] = deviceID
+        endPoint["MQTTTopics"] = SocketHandler.genTopics(system, baseTopic, deviceID)
+
+        endPoint["IPAddress"] = None
+        endPoint["port"] = None
+        endPoint["CRUDMethods"] = None
+        endPoint["MQTTUser"] = None
+        endPoint["MQTTPassword"] = None
+        endPoint["QOS"] = 0
+        return endPoint
+
+
+    def genDevice(catalogAddress, catalogPort, system, baseTopic, deviceID, deviceName):
         try:
             device = {}
             device["deviceID"] = deviceID
             device["deviceName"] = deviceName
+
+            device["Resources"] = SocketHandler.genResources()
+            device["endPoints"] = [SocketHandler.genEndpoints(catalogAddress, catalogPort, system, baseTopic, deviceID)]
             return device
         except Exception as e:
             raise Server_Error_Handler.InternalServerError(
                 message = "An error occurred while generating the device: " + str(e)
             )
     
-    def genSocket(MAC, deviceID, RSSI, catalogAddress, catalogPort):
+    def genSocket(MAC, deviceID, RSSI, masterNode):
         socket = {}
-        try:
-            #socket["socketID"] = SocketHandler.genSocketID(catalogAddress, catalogPort)
+        try: 
             socket["deviceID"] = deviceID
             socket["MAC"] = MAC
-            socket["masterNode"] = False
+            socket["masterNode"] = masterNode
             socket["HAID"] = None
             socket["RSSI"] = RSSI
             return socket
@@ -185,11 +259,13 @@ class SocketHandler():
 
             deviceName = "Smart Socket " + ("Master " if bool(masterNode) else "") + deviceID
 
+            socketData = SocketHandler.genSocket(MAC, deviceID, RSSI, masterNode)
+            deviceData = SocketHandler.genDevice(catalogAddress, catalogPort, system, baseTopic, deviceID, deviceName)
+
             url = "%s:%s/setDevice" % (
                 catalogAddress,
                 str(catalogPort)
             )
-            deviceData = SocketHandler.genDevice(deviceID, deviceName)
             response = requests.put(url, headers=headers, data=json.dumps(deviceData))
             if(response.status_code != 200):
                 raise HTTPError(response.status_code, str(response.text))
@@ -198,7 +274,6 @@ class SocketHandler():
                 catalogAddress,
                 str(catalogPort)
             )
-            socketData = SocketHandler.genSocket(MAC, deviceID, RSSI, catalogAddress, catalogPort)
             response = requests.put(url, headers=headers, data=json.dumps(socketData))
             if(response.status_code != 200):
                 raise HTTPError(response.status_code, str(response.text))
@@ -210,7 +285,7 @@ class SocketHandler():
             HAID = SocketHandler.getHAID(HAIP, HAPort, HAToken, deviceID)
             deviceData["HAID"] = HAID
             
-            response = requests.put(url, headers=headers, data=json.dumps(deviceData))
+            response = requests.put(url, headers=headers, data=json.dumps(socketData))
             if(response.status_code != 200):
                 raise HTTPError(response.status_code, str(response.text))      
             
@@ -244,9 +319,9 @@ class SocketHandler():
             
             return response.json()[0]["MQTTTopics"]
         except HTTPError as e:
-            raise Client_Error_Handler.BadRequest(msg="An error occurred while getting MQTT broker: \u0085\u0009" + e._message)
+            raise Client_Error_Handler.BadRequest(message="An error occurred while getting MQTT broker: \u0085\u0009" + e._message)
         except Exception as e:
-            raise Server_Error_Handler.InternalServerError(msg="An error occurred while getting MQTT broker: \u0085\u0009" + str(e))
+            raise Server_Error_Handler.InternalServerError(message="An error occurred while getting MQTT broker: \u0085\u0009" + str(e))
     
     def checkPresenceOfMasterNode(catalogAddress, catalogPort):
         try:
@@ -266,12 +341,12 @@ class SocketHandler():
             
             return response.json()["result"]
         except HTTPError as e:
-            raise Client_Error_Handler.BadRequest(msg="An error occurred while checking the presence of the Master node: \u0085\u0009" + e._message)
+            raise Client_Error_Handler.BadRequest(message="An error occurred while checking the presence of the Master node: \u0085\u0009" + e._message)
         except Exception as e:
-            raise Server_Error_Handler.InternalServerError(msg="An error occurred while checking the presence of the Master node: \u0085\u0009" + str(e))
+            raise Server_Error_Handler.InternalServerError(message="An error occurred while checking the presence of the Master node: \u0085\u0009" + str(e))
 
     def giveRole_toSocket(self, *uri, **params): #self è il self di REST
-        match uri[1]:
+        match uri[0]:
             case "getRole":
                 catalogAddress = self.generalConfigs["REGISTRATION"]["catalogAddress"]
                 catalogPort = self.generalConfigs["REGISTRATION"]["catalogPort"]
@@ -289,6 +364,7 @@ class SocketHandler():
                         baseTopic = self.generalConfigs["CONFIG"]["HomeAssistant"]["baseTopic"]
                         data = SocketHandler.regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, params["MAC"], float(params["RSSI"]))
 
+                    out["deviceID"] = data["deviceID"]
                     out["masterNode"] = data["masterNode"]
 
                     if(params["autoBroker"]):
@@ -305,13 +381,13 @@ class SocketHandler():
 
                     return json.dumps(out)
                 except HTTPError as e:
-                    msg = """
+                    message = """
                         An error occurred while 
                         registering socket to catalog: \u0085\u0009
                     """ + e._message
-                    raise HTTPError(status=e.status, message = msg)
+                    raise HTTPError(status=e.status, message = message)
                 except Exception as e:
-                    raise Server_Error_Handler.InternalServerError(msg=
+                    raise Server_Error_Handler.InternalServerError(message=
                         "An error occurred while getting MQTT broker: \u0085\u0009" + str(e)
                     )
             case _:
@@ -335,9 +411,33 @@ class SocketHandler():
             
             return response.json()["masterNode"]
         except HTTPError as e:
-            raise Client_Error_Handler.BadRequest(msg="An error occurred while checking id socket is the Master node: \u0085\u0009" + e._message)
+            raise Client_Error_Handler.BadRequest(message="An error occurred while checking id socket is the Master node: \u0085\u0009" + e._message)
         except Exception as e:
-            raise Server_Error_Handler.InternalServerError(msg="An error occurred while checking id socket is the Master node: \u0085\u0009" + str(e))
+            raise Server_Error_Handler.InternalServerError(message="An error occurred while checking id socket is the Master node: \u0085\u0009" + str(e))
+    
+    def genTopics(system, baseTopic, deviceID):
+        topics = {
+            "sub": [],
+            "pub": []
+        }
+
+        baseTopic += "/"
+        stateSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID + "/state"
+        availableSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID + "/status"
+
+        topics["pub"].append(stateSensorTopic)
+        topics["pub"].append(availableSensorTopic)
+
+        stateSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/state"
+        commandSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/control"
+        availableSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/status"
+
+        for i in range(3):
+            topics["pub"].append(stateSwitchTopic + "/" + str(i))
+            topics["pub"].append(availableSwitchTopic + "/" + str(i))
+            topics["sub"].append(commandSwitchTopic + "/" + str(i))
+
+        return topics
 
     def regSocket_toHA(self, system, baseTopic, deviceID, masterNode, deviceName=None):
         try:
@@ -441,17 +541,17 @@ class SocketHandler():
                 i+=1
                 
         except HTTPError as e:
-            msg = """
+            message = """
                 An error occurred while 
                 registering socket to HomeAssistant: \u0085\u0009
             """ + e._message
-            raise HTTPError(status=e.status, message = msg)
+            raise HTTPError(status=e.status, message = message)
         except Exception as e:
-            msg = """
+            message = """
                 An error occurred while
                 registering socket to HomeAssistant: \u0085\u0009
             """ + str(e)
-            raise Server_Error_Handler.InternalServerError(msg=msg)
+            raise Server_Error_Handler.InternalServerError(message=message)
         
     def updateSocketName_onHA(self, *uri): #TODO Test this 
         try:
@@ -472,17 +572,17 @@ class SocketHandler():
                 case _:
                     raise Server_Error_Handler.NotImplemented("Method not implemented")
         except HTTPError as e:
-            msg = """
+            message = """
                 An error occurred while 
                 updating socket name on HomeAssistant: \u0085\u0009
             """ + e._message
-            raise HTTPError(status=e.status, message = msg)
+            raise HTTPError(status=e.status, message = message)
         except Exception as e:
-            msg = """
+            message = """
                 An error occurred while
                 updating socket name on HomeAssistant: \u0085\u0009
             """ + str(e)
-            raise Server_Error_Handler.InternalServerError(message=msg)
+            raise Server_Error_Handler.InternalServerError(message=message)
 
 
     def delSocket_fromHA(self, deviceID, baseTopic, system):
@@ -502,17 +602,17 @@ class SocketHandler():
                 dT = discoveryTopics[1] + "_" + str(plug) + "/config"
                 print(self.MQTTService.Publish(dT, "", retain=True))
         except HTTPError as e:
-            msg = """
+            message = """
                 An error occurred while 
                 deleting socket from HomeAssistant: \u0085\u0009
             """ + e._message
-            raise HTTPError(status=e.status, message = msg)
+            raise HTTPError(status=e.status, message = message)
         except Exception as e:
-            msg = """
+            message = """
                 An error occurred while
                 deleting socket from HomeAssistant: \u0085\u0009
             """ + str(e)
-            raise Server_Error_Handler.InternalServerError(msg=msg)
+            raise Server_Error_Handler.InternalServerError(message=message)
         
     '''def handleDeleteSocket_byHA(topic, payload):
         try:
@@ -527,19 +627,27 @@ class SocketHandler():
                     raise HTTPError(status=response.status_code, message = response.text)
 
         except HTTPError as e:
-            msg = """
+            message = """
                 An error occurred while 
                 handling Deletion of Device initiated by HomeAssistant: \u0085\u0009
             """ + e._message
-            raise HTTPError(status=e.status, message = msg)
+            raise HTTPError(status=e.status, message = message)
         except Exception as e:
-            msg = """
+            message = """
                 An error occurred while
                 handling Deletion of Device initiated by HomeAssistant: \u0085\u0009
             """ + str(e)
-            raise Server_Error_Handler.InternalServerError(message=msg)'''
+            raise Server_Error_Handler.InternalServerError(message=message)'''
     
     def getHAID(HAIP, HAPort, HAToken, deviceID):
+        """
+        Get the number that HomeAssistant assigns to a specific device
+        for its entities (e.g. sensor.voltage_1, sensor.voltage_2, etc.)
+        If the device is the first one to be registered, the function will return 0
+        but no number will be appended to the entities (e.g. sensor.voltage, sensor.current, etc.)
+
+        """
+
         try:
             template = """{% set devices = states | map(attribute='entity_id') | map('device_id') | unique | reject('eq',None) | list %}
                 {%- set ns = namespace(devices = []) %}
@@ -575,17 +683,20 @@ class SocketHandler():
             text = response.text.replace("\'", "\"")
             response = json.loads(text)
 
-            return response[0]["entities"][0].split("_")[1]
+            if(not "_" in response[0]["entities"][0]): # If the device is the first one then it has no "HAID"
+                return 0                               # So if return 0 then no "HAID" is needed
+            else:
+                return response[0]["entities"][0].split("_")[1]
         except HTTPError as e:
-            msg = """
+            message = """
                 An error occurred while 
                 getting devices info from Home Assistant: \u0085\u0009
             """ + e._message
-            raise HTTPError(status=e.status, message = msg)
+            raise HTTPError(status=e.status, message = message)
         except Exception as e:
-            msg = """
+            message = """
                 An error occurred while 
                 getting devices info from Home Assistant: \u0085\u0009
             """ + str(e)
-            raise Server_Error_Handler.InternalServerError(msg=msg)
+            raise Server_Error_Handler.InternalServerError(message=message)
     
