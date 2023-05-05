@@ -157,12 +157,8 @@ class DeviceSettings:
             
             for sched in self.scheduling:
                 sched.save2DB(DBPath)
-
-            update_entry_inDB(DBPath, "DeviceSettings", "deviceID", self.to_dict())
             
-            
-
-            update_entry_inDB(DBPath, "Devices", "deviceID", {"deviceID": self.deviceID, "deviceName": self.deviceName})
+            save_entry2DB(DBPath, "DeviceSettings", self.to_dict())
 
         except HTTPError as e:
             raise HTTPError(status=e.status, message="An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB:\u0085\u0009" + str(e._message))
@@ -172,10 +168,40 @@ class DeviceSettings:
             )
         
     def updateDB(self, DBPath):
-        self.save2DB(DBPath)
+        try:
+            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
+                raise Client_Error_Handler.NotFound(message="Device not found in DB")
+            
+            for sched in self.scheduling:
+                sched.save2DB(DBPath)
+
+            update_entry_inDB(DBPath, "DeviceSettings", "deviceID", self.to_dict())
+            
+            update_entry_inDB(DBPath, "Devices", "deviceID", {"deviceID": self.deviceID, "deviceName": self.deviceName})
+
+        except HTTPError as e:
+            raise HTTPError(status=e.status, message="An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB:\u0085\u0009" + str(e._message))
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(
+                "An error occurred while saving device settings for device with ID \"" + self.deviceID + "\" to the DB:\u0085\u0009" + str(e)
+            )
 
     def set2DB(self, DBPath):
-        self.save2DB(DBPath)
+        try:
+            if(check_presence_inDB(DBPath, "DeviceSettings", "deviceID", self.deviceID)):
+                self.updateDB(DBPath)
+            else:
+                self.save2DB(DBPath)
+        except HTTPError as e:
+            raise HTTPError(
+                status=e.status, message="An error occurred while setting device settings for device with ID \"" + 
+                self.deviceID + "\" to the DB:\u0085\u0009" + str(e._message)
+            )
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(
+                "An error occurred while setting device settings for device with ID \"" + self.deviceID + "\" to the DB:\u0085\u0009" + str(e)
+            )
+        
 
     def deleteFromDB(DBPath, params):
         try:

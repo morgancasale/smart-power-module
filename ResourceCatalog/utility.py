@@ -100,7 +100,6 @@ def update_entry_inDB(DBPath, table, primaryKeyNames, entryData):
     if(not isinstance(primaryKeyNames, list)) : primaryKeyNames = [primaryKeyNames]
     try:
         conn = sq.connect(DBPath)
-        conn.execute("PRAGMA foreign_keys = ON")
         query = "UPDATE " + table + " SET "
 
         keys = []

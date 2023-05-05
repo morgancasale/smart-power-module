@@ -250,6 +250,25 @@ class SocketHandler():
                 message = "An error occurred while deleting the device from the catalog: " + str(e)
             )
         
+    def genSocketStgs(deviceID, deviceName):
+        socketStgs = {}
+        socketStgs["deviceID"] = deviceID
+        socketStgs["deviceName"] = deviceName
+        socketStgs["enabledSockets"] = [1, 1, 1]
+        socketStgs["HPMode"] = 0
+        socketStgs["MPControl"] = 0
+        socketStgs["maxPower"] = 1
+        socketStgs["MPMode"] = "Notify"
+        socketStgs["faultControl"] = 0
+        socketStgs["parControl"] = 0
+        socketStgs["parThreshold"] = 1
+        socketStgs["parMode"] = "Manual"
+        socketStgs["applianceType"] = "None"
+        socketStgs["FBControl"] = 0
+        socketStgs["FBMode"] = "Notify"
+
+        return socketStgs
+        
     def regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, MAC, RSSI):
         try:
             headers = {
@@ -263,6 +282,7 @@ class SocketHandler():
             deviceName = "Smart Socket " + ("Master " if bool(masterNode) else "") + deviceID
 
             socketData = SocketHandler.genSocket(MAC, deviceID, RSSI, masterNode)
+            socketStgsData = SocketHandler.genSocketStgs(deviceID, deviceName)
             deviceData = SocketHandler.genDevice(catalogAddress, catalogPort, system, baseTopic, deviceID, deviceName)
 
             url = "%s:%s/setDevice" % (
@@ -270,6 +290,14 @@ class SocketHandler():
                 str(catalogPort)
             )
             response = requests.put(url, headers=headers, data=json.dumps(deviceData))
+            if(response.status_code != 200):
+                raise HTTPError(response.status_code, str(response.text))
+            
+            url = "%s:%s/setDeviceSettings" % (
+                catalogAddress,
+                str(catalogPort)
+            )
+            response = requests.put(url, headers=headers, data=json.dumps(socketStgsData))
             if(response.status_code != 200):
                 raise HTTPError(response.status_code, str(response.text))
 
