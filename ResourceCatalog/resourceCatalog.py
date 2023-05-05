@@ -209,9 +209,10 @@ class ResourceCatalog:
                     return "Appliance update was successful"
                 
                 case "setOnlineStatus":
+                    results = []
                     for entry in params:
-                        setOnlineStatus(entry)
-                    return "Online status update was successful"
+                        results.append(setOnlineStatus(entry))
+                    return results
                 
                 case "exit":
                     exit()
@@ -277,9 +278,10 @@ class ResourceCatalog:
                     return "Connection update was successful"
                 
                 case "updateOnlineStatus":
+                    results = []
                     for entry in params:
-                        updateOnlineStatus(self.DBPath, entry)
-                    return "Online status update was successful"
+                        results.append(updateOnlineStatus(self.DBPath, entry))
+                    return ("\n\t").join(results)
                 
                 case "exit":
                     exit()
@@ -293,6 +295,7 @@ class ResourceCatalog:
 
     def handleDeleteRequest(self, *uri, **params): #TODO : streamline using the same method for all classes
         cmd = uri[1]
+        if(not isinstance(params, list)) : params = [params]
         try:
             match cmd:
                 case "delHouse":

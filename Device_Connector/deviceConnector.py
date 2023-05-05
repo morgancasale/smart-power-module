@@ -4,11 +4,13 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir
 sys.path.append(PROJECT_ROOT)
 
 from threading import Thread
+from colorama import Fore
 
 from microserviceBase.serviceBase import *
 from microserviceBase.Error_Handler import * 
 
 from socketHandler import SocketHandler
+from dataHandler import DataHandler
 
 class DeviceConnector():
     def __init__(self):
@@ -21,29 +23,42 @@ class DeviceConnector():
         self.delSocket_fromHA = SocketHandler.delSocket_fromHA       # del servizio
         #self.handleDelete_byHA = SocketHandler.handleDeleteSocket_byHA
 
-        self.service = ServiceBase("Device_Connector/deviceConnector.json", GET=self.regSocket_toCatalog, PUT=self.handleUpdate_toHA, Notifier=None)
+        self.service = ServiceBase(
+            "Device_Connector/deviceConnector.json", GET=self.regSocket_toCatalog, PUT=self.handleUpdate_toHA, 
+            Notifier = None
+        )
 
         self.catalogAddress = self.service.generalConfigs["REGISTRATION"]["catalogAddress"]
+        if("http://" not in self.catalogAddress):
+            self.catalogAddress = "http://" + self.catalogAddress
         self.catalogPort = self.service.generalConfigs["REGISTRATION"]["catalogPort"]
  
         self.service.start()
 
-        '''OnlineStatusTracker = Thread(target=self.OnlineStatusTracker, args=(self.catalogAddress, self.catalogPort))
-        OnlineStatusTracker.start()'''
+        OnlineStatusTracker = Thread(target=self.OnlineStatusTracker, args=(self.catalogAddress, self.catalogPort))
+        OnlineStatusTracker.start()
         
         #self.service.MQTT.Subscribe("%s+/%s/+/config"%(self.baseTopic, self.system))
 
-    def OnlineStatusTracker(catalogAddress, catalogPort):
+    def OnlineStatusTracker(self, catalogAddress, catalogPort):
         try:
             while True:
-                url = "http://%s:%s/updateOnlineStatus"%(catalogAddress, catalogPort)
-                params = [{"table" : "Devices" }, {"table" : "DeviceResource_conn"}]
+                watchDogTimer = 5*60
 
-                response = requests.patch(url, data=json.dumps(params))
+                url = "%s:%s/updateOnlineStatus"%(catalogAddress, catalogPort)
+                params = [
+                    {"table" : "Devices", "timer" : watchDogTimer}, 
+                    {"table" : "DeviceResource_conn", "timer" : watchDogTimer}
+                ]
+
+                headers = {"Content-Type" : "application/json"}
+                response = requests.patch(url, headers=headers, data=json.dumps(params))
                 if(response.status_code != 200):
                     raise HTTPError(response.status_code, response.text)
+                
+                print(Fore.LIGHTGREEN_EX + "Online status Tracker:\n\t%s"%response.text + Fore.RESET)
 
-                time.sleep(5*60)
+                time.sleep(watchDogTimer)
         except Exception as e:
             raise Server_Error_Handler.InternalServerError(
                 message = "An error occurred while updating devices online status" + str(e)
@@ -51,13 +66,14 @@ class DeviceConnector():
         
     def setOnlineStatus(self, deviceID, status):
         try:
-            url = "http://%s:%s/setOnlineStatus"%(self.catalogAddress, self.catalogPort)
+            url = "%s:%s/setOnlineStatus"%(self.catalogAddress, self.catalogPort)
             params = [
                 {"table" : "Devices", "keyName" : "deviceID", "keyValue" : deviceID, "status" : status},
                 {"table" : "DeviceResource_conn", "keyName" : "deviceID", "keyValue" : deviceID, "status" : status}
             ]
 
-            response = requests.put(url, data=json.dumps(params))
+            headers = {"Content-Type" : "application/json"}
+            response = requests.put(url, headers=headers, data=json.dumps(params))
             if(response.status_code != 200):
                 raise HTTPError(response.status_code, response.text)
         except HTTPError as e:

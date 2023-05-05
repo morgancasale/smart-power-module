@@ -219,7 +219,7 @@ class RESTServer(Thread):
         conf={
             '/':{
                 "request.dispatch" : cherrypy.dispatch.MethodDispatcher(),
-                "request.methods_with_bodies": ("POST", "PUT", "PATCH", "DELETE"),
+                "request.methods_with_bodies": ("POST", "PUT", "PATCH"),
 
                 "tools.sessions.on" : True,            
                 "tools.json_in.on": True

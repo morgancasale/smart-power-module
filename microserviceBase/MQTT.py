@@ -128,13 +128,13 @@ class MQTTServer(Thread):
         if (self.configs["subPub"]["pub"]):
             for topic in topics:
                 self.checkTopic(topic, "pub")
-                if(len(self.publishtopics)>0):
+                if(len(self.publishtopics)>1):
                     for publishtopic in  self.publishtopics:
-                         print("Publishing '%s' at topic '%s'" % (message, publishtopic))
-                         self.Client.publish(publishtopic, json.dumps(message), 2, retain)
+                        print("Publishing '%s' at topic '%s'" % (message, publishtopic))
+                        self.Client.publish(publishtopic, json.dumps(message), self.QOS, retain=retain)
                 else:
                     print("Publishing '%s' at topic '%s'" % (message, topic))
-                    self.Client.publish(topic, json.dumps(message), 2, retain)
+                    self.Client.publish(topic, json.dumps(message), self.QOS, retain=retain)
         else:
             raise self.clientErrorHandler.BadRequest(
             "Publisher is not active for this service")

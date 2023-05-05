@@ -232,11 +232,14 @@ class SocketHandler():
                 catalogAddress,
                 str(catalogPort)
             )
+            headers = {
+                'content-type': "application/json",
+            }
             params = {
                 "deviceID" : deviceID
             }
 
-            response = requests.delete(url, params=params)
+            response = requests.delete(url, headers=headers, params=params)
             if(response.status_code != 200):
                 raise HTTPError(response.status_code, str(response.text))
             return True
@@ -287,7 +290,9 @@ class SocketHandler():
             
             response = requests.put(url, headers=headers, data=json.dumps(socketData))
             if(response.status_code != 200):
-                raise HTTPError(response.status_code, str(response.text))      
+                raise HTTPError(response.status_code, str(response.text))
+
+            #raise Exception("sandokan!")   
             
             return socketData
         except HTTPError as e:
@@ -587,6 +592,7 @@ class SocketHandler():
 
     def delSocket_fromHA(self, deviceID, baseTopic, system):
         try:
+            baseTopic += "/"
             discoveryTopics = [
                 baseTopic + "sensor/" + system + "/"+ deviceID,
                 baseTopic + "switch/" + system + "/"+ deviceID
