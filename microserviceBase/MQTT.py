@@ -6,8 +6,9 @@ import requests
 
 from threading import Thread, Event, current_thread
 
+
 class MQTTServer(Thread):
-    def __init__(self, threadID, threadName, events, configs,generalConfigs,configs_file, init_func=None, Notifier=None):
+    def __init__(self, threadID, threadName, events, configs, generalConfigs, configs_file, init_func=None, Notifier=None):
         Thread.__init__(self)
         self.threadID = threadID
         self.name = threadName
@@ -16,7 +17,7 @@ class MQTTServer(Thread):
         self.configParams = sorted([
             "endPointID", "endPointName", "autoBroker",
             "brokerAddress", "brokerPort", "subPub",
-            "clientID", "MQTTTopics", "QOS","username","password"
+            "clientID", "MQTTTopics", "QOS", "username", "password"
         ])
 
         self.connected = False
@@ -33,19 +34,20 @@ class MQTTServer(Thread):
             if (self.check_and_loadConfigs()):
 
                 url = self.generalConfigs["REGISTRATION"]["catalogAddress"] + ":"
-                url += str(self.generalConfigs["REGISTRATION"]["catalogPort"])+ "/getInfo"
+                url += str(self.generalConfigs["REGISTRATION"]
+                           ["catalogPort"]) + "/getInfo"
                 params = {
                     "table": "EndPoints",
                     "keyName": "endPointName",
                     "keyValue": "MQTTBroker"
                 }
 
-
-                if (self.configs["autoBroker"]): # sse personalizzo prendo broker da config, senno da resource catalogue
-                    response= requests.get(url, params=params)
-                    if(response.status_code != 200):
-                        raise HTTPError(response.status_code, str(response.text))
-
+                # sse personalizzo prendo broker da config, senno da resource catalogue
+                if (self.configs["autoBroker"]):
+                    response = requests.get(url, params=params)
+                    if (response.status_code != 200):
+                        raise HTTPError(response.status_code,
+                                        str(response.text))
 
                     broker_AddPort = response.json()[0]
 
@@ -54,20 +56,26 @@ class MQTTServer(Thread):
                     self.username = broker_AddPort["MQTTUser"]
                     self.password = broker_AddPort["MQTTPassword"]
                     if (self.broker == None or self.brokerPort == None):
-                        raise self.clientErrorHandler.BadRequest("Missing broker address or port in Resource Catalogue")
+                        raise self.clientErrorHandler.BadRequest(
+                            "Missing broker address or port in Resource Catalogue")
                     if (self.username == None or self.password == None):
-                        raise self.clientErrorHandler.BadRequest("Missing broker username or password in Resource Catalogue")
-                    
-                    if(self.generalConfigs["MQTT"]["brokerAddress"] == None or self.generalConfigs["MQTT"]["brokerPort"] == None):
-                          self.updateConfigFile( {"brokerAddress": self.broker, "brokerPort": self.brokerPort})
-                    if(self.generalConfigs["MQTT"]["username"] == None or self.generalConfigs["MQTT"]["password"] == None):
-                          self.updateConfigFile( {"username": self.username, "password": self.password})
+                        raise self.clientErrorHandler.BadRequest(
+                            "Missing broker username or password in Resource Catalogue")
+
+                    if (self.generalConfigs["MQTT"]["brokerAddress"] == None or self.generalConfigs["MQTT"]["brokerPort"] == None):
+                        self.updateConfigFile(
+                            {"brokerAddress": self.broker, "brokerPort": self.brokerPort})
+                    if (self.generalConfigs["MQTT"]["username"] == None or self.generalConfigs["MQTT"]["password"] == None):
+                        self.updateConfigFile(
+                            {"username": self.username, "password": self.password})
 
                 self.subNotifier = Notifier
 
-                self.MQTTSubTopic =  [(topic, self.QOS)  for topic in self.configs["MQTTTopics"]["sub"]]
+                self.MQTTSubTopic = [(topic, self.QOS)
+                                     for topic in self.configs["MQTTTopics"]["sub"]]
 
-            if (init_func != None): init_func()
+            if (init_func != None):
+                init_func()
 
             self.Client = MQTT.Client(self.clientID, True)
 
@@ -76,15 +84,18 @@ class MQTTServer(Thread):
 
         except HTTPError as e:
             self.events["stopEvent"].set()
-            raise HTTPError( status=e.status, message = "An error occurred while enabling the MQTT server: \u0085\u0009" + e._message)
+            raise HTTPError(
+                status=e.status, message="An error occurred while enabling the MQTT server: \u0085\u0009" + e._message)
         except Exception as e:
             self.events["stopEvent"].set()
             raise self.serverErrorHandler.InternalServerError(
-                "An error occurred while enabling MQTT server: \u0085\u0009" + str(e)
+                "An error occurred while enabling MQTT server: \u0085\u0009" +
+                str(e)
             )
 
     def openMQTTServer(self):
-        self.Client.username_pw_set(username=self.username, password=self.password)
+        self.Client.username_pw_set(
+            username=self.username, password=self.password)
         self.Client.connect(self.broker, self.brokerPort)
 
         self.Client.loop_start()
@@ -93,78 +104,72 @@ class MQTTServer(Thread):
 
     def run(self):
         try:
-            print("MQTT - Thread %s waiting for registration..." % current_thread().ident)
+            print("MQTT - Thread %s waiting for registration..." %
+                  current_thread().ident)
             self.events["startEvent"].wait()
             self.openMQTTServer()
-            
-
 
         except HTTPError as e:
             self.events["stopEvent"].set()
-            raise HTTPError( status=e.status, message = "An error occurred while running the MQTT server: \u0085\u0009" + e._message)
+            raise HTTPError(
+                status=e.status, message="An error occurred while running the MQTT server: \u0085\u0009" + e._message)
         except Exception as e:
             self.events["stopEvent"].set()
             raise self.serverErrorHandler.InternalServerError(
-                "An error occurred while running the MQTT server: \u0085\u0009" + str(e)
+                "An error occurred while running the MQTT server: \u0085\u0009" +
+                str(e)
             )
 
     def OnConnect(self, a, b, c, rc):
         print("Connected to %s with result code: %d" % (self.broker, rc))
-        if(rc == 0):
+        if (rc == 0):
             self.connected = True
         else:
-                raise self.serverErrorHandler.InternalServerError(
+            raise self.serverErrorHandler.InternalServerError(
                 "no conncetion to broker"
             )
 
     def OnMessageReceived(self, a, b, msg):
         self.subNotifier(self, msg.topic, msg.payload)
 
-        
-
     def Publish(self, topics, msg, retain=False):
-        while(not self.connected):
+        while (not self.connected):
             time.sleep(5)
-        if(not isinstance(topics, list)):
+        if (not isinstance(topics, list)):
             topics = [topics]
         if (self.configs["subPub"]["pub"]):
             for topic in topics:
                 self.checkTopic(topic, "pub")
-                if(len(self.publishtopics)>0):
-                    for publishtopic in  self.publishtopics:
-                         print("Publishing '%s' at topic '%s'" % (msg, publishtopic))
-                         self.Client.publish(publishtopic, json.dumps(msg), 0, retain)
-                else:
-                    print("Publishing '%s' at topic '%s'" % (msg, topic))
-                    self.Client.publish(topic, json.dumps(msg), 0, retain)
+                print("Publishing '%s' at topic '%s'" % (msg, topic))
+                self.Client.publish(topic, json.dumps(msg), 2, retain)
         else:
             raise self.clientErrorHandler.BadRequest(
-            "Publisher is not active for this service")
-
+                "Publisher is not active for this service")
 
     def Subscribe(self, topics):
-        while(not self.connected):
+        while (not self.connected):
             time.sleep(5)
-        if(not isinstance(topics, list)):
+        if (not isinstance(topics, list)):
             topics = [topics]
         if (self.configs["subPub"]["sub"]):
-            if (len(topics) >1):
+            if (len(topics) > 1):
                 MQTTTopics = []
             self.topics = []
             for topic in topics:
-                self.checkTopic(topic,"sub")
-                if (len(topics) ==1):
-                        MQTTTopics = (topic, 2)
-                        self.topics = topic
+                self.checkTopic(topic, "sub")
+                if (len(topics) == 1):
+                    MQTTTopics = (topic, 2)
+                    self.topics = topic
                 else:
-                        MQTTTopics.append((topic, 2))
-                        self.topics.append(topic)
-            print("subscribing '%d' at topic '%s'" % (2,   MQTTTopics ))
+                    MQTTTopics.append((topic, 2))
+                    self.topics.append(topic)
+            print("subscribing '%d' at topic '%s'" % (2,   MQTTTopics))
             self.Client.subscribe(MQTTTopics)
             self.isSub = True
 
         else:
-            raise self.clientErrorHandler.BadRequest("Error subscriber not activated")
+            raise self.clientErrorHandler.BadRequest(
+                "Error subscriber not activated")
 
     def Unsubscribe(self):
         if (self.isSub):
@@ -177,62 +182,71 @@ class MQTTServer(Thread):
         self.Client.loop_stop()
         self.Client.disconnect()
 
-
-
     def updateConfigFile(self, dict):
         try:
 
             self.generalConfigs["MQTT"]["brokerAddress"] = dict["brokerAddress"]
             self.generalConfigs["MQTT"]["brokerPort"] = dict["brokerPort"]
-            
 
             with open(self.configs_file, 'w') as file:
-                 json.dump(self.generalConfigs, file, indent=4)
+                json.dump(self.generalConfigs, file, indent=4)
             # with open(self.configs_file, "w") as file:
             #     json.dump(configs, file, indent=4)
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError(
-                "An error occurred while updating the configuration file: \u0085\u0009" + str(e)
+                "An error occurred while updating the configuration file: \u0085\u0009" +
+                str(e)
             )
 
-    def Wildcards(self,topic, subpub):
+    def Wildcards(self, topic, subpub):
         self.publishtopics = []
+        hash_flag = False
         Topic = topic
         topic = topic.split("/")
         hash_find = [i for i, x in enumerate(topic) if x == "#"]
         plus_find = [i for i, x in enumerate(topic) if x == "+"]
         subtopic = []
-        if("#" in char for char in self.configs["MQTTTopics"][subpub]):
-             hash_topics = []
-             hash_input_topic = []
-             for topics in self.configs["MQTTTopics"][subpub]:
-                 if("#" in topics):
-                     hash_find_topics = [i for i, x in enumerate(topics.split("/")) if x == "#"]
-                     hash_topics.append(topics.split("/")[:hash_find_topics[0]])
-                     hash_input_topic.append(topic[:hash_find_topics[0]])
-             for i in range(len(hash_input_topic)):
-                if(hash_input_topic[i] in hash_topics):
+        if (hash_find != [] and subpub == "pub"):
+            raise self.clientErrorHandler.BadRequest(
+                "Error # wildcard can't be used in publisher")
+
+        for char in self.configs["MQTTTopics"][subpub]:
+            if ("#" in char):
+                hash_flag = True
+        if (hash_flag):
+            hash_topics = []
+            hash_input_topic = []
+            for topics in self.configs["MQTTTopics"][subpub]:
+                if ("#" in topics):
+                    hash_find_topics = [i for i, x in enumerate(
+                        topics.split("/")) if x == "#"]
+                    hash_topics.append(topics.split("/")[:hash_find_topics[0]])
+                    hash_input_topic.append(topic[:hash_find_topics[0]])
+            for i in range(len(hash_input_topic)):
+                if (hash_input_topic[i] in hash_topics):
                     self.publishtopics.append(Topic)
-                    return True    
+                    return True
         else:
 
-            if(hash_find != []):
+            if (hash_find != []):
 
                 if (len(hash_find) > 1):
-                    raise self.clientErrorHandler.BadRequest("Error # wildcard can't be more than one")
+                    raise self.clientErrorHandler.BadRequest(
+                        "Error # wildcard can't be more than one")
 
                 if (len(plus_find) < 1):
                     subtopic.extend(topic[0:hash_find[0]])
 
                 else:
                     if (plus_find[-1] > hash_find[0]):
-                        raise self.clientErrorHandler.BadRequest("Error + wildcard can't be before #")
+                        raise self.clientErrorHandler.BadRequest(
+                            "Error + wildcard can't be before #")
                     temp = 0
                     for i in range(len(plus_find)):
                         subtopic.extend(topic[temp:plus_find[i]-1])
                         temp = plus_find[i]+1
                     if (hash_find > 0):
-                        subtopic.extend(topic[temp:hash_find[0]]  )
+                        subtopic.extend(topic[temp:hash_find[0]])
                     else:
                         subtopic.extend(topic[temp:])
             elif (plus_find != []):
@@ -243,76 +257,68 @@ class MQTTServer(Thread):
                 subtopic.extend(topic[temp:])
             listTopic = []
 
-
             for i in range(len(self.configs["MQTTTopics"][subpub])):
                 singleTopic = []
 
                 if (len(plus_find) == 0):
 
-                    singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[0:hash_find[0]])
+                    singleTopic.extend(
+                        self.configs["MQTTTopics"][subpub][i].split("/")[0:hash_find[0]])
                 else:
                     temp = 0
                     for j in range(len(plus_find)):
-                        singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[temp:plus_find[j]-1])
+                        singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split(
+                            "/")[temp:plus_find[j]-1])
                         temp = plus_find[j]+1
 
                     if (hash_find != []):
-                        singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[temp:hash_find[0]])
+                        singleTopic.extend(
+                            self.configs["MQTTTopics"][subpub][i].split("/")[temp:hash_find[0]])
                     else:
-                        singleTopic.extend(self.configs["MQTTTopics"][subpub][i].split("/")[temp:])
+                        singleTopic.extend(
+                            self.configs["MQTTTopics"][subpub][i].split("/")[temp:])
 
                 listTopic.append(singleTopic)
 
-            if( subtopic in listTopic):
-                if(subpub == "pub"):
-                    indexpub =  [i for i, x in enumerate(listTopic) if x == subtopic]
-                    for j in indexpub:
-                        self.publishtopics.append(self.configs["MQTTTopics"][subpub][j])
+            if (subtopic in listTopic):
                 return True
+
             else:
-                raise self.clientErrorHandler.BadRequest("Error topic not in config file")
+                raise self.clientErrorHandler.BadRequest(
+                    "Error topic not in config file")
 
+    def checkTopic(self, topic, subpub):
 
-    def checkTopic(self,topic, subpub):
-        if(subpub == "sub"):   
-            if ("+" not in topic and "#" not in topic ):
-                if ( topic  not in self.configs["MQTTTopics"][subpub]):
-                    raise self.clientErrorHandler.BadRequest("Error topic not in config file")
-            
+        if ("+" not in topic and "#" not in topic and subpub != "pub"):
+            if (topic not in self.configs["MQTTTopics"][subpub]):
+                raise self.clientErrorHandler.BadRequest(
+                    "Error topic not in config file")
+
         else:
-           self.Wildcards(topic, subpub)
-           
-           
-                 
-                 
-        return True
+            self.Wildcards(topic, subpub)
 
+        return True
 
     def changeSubTopic(self, newtopic):
         if (self.configs["subPub"]["sub"]):
             self.Unsubscribe()
             for topic in newtopic:
-               self.checkTopic(topic,"sub")
-               self.Subscribe(newtopic)
+                self.checkTopic(topic, "sub")
+                self.Subscribe(newtopic)
         else:
-            raise self.clientErrorHandler.BadRequest("Error subscriber not activated")
-
-
-
-
+            raise self.clientErrorHandler.BadRequest(
+                "Error subscriber not activated")
 
     def checkParams(self):
         if (not self.configParams == sorted(self.configs.keys())):
             raise self.clientErrorHandler.BadRequest(
                 "Missing parameters in config file")
 
-        if(not all(key in self.SubPub  for key in self.configs["subPub"].keys())):
+        if (not all(key in self.SubPub for key in self.configs["subPub"].keys())):
             raise self.clientErrorHandler.BadRequest(
                 "Missing parameters in config file")
 
-
-
-        if(not all(key in self.SubPub  for key in self.configs["MQTTTopics"].keys())):
+        if (not all(key in self.SubPub for key in self.configs["MQTTTopics"].keys())):
             raise self.clientErrorHandler.BadRequest(
                 "Missing parameters in config file")
 
@@ -331,40 +337,35 @@ class MQTTServer(Thread):
             raise self.clientErrorHandler.BadRequest(
                 "autoBroker parameter must be a boolean")
 
-
-        if(not self.configs["autoBroker"]):
+        if (not self.configs["autoBroker"]):
             if (not isinstance(self.configs["brokerAddress"], str)):
                 raise self.clientErrorHandler.BadRequest(
                     "brokerAddress parameter must be a string")
-     
 
-        if(not self.configs["username"]):
+        if (not self.configs["username"]):
             if (not isinstance(self.configs["username"], str)):
                 raise self.clientErrorHandler.BadRequest(
                     "username parameter must be a string")
-       
-        
 
-        if(not self.configs["password"]):
+        if (not self.configs["password"]):
             if (not isinstance(self.configs["password"], str)):
                 raise self.clientErrorHandler.BadRequest(
                     "password parameter must be a string")
-        if(not self.configs["autoBroker"]):
+        if (not self.configs["autoBroker"]):
             self.broker = self.configs["brokerAddress"]
-            self.username = self.configs["username"]    
+            self.username = self.configs["username"]
             self.password = self.configs["password"]
-            self.brokerPort = self.configs["brokerPort"]    
+            self.brokerPort = self.configs["brokerPort"]
 
         if (not isinstance(self.configs["brokerPort"], int)):
-                raise self.clientErrorHandler.BadRequest(
-                    "brokerPort parameter must be a int")
-        
+            raise self.clientErrorHandler.BadRequest(
+                "brokerPort parameter must be a int")
 
-        if(not isinstance(self.configs["subPub"], dict)):
+        if (not isinstance(self.configs["subPub"], dict)):
             raise self.clientErrorHandler.BadRequest(
                 "subPub parameter must be a dict")
 
-        if(not isinstance(self.configs["MQTTTopics"], dict)):
+        if (not isinstance(self.configs["MQTTTopics"], dict)):
             raise self.clientErrorHandler.BadRequest(
                 "subPub parameter must be a dict")
 
@@ -394,14 +395,14 @@ class MQTTServer(Thread):
                 "QOS parameter must be a int")
         self.QOS = self.configs["QOS"]
 
-
     def check_and_loadConfigs(self):
         try:
             self.checkParams()
             self.validateParams()
             return True
         except HTTPError as e:
-            raise HTTPError( status=e.status, message = "MQTT configs have errors: \u0085\u0009" + e._message)
+            raise HTTPError(
+                status=e.status, message="MQTT configs have errors: \u0085\u0009" + e._message)
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError(
                 "MQTT configs have errors: \u0085\u0009" + str(e)
