@@ -16,7 +16,7 @@ class DeviceSettings:
         self.settingsKeys = [
             "deviceID", "deviceName", "enabledSockets", "HPMode", "MPControl", "maxPower", "MPMode", "faultControl",
             "parControl", "parThreshold", "parMode", "applianceType", "FBControl", "FBMode",
-            "scheduling"
+            "scheduling", "Online"
         ]
 
         self.scheduling = []
@@ -57,7 +57,7 @@ class DeviceSettings:
                     self.enabledSockets = settingsData["enabledSockets"]
                         
                     
-                case ("HPMode" | "MPControl" | "faultControl" | "parControl" | "FBControl"):
+                case ("HPMode" | "MPControl" | "faultControl" | "parControl" | "FBControl" | "Online"):
                     if(isinstance(settingsData[key], int)):
                         settingsData[key] = bool(settingsData[key])
                     if(not isinstance(settingsData[key], bool)):
@@ -68,6 +68,7 @@ class DeviceSettings:
                         case "faultControl": self.faultControl = settingsData["faultControl"]
                         case "parControl": self.parControl = settingsData["parControl"]
                         case "FBControl": self.FBControl = settingsData["FBControl"]
+                        case "Online": self.Online = settingsData["Online"]
                     
                 case ("maxPower" | "parThreshold"):
                     if(not isinstance(settingsData[key], (int, float)) or settingsData[key] < 0):

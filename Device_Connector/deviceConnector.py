@@ -69,7 +69,8 @@ class DeviceConnector():
             url = "%s:%s/setOnlineStatus"%(self.catalogAddress, self.catalogPort)
             params = [
                 {"table" : "Devices", "keyName" : "deviceID", "keyValue" : deviceID, "status" : status},
-                {"table" : "DeviceResource_conn", "keyName" : "deviceID", "keyValue" : deviceID, "status" : status}
+                {"table" : "DeviceResource_conn", "keyName" : "deviceID", "keyValue" : deviceID, "status" : status},
+                {"table" : "DeviceSettings", "keyName" : "deviceID", "keyValue" : deviceID, "status" : status}
             ]
 
             headers = {"Content-Type" : "application/json"}

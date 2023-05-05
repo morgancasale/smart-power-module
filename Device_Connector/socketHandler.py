@@ -266,6 +266,7 @@ class SocketHandler():
         socketStgs["applianceType"] = "None"
         socketStgs["FBControl"] = 0
         socketStgs["FBMode"] = "Notify"
+        socketStgs["Online"] = 1
 
         return socketStgs
         
