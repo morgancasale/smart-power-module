@@ -18,12 +18,14 @@ class Device:
         self.endPoints = []
         self.Resources = []
 
+        self.userID = None
+
         if(newDevice) : self.checkKeys(deviceData)
         self.checkSaveValues(deviceData)
 
         if(newDevice): 
             self.Online = True
-            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = time.time()
         
 
     def checkKeys(self, deviceData):
@@ -66,15 +68,15 @@ class Device:
         try:
             if(check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
                 raise Client_Error_Handler.BadRequest(message="A device with ID \"" + self.deviceID + "\" already exists in the database")
-            if(not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
+            if(self.userID != None and not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
                 raise Client_Error_Handler.NotFound(message="The user with ID \"" + self.userID + "\" does not exist in the database")            
 
             for endPoint in self.endPoints:
-                endPoint.save2DB(DBPath)
+                endPoint.set2DB(DBPath)
                 EP_Dev_conn.append(endPoint.endPointID)
 
             for resource in self.Resources:
-                resource.save2DB(DBPath)
+                resource.set2DB(DBPath)
                 Res_Dev_conn.append(resource.resourceID)
 
             # Save the device to the DB
@@ -113,28 +115,28 @@ class Device:
                 raise Client_Error_Handler.NotFound(message="The device with ID \"" + self.deviceID + "\" does not exist in the database")
 
             self.Online = True
-            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = time.time()
 
             for endPoint in self.endPoints:
                 try:
                     endPoint.set2DB(DBPath)
                 except HTTPError as e:
-                    msg = "An error occurred while updating device's endpoint with ID \"" + endPoint.endPointID + "\":\u0085\u0009" + str(e._message)
-                    raise HTTPError(status=e.status, message = msg)
+                    message = "An error occurred while updating device's endpoint with ID \"" + endPoint.endPointID + "\":\u0085\u0009" + str(e._message)
+                    raise HTTPError(status=e.status, message = message)
                 except Exception as e:
-                    msg = "An error occurred while updating device's endpoint with ID \"" + endPoint.endPointID + "\":\u0085\u0009" + str(e)
-                    raise Server_Error_Handler.InternalServerError(message = msg)
+                    message = "An error occurred while updating device's endpoint with ID \"" + endPoint.endPointID + "\":\u0085\u0009" + str(e)
+                    raise Server_Error_Handler.InternalServerError(message = message)
                 endPointIDs.append(endPoint.endPointID)
 
             for resource in self.Resources:
                 try:
                     resource.set2DB(DBPath)
                 except HTTPError as e:
-                    msg = "An error occurred while updating device's resource with ID \"" + resource.resourceID + "\":\u0085\u0009" + str(e._message)
-                    raise HTTPError(status=e.status, message=msg)
+                    message = "An error occurred while updating device's resource with ID \"" + resource.resourceID + "\":\u0085\u0009" + str(e._message)
+                    raise HTTPError(status=e.status, message=message)
                 except Exception as e:
-                    msg = "An error occurred while updating device's resource with ID \"" + resource.resourceID + "\":\u0085\u0009" + str(e)
-                    raise Server_Error_Handler.InternalServerError(message=msg)
+                    message = "An error occurred while updating device's resource with ID \"" + resource.resourceID + "\":\u0085\u0009" + str(e)
+                    raise Server_Error_Handler.InternalServerError(message=message)
                 resourceIDs.append(resource.resourceID)
 
             if(len(endPointIDs)>0):
@@ -248,7 +250,8 @@ class Device:
         newDeviceIDs = []
         newEndPointIDs = []
         newResourceIDs = []
-
+        
+        if(not isinstance(entries, list)): entries = [entries]
         try:
             for entry in entries:
                 newDeviceIDs.append(entry.deviceID)
@@ -259,7 +262,7 @@ class Device:
 
             missingDeviceIDs = list(set(allDeviceIDs) - set(newDeviceIDs))
 
-            entry = {"deviceID": missingDeviceIDs, "Online": False, "lastUpdate": datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+            entry = {"deviceID": missingDeviceIDs, "Online": False, "lastUpdate": time.time()}
 
             update_entry_inDB(DBPath, "Devices", "deviceID", entry)
             EndPoint.setOnlineStatus(newEndPointIDs)

@@ -13,7 +13,7 @@ class User:
         self.userData = userData
 
         if(newUser):
-            self.lastUpdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.lastUpdate = time.time()
     
     def checkKeys(self, userData):
         if(not all(key in self.userKeys for key in userData.keys())):
@@ -67,7 +67,7 @@ class User:
                     if(not check_presence_inDB(DBPath, "Devices", "deviceID", deviceID)):
                         raise Client_Error_Handler.NotFound(message="A device with ID \"" + deviceID + "\" does not exist in the database")
 
-                    self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    self.lastUpdate = time.time()
                     save_entry2DB(DBPath, "UserDevice_conn", {"userID": self.userID, "deviceID": deviceID, "lastUpdate": self.lastUpdate})
 
             save_entry2DB(DBPath, "Users", self.to_dict())
@@ -88,7 +88,7 @@ class User:
             if(not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
                 raise Client_Error_Handler.BadRequest(message="A user with ID \"" + self.userID + "\" does not exist in the database")
             
-            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = time.time()
 
             if("deviceID" in self.userData.keys()):
                 data = {"table": "UserDevice_conn", "refID": "userID", "connID": "deviceID", "refValue": self.userID, "connValues": self.deviceID}

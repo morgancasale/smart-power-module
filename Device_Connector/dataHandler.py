@@ -19,7 +19,7 @@ class DataHandler():
             self.catalogPort = self.generalConfigs["REGISTRATION"]["catalogPort"]
             payload = json.loads(payload)
             if (DataHandler.checkPresenceOfIDSocket(payload["deviceID"], self.catalogAddress, self.catalogPort)):
-                if (not DataHandler.setStatusDevice(payload["deviceID"], "ONLINE")):
+                if (not DataHandler.setStatusDevice(payload["deviceID"], 1,self.catalogAddress, self.catalogPort)):
                     raise Server_Error_Handler.InternalServerError(
                         message="An error occurred while updating device status"
                     )
@@ -102,15 +102,15 @@ class DataHandler():
 
     def setStatusDevice(deviceID, status, catalogAddress, catalogPort):
         try:
-            url = "%s:%s/setStatus" % (catalogAddress, str(catalogPort))
-            params = {
-                "table": "Sockets",
+            url = "%s:%s/setOnlineStatus" % (catalogAddress, str(catalogPort))
+            data = {
+                "table": "Devices",
                 "keyName": "deviceID",
                 "keyValue": deviceID,
                 "status": status,
             }
 
-            response = requests.get(url, params=params)
+            response = requests.put(url, json=data)
             if response.status_code != 200:
                 raise HTTPError(response.status_code, str(response.text))
             result = json.loads(response.text)

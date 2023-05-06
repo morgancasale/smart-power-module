@@ -16,12 +16,12 @@ def notify(self,topic, payload):
 
 
 if __name__ == "__main__":
-    a = ServiceBase("test/fraSubFile.json", Notifier = DataHandler.regData_toHa)
+    a = ServiceBase("test/fraSubFile.json", Notifier = notify)
     a.start()
     clientErrorHandler = Client_Error_Handler()
     topics = [ "homeassistant/sensor/smartSockets/id/state"
     ]
-    a.MQTT.Subscribe("smartSocket/data")
+    a.MQTT.Subscribe("/merda/#")
     time.sleep(5*10)
     a.MQTT.changeSubTopic(["/ciao/97/1"])
 

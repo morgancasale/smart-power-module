@@ -19,7 +19,7 @@ class Service:
 
         if(newService):
             self.Online = True
-            self.lastUpdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.lastUpdate = time.time()
     
     def checkKeys(self, serviceData):
         if(not all(key in serviceData.keys() for key in self.serviceKeys)):
@@ -92,17 +92,17 @@ class Service:
             if(check_presence_inDB(DBPath, "Services", "serviceID", self.serviceID)):
                 raise HTTPError(status=400, message="An service with ID \"" + self.serviceID + "\" already exists in the database")
             
-            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = time.time()
 
             for endPoint in self.endPoints:
                 try:
                     endPoint.set2DB(DBPath)
                 except HTTPError as e:
-                    msg = "An error occurred while saving service's endPoints with ID " + endPoint.endPointID + " is not valid:\u0085\u0009" + e._message
-                    raise HTTPError(e.status, msg)
+                    message = "An error occurred while saving service's endPoints with ID " + endPoint.endPointID + " is not valid:\u0085\u0009" + e._message
+                    raise HTTPError(e.status, message)
                 except Exception as e:
-                    msg = "An error occurred while saving service's endPoints with ID " + endPoint.endPointID + " is not valid:\u0085\u0009" + str(e)
-                    raise HTTPError(500, msg)
+                    message = "An error occurred while saving service's endPoints with ID " + endPoint.endPointID + " is not valid:\u0085\u0009" + str(e)
+                    raise HTTPError(500, message)
                 
                 endPointIDs.append(endPoint.endPointID)
 
@@ -139,17 +139,17 @@ class Service:
             if(not check_presence_inDB(DBPath, "Services", "serviceID", self.serviceID)):
                 raise HTTPError(status=400, message="An service with ID \"" + self.serviceID + "\" does not exist in the database")
             
-            self.lastUpdate = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            self.lastUpdate = time.time()
 
             for endPoint in self.endPoints:
                 try:
                     endPoint.set2DB(DBPath)
                 except HTTPError as e:
-                    msg = "An error occurred while updating service's endPoints with ID \"" + endPoint.endPointID +"\":\u0085\u0009" + e._message
-                    raise HTTPError(e.status, msg)
+                    message = "An error occurred while updating service's endPoints with ID \"" + endPoint.endPointID +"\":\u0085\u0009" + e._message
+                    raise HTTPError(e.status, message)
                 except Exception as e:
-                    msg = "An error occurred while saving service's endPoints with ID \"" + endPoint.endPointID + "\":\u0085\u0009" + str(e)
-                    raise HTTPError(500, msg)
+                    message = "An error occurred while saving service's endPoints with ID \"" + endPoint.endPointID + "\":\u0085\u0009" + str(e)
+                    raise HTTPError(500, message)
                 
                 endPointIDs.append(endPoint.endPointID)            
 
@@ -280,7 +280,7 @@ class Service:
 
         missingServiceIDs = list(set(allServiceIDs) - set(newServiceIDs))
 
-        entry = {"serviceID": missingServiceIDs, "Online": False, "lastUpdate": datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
+        entry = {"serviceID": missingServiceIDs, "Online": False, "lastUpdate": time.time()}
 
         update_entry_inDB(DBPath, "Services", "serviceID", entry)
         EndPoint.setOnlineStatus(newEndPointIDs)

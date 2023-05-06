@@ -48,8 +48,8 @@
                 "/morgy/99/1",
                 "/ciao/97/1",
                 "/bro/97/1",
-                "homeassistant/sensor/smartSockets/id/state",
-                "smartSocket/data"
+                "/homeassistant/sensor/smartSockets/id/state",
+                "/smartSocket/data"
 
             ],
             "pub": [
