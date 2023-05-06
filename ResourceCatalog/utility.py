@@ -153,6 +153,7 @@ def delete_entry_fromDB(DBPath, table, keyName, keyValue):
         keyValue = [str(value) for value in keyValue]
 
         conn = sq.connect(DBPath)
+        conn.execute("PRAGMA foreign_keys = ON")
 
         keyName = "(" + ", ".join(keyName) + ")"
         keyValue = "(\"" + "\", \"".join(keyValue) + "\")"
@@ -266,14 +267,24 @@ def isaMAC(value):
 def updateOnlineStatus(DBPath, params):
     try:
         table = params["table"]
+        timer = params["timer"]
 
         if(not check_presence_ofTableInDB(DBPath, table)): 
             raise Client_Error_Handler.NotFound(message="The table \"" + table + "\" does not exist")
         
-        query = "UPDATE " + table + " SET Online = 0 WHERE lastUpdate > " + time.time() + ";"
-        query += "UPDATE " + table + " SET lastUpdate = " + time.time() + ";"
+        now = time.time()
+        query = "UPDATE " + table + " SET Online = 0 WHERE lastUpdate < " + str(now - timer) + " AND Online = 1"
+        #query += "UPDATE " + table + " SET lastUpdate = " + str(now) + ";"
 
-        DBQuery_to_dict(DBPath, query)
+        conn = sq.connect(DBPath)
+        cursor = conn.cursor()
+        cursor.execute(query)
+
+        rowaffected = cursor.rowcount
+        conn.commit()
+        conn.close()
+
+        return "Updated " + str(rowaffected) + " rows of table " + table + "." 
     except HTTPError as e:
         raise HTTPError(status=e.status, message ="An error occurred while updating the online status:\u0085\u0009" + e._message)
     except Exception as e:
@@ -301,8 +312,16 @@ def setOnlineStatus(DBPath, params):
         if(isinstance(status, bool)):
             status = int(status)
         
-        query = "UPDATE " + table + " SET (Online, lastUpdate) = (" + str(status) + ", " + str(time.time()) + " WHERE " + keyName + " = " + keyValue
-        DBQuery_to_dict(DBPath, query)
+        query = "UPDATE " + table + " SET (Online, lastUpdate) = (" + str(status) + ", " + str(time.time()) + ") WHERE " + keyName + " = '" + keyValue +"'"
+        conn = sq.connect(DBPath)
+        cursor = conn.cursor()
+        cursor.execute(query)
+
+        rowaffected = cursor.rowcount
+        conn.commit()
+        conn.close()
+
+        return "Updated " + str(rowaffected) + " rows of table " + table + "." 
     except HTTPError as e:
         raise HTTPError(status=e.status, message ="An error occurred while setting the online status:\u0085\u0009" + e._message)
     except Exception as e:

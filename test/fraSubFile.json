@@ -48,7 +48,7 @@
                 "/morgy/99/1",
                 "/ciao/97/1",
                 "/bro/97/1",
-                "/homeassistant/sensor/smartSockets/id/state",
+                "homeassistant/sensor/smartSocket/D1/state",
                 "/smartSocket/data"
 
             ],

@@ -19,9 +19,9 @@ if __name__ == "__main__":
     a = ServiceBase("test/fraSubFile.json", Notifier = notify)
     a.start()
     clientErrorHandler = Client_Error_Handler()
-    topics = [ "homeassistant/sensor/smartSockets/id/state"
+    topics = [ 'homeassistant/sensor/smartSocket/D1/state'
     ]
-    a.MQTT.Subscribe("/merda/#")
+    a.MQTT.Subscribe(topics)
     time.sleep(5*10)
     a.MQTT.changeSubTopic(["/ciao/97/1"])
 

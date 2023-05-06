@@ -18,7 +18,7 @@ if __name__ == "__main__":
     topics = ["/bro/99/1", "/morgy/99/1", "/ciao/97/1", "/bro/97/1"]
     while(True):
      
-        fixedData={"deviceID":"D1","Voltage": 1, "Current":2, "Power":3,"Energy": 4}
+        fixedData={"deviceID":"D1","Voltage": 1.0, "Current":2.0, "Power":3.9,"Energy": 4.45}
         
          
         service.MQTT.Publish("/smartSocket/data",fixedData,retain=True) 

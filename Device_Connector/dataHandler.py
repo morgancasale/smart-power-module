@@ -26,7 +26,7 @@ class DataHandler():
                 self.baseTopic += "/"
                 stateSensorTopic = (
                     self.baseTopic
-                    + "/sensor/"
+                    + "sensor/"
                     + self.system
                     + "/"
                     + payload["deviceID"]
@@ -38,12 +38,12 @@ class DataHandler():
                 )
             DataHandler.checkpayload(payload)
             datafixed = {
-                "Voltage": payload["VOltage"],
+                "Voltage": payload["Voltage"],
                 "Current": payload["Current"],
                 "Power": payload["Power"],
                 "Energy": payload["Energy"],
             }
-            self.MQTTService.Client.Publish(stateSensorTopic, json.dumps(datafixed))
+            self.Publish(stateSensorTopic, json.dumps(datafixed))
 
         except HTTPError as e:
             message = (
@@ -64,12 +64,12 @@ class DataHandler():
             raise Server_Error_Handler.InternalServerError(message=message)
 
     def checkpayload(payload):
-        configParams = sorted["socketID", "Voltage", "Current", "Power", "Energy"]
+        configParams = sorted(["deviceID", "Voltage", "Current", "Power", "Energy"])
 
         if not configParams == sorted(payload.keys()):
             raise HTTPError("Missing parameters in config file")
 
-        if not isinstance(payload["socketID"], str):
+        if not isinstance(payload["deviceID"], str):
             raise Server_Error_Handler.BadRequest("socketID parameter must be a string")
 
         if not isinstance(payload["Voltage"], float):
@@ -113,9 +113,9 @@ class DataHandler():
             response = requests.put(url, json=data)
             if response.status_code != 200:
                 raise HTTPError(response.status_code, str(response.text))
-            result = json.loads(response.text)
+            result = response.text
 
-            return result["result"]
+            return result
         except HTTPError as e:
             raise HTTPError(status=e.status, message=e._message)
         except Exception as e:
