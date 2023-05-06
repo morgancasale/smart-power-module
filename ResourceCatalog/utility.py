@@ -313,8 +313,15 @@ def setOnlineStatus(DBPath, params):
             status = int(status)
         
         query = "UPDATE " + table + " SET (Online, lastUpdate) = (" + str(status) + ", " + str(time.time()) + " WHERE " + keyName + " = " + keyValue
-        result = DBQuery_to_dict(DBPath, query)
-        return True
+        conn = sq.connect(DBPath)
+        cursor = conn.cursor()
+        cursor.execute(query)
+
+        rowaffected = cursor.rowcount
+        conn.commit()
+        conn.close()
+
+        return "Updated " + str(rowaffected) + " rows of table " + table + "." 
     except HTTPError as e:
         raise HTTPError(status=e.status, message ="An error occurred while setting the online status:\u0085\u0009" + e._message)
     except Exception as e:
