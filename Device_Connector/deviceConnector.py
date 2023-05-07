@@ -10,6 +10,7 @@ from microserviceBase.Error_Handler import *
 
 from socketHandler import SocketHandler
 from dataHandler import DataHandler
+from commandHandler import commandHandler
 
 class DeviceConnector():
     def __init__(self):
@@ -22,13 +23,13 @@ class DeviceConnector():
         self.delSocket_fromHA = SocketHandler.delSocket_fromHA       # del servizio
         #self.handleDelete_byHA = SocketHandler.handleDeleteSocket_byHA
 
-        self.service = ServiceBase("Device_Connector/deviceConnector.json", GET=self.regSocket_toCatalog, PUT=self.handleUpdate_toHA, Notifier=DataHandler.regData_toHa)
+        self.service = ServiceBase("Device_Connector/deviceConnector.json", GET=self.regSocket_toCatalog, PUT=self.handleUpdate_toHA, Notifier=commandHandler.getCMD_fromHA)
 
         self.catalogAddress = self.service.generalConfigs["REGISTRATION"]["catalogAddress"]
         self.catalogPort = self.service.generalConfigs["REGISTRATION"]["catalogPort"]
  
         self.service.start()
-        self.service.MQTT.Subscribe("/smartSocket/data")
+        self.service.MQTT.Subscribe("/homeassistant/smartSocket/D1/#")
         '''OnlineStatusTracker = Thread(target=self.OnlineStatusTracker, args=(self.catalogAddress, self.catalogPort))
         OnlineStatusTracker.start()'''
         

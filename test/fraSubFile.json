@@ -49,7 +49,10 @@
                 "/ciao/97/1",
                 "/bro/97/1",
                 "homeassistant/sensor/smartSocket/D1/state",
-                "/smartSocket/data"
+                "/smartSocket/data",
+                "/homeassistant/#",
+                "/smartSocket/control"
+                
 
             ],
             "pub": [

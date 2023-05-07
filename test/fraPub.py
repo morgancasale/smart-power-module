@@ -18,10 +18,10 @@ if __name__ == "__main__":
     topics = ["/bro/99/1", "/morgy/99/1", "/ciao/97/1", "/bro/97/1"]
     while(True):
      
-        fixedData={"deviceID":"D1","Voltage": 1.0, "Current":2.0, "Power":3.9,"Energy": 4.45}
-        
+       # fixedData={"deviceID":"D1","Voltage": 1.0, "Current":2.0, "Power":3.9,"Energy": 4.45}
+        fixedData = {"CMD_HA":True}
          
-        service.MQTT.Publish("/smartSocket/data",fixedData,retain=True) 
+        service.MQTT.Publish("/homeassistant/smartSocket/D1/1/cmd_HA",fixedData,retain=True) 
         time.sleep(1)
         # service.MQTT.Publish("/morgy/99/1", "2")
         # time.sleep(1)

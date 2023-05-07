@@ -43,7 +43,7 @@
         "MQTTTopics": {
             "sub": [
                 "/smartSocket/data",
-                "pizzapazza/1"
+                "homeassistant/#"
             ],
             "pub": [
                 "smartSocket/control",
