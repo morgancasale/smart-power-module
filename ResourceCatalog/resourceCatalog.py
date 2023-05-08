@@ -211,7 +211,7 @@ class ResourceCatalog:
                 case "setOnlineStatus":
                     results = []
                     for entry in params:
-                        results.append(setOnlineStatus(entry))
+                        results.append(setOnlineStatus(self.DBPath, entry))
                     return results
                 
                 case "exit":

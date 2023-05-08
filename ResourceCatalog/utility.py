@@ -312,7 +312,7 @@ def setOnlineStatus(DBPath, params):
         if(isinstance(status, bool)):
             status = int(status)
         
-        query = "UPDATE " + table + " SET (Online, lastUpdate) = (" + str(status) + ", " + str(time.time()) + " WHERE " + keyName + " = " + keyValue
+        query = "UPDATE " + table + " SET (Online, lastUpdate) = (" + str(status) + ", " + str(time.time()) + ") WHERE " + keyName + " = \"" + keyValue + "\""
         conn = sq.connect(DBPath)
         cursor = conn.cursor()
         cursor.execute(query)

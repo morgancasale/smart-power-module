@@ -31,7 +31,7 @@
         "endPointID": "ENTYzMz",
         "endPointName": "deviceConnector",
         "autoBroker": true,
-        "brokerAddress": "broker.hivemq.com",
+        "brokerAddress": "broker.emqx.io",
         "brokerPort": 1883,
         "username": "",
         "password": "",
@@ -43,7 +43,8 @@
         "MQTTTopics": {
             "sub": [
                 "smartSocket/data",
-                "pizzapazza/1"
+                "homeassistant/#",
+                "homeassistant/switch/smartSockets/+/control"
             ],
             "pub": [
                 "smartSocket/control",
@@ -53,10 +54,10 @@
         "QOS": 0
     },
     "REGISTRATION": {
-        "enabled": true,
+        "enabled": false,
         "serviceID": "SNTk3MD",
         "serviceName": "deviceConnector",
-        "catalogAddress": "http://127.0.0.1",
+        "catalogAddress": "http://192.168.2.145",
         "catalogPort": 8099,
         "T_Registration": 1
     }

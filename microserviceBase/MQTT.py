@@ -96,8 +96,6 @@ class MQTTServer(Thread):
             print("MQTT - Thread %s waiting for registration..." % current_thread().ident)
             self.events["startEvent"].wait()
             self.openMQTTServer()
-            
-
 
         except HTTPError as e:
             self.events["stopEvent"].set()
@@ -113,8 +111,8 @@ class MQTTServer(Thread):
         if(rc == 0):
             self.connected = True
         else:
-                raise self.serverErrorHandler.InternalServerError(
-                "no conncetion to broker"
+            raise self.serverErrorHandler.InternalServerError(
+                "No connection to broker"
             )
 
     def OnMessageReceived(self, a, b, message):
@@ -131,10 +129,10 @@ class MQTTServer(Thread):
                 if(len(self.publishtopics)>1):
                     for publishtopic in  self.publishtopics:
                         print("Publishing '%s' at topic '%s'" % (message, publishtopic))
-                        self.Client.publish(publishtopic, json.dumps(message), self.QOS, retain=retain)
+                        self.Client.publish(publishtopic, message, self.QOS, retain=retain)
                 else:
                     print("Publishing '%s' at topic '%s'" % (message, topic))
-                    self.Client.publish(topic, json.dumps(message), self.QOS, retain=retain)
+                    self.Client.publish(topic, message, self.QOS, retain=retain)
         else:
             raise self.clientErrorHandler.BadRequest(
             "Publisher is not active for this service")

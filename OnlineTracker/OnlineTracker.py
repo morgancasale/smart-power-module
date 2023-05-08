@@ -11,7 +11,7 @@ from microserviceBase.Error_Handler import *
 class ServicesTracker():
     def __init__(self):
         self.service = ServiceBase(
-            "ServicesTracker/servicesTracker.json"
+            "OnlineTracker/onlineTracker.json"
         )
 
         catalogAddress = self.service.generalConfigs["REGISTRATION"]["catalogAddress"]
@@ -30,7 +30,9 @@ class ServicesTracker():
 
                 url = "%s:%s/updateOnlineStatus"%(catalogAddress, catalogPort)
                 params = [
-                    {"table" : "Services", "timer" : watchDogTimer}
+                    {"table" : "Services", "timer" : watchDogTimer},
+                    {"table" : "Devices", "timer" : watchDogTimer}, 
+                    {"table" : "DeviceResource_conn", "timer" : watchDogTimer}
                 ]
 
                 headers = {"Content-Type" : "application/json"}

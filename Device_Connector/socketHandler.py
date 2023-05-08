@@ -484,26 +484,26 @@ class SocketHandler():
                     "name": "Voltage",
                     "unit_of_measurement": "V",
                     "device_class": "voltage",
-                    "value_template": "{{ value_json.voltage|default(0) }}"
+                    "value_template": "{{ value_json.voltage }}"
                 },
                 {
                     "name": "Current",
                     "unit_of_measurement": "A",
                     "device_class": "current",
-                    "value_template": "{{ value_json.current|default(0) }}"
+                    "value_template": "{{ value_json.current }}"
 
                 },
                 {
                     "name": "Power",
                     "unit_of_measurement": "W",
                     "device_class": "power",
-                    "value_template": "{{ value_json.power|default(0) }}"
+                    "value_template": "{{ value_json.power }}"
                 },
                 {
                     "name": "Energy",
                     "unit_of_measurement": "kWh",
                     "device_class": "energy",
-                    "value_template": "{{ value_json.energy|default(0) }}"
+                    "value_template": "{{ value_json.energy }}"
                 }
             ]
 
