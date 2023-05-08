@@ -44,7 +44,7 @@
             "sub": [
                 "smartSocket/data",
                 "homeassistant/#",
-                "homeassistant/switch/smartSockets/+/control"
+                "homeassistant/switch/smartSockets/+/control/#"
             ],
             "pub": [
                 "smartSocket/control",

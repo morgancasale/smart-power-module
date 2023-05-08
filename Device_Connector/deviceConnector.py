@@ -19,9 +19,9 @@ def notify(self, topic, payload):
     config_command = ["homeassistant","switch","smartSocket","control"]
     config_data = ["smartSocket","data"]
     if( all(x in Topic for x in config_command)):
-        commandHandler.getCMD_fromHA(self,topic,payload)
+        commandHandler.getCMD_fromHA(self, topic, payload)
     elif( all(x in Topic for x in config_data)):
-        DataHandler.regData_toHa(self,topic,payload)
+        DataHandler.regData_toHa(self, topic, payload)
     else:
         raise Client_Error_Handler.BadRequest("Topic not valid")
 
@@ -49,7 +49,7 @@ class DeviceConnector():
         self.service.start()
 
         self.service.MQTT.Subscribe("smartSocket/data")
-        self.service.MQTT.Subscribe("/homeassistant/switch/smartSocket/+/control")
+        self.service.MQTT.Subscribe("homeassistant/switch/smartSocket/+/control/#")
 
         '''OnlineStatusTracker = Thread(target=self.OnlineStatusTracker, args=(self.catalogAddress, self.catalogPort))
         OnlineStatusTracker.start()'''

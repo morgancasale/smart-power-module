@@ -561,7 +561,7 @@ class SocketHandler():
                 sensor.update(devicePayload)
                 sensor["unique_id"] = sensor["unique_id"] + "_" + sensor["device_class"]
                 discTopic = baseTopic + "sensor/" + system + "/" + deviceID + "_" + sensor["device_class"] + "/config" # homeassistant/sensor/smartSocket/
-                print(self.MQTTService.Client.publish(discTopic, json.dumps(sensor)))
+                print(self.MQTTService.Client.publish(discTopic, json.dumps(sensor), retain=True))
                 time.sleep(0.1)
                 
 
@@ -571,7 +571,7 @@ class SocketHandler():
                 switch.update(devicePayload)
                 switch["unique_id"] = switch["unique_id"] + "_" + str(i)
                 discTopic = baseTopic + "switch/" + system + "/" + deviceID + "_" + str(i) + "/config"
-                print(self.MQTTService.Client.publish(discTopic, json.dumps(switch)))
+                print(self.MQTTService.Client.publish(discTopic, json.dumps(switch), retain=True))
                 i+=1
                 
         except HTTPError as e:
