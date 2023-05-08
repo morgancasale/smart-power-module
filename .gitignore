@@ -8,5 +8,13 @@
 HomeAssistant_Connector/
 
 test.py
-test/
+.vscode
+
+/Device_Connector/__pycache__
+
+/ResourceCatalog
+
+/deviceSim
+
+/Data_DB
 
