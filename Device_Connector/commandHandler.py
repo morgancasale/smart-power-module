@@ -61,7 +61,7 @@ class commandHandler():
     
      def checkTopic(topic, baseTopic,system,deviceID,plug):
          topic = topic.split("/")
-         configParams = ["cmd_HA", baseTopic, system]
+         configParams = ["control", baseTopic, system,"switch"]
          if(not all(x in topic for x in configParams)):
             raise HTTPError("Missing parameters in topic")
          deviceID = topic[3]

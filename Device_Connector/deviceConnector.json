@@ -10,7 +10,7 @@
             "autoHA": false,
             "address": "127.0.0.1",
             "port": 8123,
-            "baseTopic": "/homeassistant",
+            "baseTopic": "homeassistant",
             "system": "smartSocket"
         }
     },
@@ -43,7 +43,8 @@
         "MQTTTopics": {
             "sub": [
                 "/smartSocket/data",
-                "homeassistant/#"
+                "/homeassistant/#",
+                "/homeassistant/switch/smartSockets/+/control"
             ],
             "pub": [
                 "smartSocket/control",

@@ -12,6 +12,22 @@ from socketHandler import SocketHandler
 from dataHandler import DataHandler
 from commandHandler import commandHandler
 
+def notify(self,topic, payload):
+    print("Topic: %s, Payload: %s" % (topic, payload))
+    Topic = topic.split("/")
+    config_command = ["homeassistant","switch","smartSocket","control"]
+    config_data = ["smartSocket","data"]
+    if( all(x in Topic for x in config_command)):
+        commandHandler.getCMD_fromHA(self,topic,payload)
+    elif( all(x in Topic for x in config_data)):
+        DataHandler.regData_toHa(self,topic,payload)
+    else:
+        raise Client_Error_Handler.BadRequest("Topic not valid")
+
+    
+
+
+
 class DeviceConnector():
     def __init__(self):
         self.baseTopic = "homeassistant/"
@@ -23,13 +39,14 @@ class DeviceConnector():
         self.delSocket_fromHA = SocketHandler.delSocket_fromHA       # del servizio
         #self.handleDelete_byHA = SocketHandler.handleDeleteSocket_byHA
 
-        self.service = ServiceBase("Device_Connector/deviceConnector.json", GET=self.regSocket_toCatalog, PUT=self.handleUpdate_toHA, Notifier=commandHandler.getCMD_fromHA)
+        self.service = ServiceBase("Device_Connector/deviceConnector.json", GET=self.regSocket_toCatalog, PUT=self.handleUpdate_toHA, Notifier=notify)
 
         self.catalogAddress = self.service.generalConfigs["REGISTRATION"]["catalogAddress"]
         self.catalogPort = self.service.generalConfigs["REGISTRATION"]["catalogPort"]
  
         self.service.start()
-        self.service.MQTT.Subscribe("/homeassistant/smartSocket/D1/#")
+        self.service.MQTT.Subscribe("/smartSocket/data")
+        self.service.MQTT.Subscribe("homeassistant/switch/smartSocket/+/control")
         '''OnlineStatusTracker = Thread(target=self.OnlineStatusTracker, args=(self.catalogAddress, self.catalogPort))
         OnlineStatusTracker.start()'''
         

@@ -33,7 +33,8 @@ class DataHandler():
                     + "/state"
                 )
                 availableSensorTopic = (
-                    self.baseTopic
+                    "/"
+                    +self.baseTopic
                     + "sensor/"
                     + self.system
                     + "/"
