@@ -45,11 +45,13 @@ class DataHandler():
                     "Device that sending data is not registered"
                 )
             DataHandler.checkpayload(payload)
+            
             datafixed = {
                 "Voltage": payload["Voltage"],
                 "Current": payload["Current"],
                 "Power": payload["Power"],
                 "Energy": payload["Energy"],
+                "SwitchesState": payload["SwitchesState"],
             }
             self.Publish(stateSensorTopic, json.dumps(datafixed)) #devi pubblicare anche sullo status topic che il dispositivo è online
             self.Publish(availableSensorTopic, json.dumps(1)) #devi pubblicare anche sullo status topic che il dispositivo è online
@@ -73,7 +75,7 @@ class DataHandler():
             raise Server_Error_Handler.InternalServerError(message=message)
 
     def checkpayload(payload):
-        configParams = sorted(["deviceID", "Voltage", "Current", "Power", "Energy"])
+        configParams = sorted(["deviceID", "Voltage", "Current", "Power", "Energy","SwitchesState"])
 
         if not configParams == sorted(payload.keys()):
             raise HTTPError("Missing parameters in config file")
@@ -92,6 +94,12 @@ class DataHandler():
 
         if not isinstance(payload["Energy"], float):
             raise Server_Error_Handler.BadRequest("Energy parameter must be a float")
+        
+        if not isinstance(payload["SwitchesState"], list):
+            raise Server_Error_Handler.BadRequest("SwitchesState parameter must be a list")
+        for switch in payload["SwitchesState"]:
+            if(not isinstance(switch, int)):
+                raise Server_Error_Handler.BadRequest("switch parameter must be a int")
 
     def checkPresenceOfIDSocket(deviceID, catalogAddress, catalogPort):
         try:
