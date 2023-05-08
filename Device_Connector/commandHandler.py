@@ -31,7 +31,7 @@ class commandHandler():
                 datafixed = {
                     "deviceID": info[0],
                     "plug": info[1],
-                    "state": int(payload["CMD_HA"])
+                    "state": int(payload)
 
                 }
                 self.Publish(cmdSensorTopic, json.dumps(datafixed))
@@ -69,12 +69,9 @@ class commandHandler():
          return [deviceID,plug]
      
      def checkPayload(payload):
-         configParams = ["CMD_HA"]
-         if(not configParams == list(payload.keys())):
-            raise HTTPError(
-            "Missing parameters in config file of cmd_HA")
+        
          
-         if not isinstance(payload["CMD_HA"], bool):
+         if not isinstance(payload, bool):
             raise Server_Error_Handler.InternalServerError("socketID parameter must be a string")
 
      def checkPresenceOfIDSocket(deviceID, catalogAddress, catalogPort):
