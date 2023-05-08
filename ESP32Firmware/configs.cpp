@@ -12,7 +12,7 @@ String mqttPWD = "public";
 String subTopic = "smartSocket/control";
 String pubTopic = "smartSocket/data";
 
-String socketID = "null";
+String deviceID = "null";
 bool masterNode = true;
 uint8_t masterMAC[6] = {0xC8, 0xC9, 0xA3, 0xC9, 0x52, 0x80};
 uint8_t slaveMAC[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};

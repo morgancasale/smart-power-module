@@ -7,7 +7,7 @@ PubSubClient mqttClient(mqttBroker.c_str(), mqttPort, mqttCallback, wifiClient);
 
 Scheduler nodeScheduler;
 painlessMesh socket_mesh;
-Task sender(TASK_SECOND * SAMPLE_PERIOD, TASK_FOREVER, &sendData);
+Task MeshSender(TASK_SECOND * SAMPLE_PERIOD, TASK_FOREVER, &sendData2Mesh);
 
 void setup_wifi() {
   //delay(100);
@@ -39,6 +39,7 @@ void setup_wifi() {
 
   RSSI = WiFi.RSSI();
 }
+
 JSONVar get(String url, String params){
   HTTPClient http;
 
@@ -135,8 +136,8 @@ void init_mesh(){
     socket_mesh.setHostname(hostName);
     Serial.println("Set station settings.");
   } else {
-    nodeScheduler.addTask(sender);
-    sender.enable();
+    nodeScheduler.addTask(MeshSender);
+    MeshSender.enable();
   }
   if(masterNode) {
     socket_mesh.setRoot(true);

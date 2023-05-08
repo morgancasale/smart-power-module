@@ -30,7 +30,7 @@
   extern String subTopic;
   extern String pubTopic;
 
-  extern String socketID;
+  extern String deviceID;
   extern bool masterNode;
   extern uint8_t masterMAC[6];
   extern uint8_t slaveMAC[6];

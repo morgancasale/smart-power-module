@@ -4,13 +4,23 @@
 #include "sensor.h"
 
 TaskHandle_t parLoop;
+int SwitchStates[3]={0,0,0};
 
 void onMQTTReceived(String topic, String msg){
   Serial.print("Received MQTT message: ");
   Serial.println(msg);
-  socket_mesh.sendBroadcast(msg);
+
+  JSONVar payload = JSON.parse(msg);
+  
+  if(fixJSONString(payload["deviceID"]) != deviceID){
+    socket_mesh.sendBroadcast(msg);
+  } else if (fixJSONString(payload["deviceID"]) == deviceID){
+    digitalWrite (LED_BUILTIN, payload["state"]);
+    SwitchStates[(int)payload["plugID"]] = (int) payload["state"];
+  }
 }
 
+unsigned long prevTime = 0;
 void onRecMeshMsgBridge(uint32_t from, String &data) {
   Serial.println("Received data from node " + String(from));
   if(mqttClient.publish(pubTopic.c_str(), data.c_str())){
@@ -18,25 +28,61 @@ void onRecMeshMsgBridge(uint32_t from, String &data) {
   } else {
     Serial.println("Error while publishing to broker!");
   }
+
+  unsigned long now = millis();
+  if(now-prevTime>10000){
+    sendData2MQTT();
+    prevTime = now;
+  }
 }
 
 void onRecMeshMsg(uint32_t from, String &data) {
   Serial.print("Received data from node " + String(from));
   Serial.println(" : "+ data);
   JSONVar payload = JSON.parse(data);
-  if(payload["socketID"] == socketID){
+  if(payload["deviceID"] == deviceID){
     digitalWrite (LED_BUILTIN, payload["state"]);
+    SwitchStates[(int) payload["plugID"]] = (int) payload["state"];
   }
 }
 
-void sendData(){
+void readSwitchStates(JSONVar &payload){
+  payload["SwitchStates"][0] = (int) SwitchStates[0];
+  payload["SwitchStates"][1] = (int) SwitchStates[1];
+  payload["SwitchStates"][2] = (int) SwitchStates[2];
+}
+
+void sendData2Mesh(){
   float temp = read_temp();
 
   JSONVar payload;
-  payload["socketID"] = socketID;
-  payload["temperature"] = (float) temp;
+  payload["deviceID"] = deviceID;
+  payload["Voltage"] = (float) temp*10;
+  payload["Current"] = (float) temp*0.4;
+  payload["Power"] = (float)temp*10 * (float)temp*0.4;
+  payload["Energy"] = (float) (temp+10)/3;
+  readSwitchStates(payload);
 
   sendMeshMsg(JSON.stringify(payload));
+}
+
+void sendData2MQTT(){
+  float temp = random(23, 24)+random(0,100)/100;
+
+  JSONVar payload;
+  payload["deviceID"] = deviceID;
+  payload["Voltage"] = (float) temp*10;
+  payload["Current"] = (float) temp*0.4;
+  payload["Power"] = (float)temp*10 * (float)temp*0.4;
+  payload["Energy"] = (float) (temp+10)/3;
+  readSwitchStates(payload);
+
+  String data = JSON.stringify(payload);
+  if(mqttClient.publish(pubTopic.c_str(), data.c_str())){
+    Serial.println("Published at " + pubTopic + " : " + data);
+  } else {
+    Serial.println("Error while publishing to broker!");
+  }
 }
 
 String fixJSONString(JSONVar var){
@@ -58,8 +104,9 @@ void getRole(){
   Serial.print("Sending GET request with params: ");
   JSONVar response = get(url, JSON.stringify(params));
 
-  socketID = fixJSONString(response["socketID"]);
-  masterNode = (bool)(int)response["masterNode"];
+  deviceID = fixJSONString(response["deviceID"]);
+  masterNode = (bool)response["masterNode"];
+  Serial.println(masterNode);
 
   if(autoBroker){
     mqttBroker = fixJSONString(response["brokerIP"]);
@@ -84,10 +131,10 @@ void getRole(){
   }
 
   Serial.print("the masterNode and my ID is ");
-  Serial.print(socketID);
+  Serial.print(deviceID);
   Serial.println(".");
 
-  clientID = socketID;
+  clientID = deviceID;
 }
 
 IPAddress myIP = (0,0,0,0);
@@ -108,7 +155,13 @@ void loop2(void* pvParameters){
           /*mqttClient.publish("painlessMesh/from/gateway","Ready!");
           mqttClient.subscribe("painlessMesh/to/#");*/
           mqttClient.subscribe(subTopic.c_str());
-        } 
+
+          /*unsigned long now = millis();
+          if(now-prevTime>10000){
+            sendData2MQTT();
+            prevTime = now;
+          }*/
+        }
       }
     }
   }
@@ -117,18 +170,6 @@ void loop2(void* pvParameters){
 // the loop function runs over and over again forever
 void loop() {
   socket_mesh.update();
-  /*if(masterNode) mqttClient.loop();
-
-  if(myIP != getlocalIP()){
-    myIP = getlocalIP();
-    Serial.println("My IP is " + myIP.toString());
-
-    if(masterNode){
-      if (mqttClient.connect(clientID.c_str())) {
-        mqttClient.subscribe(subTopic.c_str());
-      } 
-    }
-  }*/
 }
 
 void setup() {

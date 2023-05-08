@@ -25,8 +25,9 @@
   extern void sendMeshMsg(String payload);
   extern void onRecMeshMsgBridge(uint32_t from, String &data);
   extern void onRecMeshMsg(uint32_t from, String &data);
-  extern void sendData();
+  extern void sendData2Mesh();
+  extern void sendData2MQTT();
 
-  extern Task sender;
+  extern Task MeshSender;
 
 #endif
