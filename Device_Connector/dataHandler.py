@@ -32,6 +32,14 @@ class DataHandler():
                     + payload["deviceID"]
                     + "/state"
                 )
+                availableSensorTopic = (
+                    self.baseTopic
+                    + "sensor/"
+                    + self.system
+                    + "/"
+                    + payload["deviceID"]
+                    + "/status"
+                )
             else:
                 raise Client_Error_Handler.NotFound(
                     "Device that sending data is not registered"
@@ -43,7 +51,8 @@ class DataHandler():
                 "Power": payload["Power"],
                 "Energy": payload["Energy"],
             }
-            self.Publish(stateSensorTopic, json.dumps(datafixed))
+            self.Publish(stateSensorTopic, json.dumps(datafixed)) #devi pubblicare anche sullo status topic che il dispositivo è online
+            self.Publish(availableSensorTopic, json.dumps(1)) #devi pubblicare anche sullo status topic che il dispositivo è online
 
         except HTTPError as e:
             message = (
