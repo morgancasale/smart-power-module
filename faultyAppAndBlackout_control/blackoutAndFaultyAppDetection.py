@@ -1,172 +1,259 @@
-import os
-import time
-import sys
+#se il modulo Ã¨ spento non controllo
+#formato stampa messsaggi ed errori?
+#chiudo e apro conn o lascio  aperta? per tutti
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-sys.path.append(PROJECT_ROOT)
-<<<<<<< Updated upstream
+#import os
+#import time
+#import sys
 
-from microserviceBase.serviceBase import *
-=======
+#PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+#sys.path.append(PROJECT_ROOT)
 #from microserviceBase.serviceBase import *
->>>>>>> Stashed changes
 import sqlite3
-import time
 
-class FaultyAppliancesDetection():
 
-    def __init__(self,database):
-        self.conn = sqlite3.connect('C:/Users/hp/Desktop/IOT/lab4_es4/data_m.sqlite')
+class StandByPowerDetection():
+
+    def __init__(self):
+        self.conn = sqlite3.connect('C:/Users/hp/Desktop/IOT/lab4_es4/dbRC.sqlite')
+        self.connHA = sqlite3.connect('C:/Users/hp/Desktop/IOT/lab4_es4/testDB_Marika.db')
         self.cur = self.conn.cursor()
-        self.database= 'data'
-        self.modules_and_switches='Devices'
-        self.ranges='AppliancesInfo'
-        self.devices_db= 'Appliances'
+        self.curHA= self.connHA.cursor()
+        self.database= 'states1'
+        self.onlineDev='Devices'  # online
+        self.ranges='AppliancesInfo'  #ok
+        self.devices_settings= 'DeviceSettings' #deviceID,enabledSockets,parContorl 
+        self.housesdev='HouseDev_conn' #Device per house
+        self.houses= 'Houses' #ID
+        
         self.v_upper_bound=253
         self.v_lower_bound=216
         self.blackout_lim=1
-        self.houses='HouseDev_conn'
+        self.faultyLim=2
 
-        self.clientID="provamqttprogetto0"
-        self.broker="mqtt.eclipseprojects.io"
+        #self.client= ServiceBase("C:/Usersokhp/Desktop/IOT/lab4_es4/standByPowerDetection/serviceConfig_standBy.json")
+        #self.client.start()
 
-    def prevValuesCheck(self, moduleID):
+    
+    
+    def powerPrevValuesCheck(self, moduleID):
         # Retrieve the 10 largest values of the timestamp column for the given moduleID
-        self.cur.execute("""
-            SELECT deviceID, power, voltage FROM (
-                SELECT deviceID, power, voltage, ROW_NUMBER() 
-                OVER (ORDER BY timestamp DESC) AS row_num
-                FROM {}
-                WHERE deviceID = ?
-            )
-            WHERE row_num <= 10 """.format(self.database), (moduleID,))
-        results = self.cur.fetchall()
-        #for result in results:
-        #    print(f"ID: {result[0]}, timestamp: {result[1]}")
-        return results
+        partial=moduleID[1:]
+        powerStateID= 'sensor.voltage_' + partial
+        voltageStateID= 'sensor.power_' + partial
+        self.curHA.execute("""
+             SELECT entity_id, state FROM (
+                 SELECT entity_id, state, ROW_NUMBER() 
+                 OVER (ORDER BY last_updated_ts DESC) AS row_num
+                 FROM {}
+                 WHERE entity_id = ?
+             )
+             WHERE row_num <= 10 """.format(self.database), (powerStateID,))
+        power = self.curHA.fetchall()
+
+        self.curHA.execute("""
+             SELECT entity_id, state FROM (
+                 SELECT entity_id, state, ROW_NUMBER() 
+                 OVER (ORDER BY last_updated_ts DESC) AS row_num
+                 FROM {}
+                 WHERE entity_id = ?
+             )
+             WHERE row_num <= 10 """.format(self.database), (voltageStateID,))
+        voltage = self.curHA.fetchall()
+        return power, voltage
+
+
+    def PrevValuesCheck(self, moduleID):
+        # Retrieve the 10 largest values of the timestamp column for the given moduleID
+        partial=moduleID[1:]
+        powerStateID= 'sensor.voltage_' + partial
+        voltageStateID= 'sensor.power_' + partial
+        self.curHA.execute("""
+             SELECT entity_id, last_updated_ts, state FROM (
+                 SELECT entity_id,last_updated_ts, state, ROW_NUMBER() 
+                 OVER (ORDER BY last_updated_ts DESC) AS row_num
+                 FROM {}
+                 WHERE entity_id = ?
+             )
+             WHERE row_num <= 4 """.format(self.database), (powerStateID,))
+        power = self.curHA.fetchall()
+
+        self.curHA.execute("""
+             SELECT entity_id, last_updated_ts, state FROM (
+                 SELECT entity_id, last_updated_ts, state, ROW_NUMBER() 
+                 OVER (ORDER BY last_updated_ts DESC) AS row_num
+                 FROM {}
+                 WHERE entity_id = ?
+             )
+             WHERE row_num <= 4 """.format(self.database), (voltageStateID,))
+        voltage = self.curHA.fetchall()
+        return power, voltage
        
     def lastValueCheck(self, ID):
-        #return [(ID, max_timestamp, power)]
+        partial=ID[1:]
+        powerStateID= 'sensor.voltage_' + partial
+        voltageStateID= 'sensor.power_' + partial
         #  retrieve the maximum value of timestamp column for each ID
-        self.cur.execute("""
-            SELECT deviceID, MAX(timestamp), power,  voltage
+        self.curHA.execute("""
+            SELECT entity_id, MAX(last_updated_ts), state
             FROM {}
-            WHERE deviceID
-            =?""".format(self.database),(ID,))
-        results = self.cur.fetchone()
+            WHERE entity_id
+            = ?""".format(self.database),(powerStateID,))
+        power = self.curHA.fetchone()
         
-        return results
+        self.curHA.execute("""
+            SELECT entity_id, MAX(last_updated_ts), state
+            FROM {}
+            WHERE entity_id
+            = ?""".format(self.database),(voltageStateID,))
+        voltage= self.curHA.fetchone()
+        return power, voltage 
+        #[ID, power, time], [id, voltage, time]
+    
+        
+    def moduleInfo(self):
+        #this method retrieves the status of the module, if the module is off
+        #there is no need to check for standBy power
+        self.cur.execute("""SELECT *
+                         FROM {}""".format(self.modules_and_switches))
+        result = self.cur.fetchall()
+        if result is not None:
+            return (result)
+        else:
+            return None        
+        #return true false?, come gestir errori
+        
         
     def houseInfo(self,house_ID):
-        #this method retrieves the modules belonging to each home that are on+
-        #and have one device connected to them
+         #this method retrieves the modules belonging to each home that are on+
+        #and have one device cnnected to them
         to_consider=[]
         self.cur.execute("""SELECT deviceID
                          FROM {} 
-                         WHERE houseID = ?""".format(self.houses),(house_ID,))
+                         WHERE houseID = ?""".format(self.housesdev),(house_ID,))
         house_modules= self.cur.fetchall()
         for house_module in house_modules :
-            self.cur.execute("""SELECT *
+            self.cur.execute("""SELECT deviceID, online
                              FROM {}
-                             WHERE deviceID = ? """.format(self.modules_and_switches),(house_module))
+                             WHERE deviceID = ? """.format(self.onlineDev),(house_module))
             result = self.cur.fetchall()
-            if (result[0][4]==1 and sum([int(x) for x in eval(result[0][5])])==1): 
-                to_consider.append(result)
+            if (result[0][1]==1) : 
+                self.cur.execute("""SELECT deviceID, enabledSockets, parControl
+                                 FROM {}
+                                 WHERE deviceID = ? """.format(self.devices_settings),(house_module))
+                settings = self.cur.fetchall()
+                if  (sum([int(x) for x in eval(settings[0][1])])>1):
+                    print('ERRORE')
+                    break
+                if(settings[0][2] == 1) :
+                    to_consider.append(result)
         if (to_consider) is not None:
             return (to_consider)
-        else: return None
-         
-    def getRange(self, ID):   
-        self.cur.execute("""SELECT applianceType 
-                         FROM {} 
-                         WHERE deviceID
-                         = ?""".format(self.devices_db), (ID,))
-        device_type = self.cur.fetchone()[0]
-        self.cur.execute("""SELECT standByPowerMax, functioningRangeMin, functioningRangeMax
-                          FROM {} 
-                          WHERE applianceType
-                          = ?""".format(self.ranges), (device_type,))
-        dev_range = self.cur.fetchall()
-        if dev_range is not None:
-            return dev_range
-        else:
-            return None
-
-    def faultyRangeCheck(self, range_value, last_meas):
-        if (1<last_meas[2]<range_value[0][0] and \
-            range_value[0][1]<last_meas[-2]<range_value[0][2] and\
-            216<last_meas[-1]<253):
-            return False
-        else: return True
+        else: return None   
         
+    def getRange(self, ID):   
+           self.cur.execute("""SELECT applianceType 
+                            FROM {} 
+                            WHERE deviceID
+                            = ?""".format(self.devices_settings), (ID,))
+           device_type = self.cur.fetchone()[0]
+           self.cur.execute("""SELECT standByPowerMax, functioningRangeMin, functioningRangeMax
+                             FROM {} 
+                             WHERE applianceType
+                             = ?""".format(self.ranges), (device_type,))
+           dev_range = self.cur.fetchone()
+           if dev_range is not None:
+               return dev_range
+           else:
+               return None
+           
     def blackOutRangeCheck(self, last_meas):
-        if (self.v_lower_bound<last_meas[3]<self.v_upper_bound):
+        if (self.v_lower_bound<int(last_meas[0][2])<self.v_upper_bound):
             return False
         else: return True
 
-    def MQTTfaultyInterface(self, houseID, ID):
-        client= ServiceBase("C:/Users/hp/Desktop/IOT/lab4_es4/faultyAppAndBlackout_control/serviceConfig_blackout_faulty.json")
-        mqtt= MyMQTT(self.clientID,self.broker,1883,subNotifier=None)
+    def faultyCheck(self, range_value, last_meas, ID):
+        self.cur.execute("""SELECT faultControl
+                            FROM {} 
+                            WHERE deviceID
+                            = ?""".format(self.devices_settings), (ID,))
+        faulty_control=self.cur.fetchone()[0]
+        if faulty_control:
+            if (1<int(last_meas[1][2])<range_value[0] and \
+                range_value[1]<int(last_meas[1][2])<range_value[2] and\
+                self.v_lower_bound<int(last_meas[0][2])<self.v_upper_bound):
+                return False
+            else: return True
+        else: return False 
+        
+    
+    
+    def MQTTStandByPowerInterface(self, houseID, ID):
+       #client= ServiceBase("C:/Users/hp/Desktop/IOT/lab4_es4/standByPowerDetection/serviceConfig_standBy.json")
+        #client.start()
         self.cur.execute("""SELECT switchesStates
                             FROM {}
                             WHERE deviceID = ? """.format(self.modules_and_switches),(ID,))
-        switches = self.cur.fetchone()[0]
-        topic="SmartModule/{}/dev/{}".format(houseID, ID)
+        #switches = self.cur.fetchone()[0]
+        switches = ['1','0','1']
+        #topic="SmartModule/{}/dev/{}".format(houseID, ID)
+        topic= "prova/prova/msmartmod"
         msg=  {
-            "Faulty appliance":{  
+            "StandBy power consumption":{  
             "Active": {
-            "Module": 0, 
+            "Module": 0, #id
             "Switches": switches
         }}}
         
-        client.MQTT.start()
-        client.MQTT.Subscribe(topic)
-        client.MQTT.Publish(topic, msg)
-        client.MQTT.stop() 
+        self.client.MQTT.start()
+        #client.MQTT.Subscribe(topic)
+        self.client.MQTT.Publish(topic, msg)
+        self.client.MQTT.stop() 
 
-    def MQTTblackoutInterface(self, houseID,):
-        mqtt= MyMQTT(self.clientID,self.broker,1883,subNotifier=None)
-        topic="SmartModule/{}".format(houseID)
+    '''def mqttprova(self):
+        client= ServiceBase("C:/Users/hp/Desktop/IOT/lab4_es4/standByPowerDetection/serviceConfig_standBy.json")
+        client.start()
+        topic= "prova/prova/msmartmod"
         msg=  {
-            "Blackout":{  
-            "Active": {
-            "Module": 0
-        }}}
-        
-        mqtt.start()
-        mqtt.Subscribe(topic)
-        mqtt.Publish(topic, msg)
-        mqtt.stop() 
+            "StandBy power consumption provaproava"}
+        client.MQTT.start()
+        client.MQTT.Publish(topic, msg)
 
-    def controlAndDisconnect(self): #cont fino a 4?? 8 secondi
-           self.cur.execute("""SELECT DISTINCT houseID
-                                  FROM {}""".format(self.houses))
-           houses = self.cur.fetchall()
-           for house in houses:
-               blackout_cont=0
-               modules= self.houseInfo(house[0])
-               for info in modules:
-                   faulty_cont=0
-                   value=self.getRange(info[0][0]) #info[i][0] = ID
-                   last_measurement=self.lastValueCheck(info[0][0])#[id, time,power]
-                   if self.blackOutRangeCheck(last_measurement):
+        client.MQTT.stop() '''
+
+
+    def controlAndDisconnect(self):
+        self.cur.execute("""SELECT houseID
+                    FROM {}""".format( self.houses))
+        houses = self.cur.fetchall()
+        for house in houses:
+            blackout_cont=0
+            modules=  self.houseInfo(house[0])
+            for info in modules:
+                faulty_cont=0
+                value= self.getRange(info[0][0]) #info[i][0] = ID
+                last_measurement= self.lastValueCheck(info[0][0])#[power, voltage]
+                if self.blackOutRangeCheck(last_measurement):
                        blackout_cont+=1 
-                   if blackout_cont > self.blackout_lim:
-                       control.MQTTblackoutInterface(house[0])
-                       break
-                   if self.faultyRangeCheck(value, last_measurement):
-                            prevRows=self.prevValuesCheck(info[0][0])
-                            for prevValues in prevRows:
-                                    if self.faultyRangeCheck(value, prevValues):
-                                        faulty_cont+=1   
-                            if faulty_cont>=4:
-                                control.MQTTfaultyInterface(house[0], info[0][0])
-         
+                if blackout_cont > self.blackout_lim:
+                      #self.MQTTblackoutInterface(house[0])
+                      print('blackout house', house)
+                      break
+                if self.faultyCheck(value, last_measurement, info[0][0]):
+                    prevVoltage, prevPower=self.PrevValuesCheck(info[0][0])
+                    res = tuple((voltage, power) for voltage, power in zip(prevVoltage, prevPower))
+                    for i in range(self.faultyLim):
+                        if self.faultyCheck(value, res[i],info[0][0]):
+                            faulty_cont+=1   
+                            if faulty_cont>=self.faultyLim:
+                                    #control.MQTTfaultyInterface(house[0], info[0][0])
+                                    print('faulty', info[0][0])
 
 if __name__ == "__main__":
-    control= FaultyAppliancesDetection('C:/Users/hp/Desktop/IOT/lab4_es4/data.db')
+    control= StandByPowerDetection()
     i=0
-    while i<2: #poi ci andrà true
-     control.controlAndDisconnect()
-     i+=1
-     time.sleep(2)
+    while(i<3): 
+        control.controlAndDisconnect()
+       # time.sleep(2)
+        i+=1
+ 
