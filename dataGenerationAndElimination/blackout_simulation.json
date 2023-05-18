@@ -1,0 +1,13 @@
+{
+    "dev1": {"min": 118, "max": 200, "voltage": 100},
+    "dev2": {"min": 25, "max": 100, "voltage": 100},
+    "dev3": {"min": 600, "max": 620, "voltage": 100},
+    "dev4": {"min": 0, "max": 1, "voltage": 230},
+    "dev5": {"min": 50, "max": 100, "voltage": 230},
+    "dev6": {"min": 1500, "max": 1550, "voltage": 100},
+    "dev7": {"min": 0, "max": 1, "voltage": 230},
+    "dev8": {"min": 0, "max": 1, "voltage": 230},
+    "dev9": {"min": 150, "max": 200, "voltage": 100},
+    "dev10": {"min": 0, "max": 1, "voltage": 230},
+    "dev11": {"min": 0, "max": 1, "voltage": 230}
+}

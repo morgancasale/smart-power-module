@@ -1,0 +1,71 @@
+{
+    "smartModule": {
+     
+          "smartModule/home1/dev/dev1": {
+            "min_accepted_power": 10,
+            "max_accepted_power": 50,
+            "max_accepted_voltage": 240,
+            "min_accepted_voltage": 220
+          },
+          "smartModule/home1/dev/dev2": {
+            "min_accepted_power": 20,
+            "max_accepted_power": 60,
+            "max_accepted_voltage": 240,
+            "min_accepted_voltage": 220
+          },
+          "smartModule/home1/dev/dev3": {
+            "min_accepted_power": 15,
+            "max_accepted_power": 45,
+            "max_accepted_voltage": 240,
+            "min_accepted_voltage": 220
+          },
+          "smartModule/home1/dev/dev4": {
+            "min_accepted_power": 25,
+            "max_accepted_power": 55,
+            "max_accepted_voltage": 240,
+            "min_accepted_voltage": 220
+          },
+          "smartModule/home1/dev/dev5": {
+            "min_accepted_power": 30,
+            "max_accepted_power": 70,
+            "max_accepted_voltage": 240,
+            "min_accepted_voltage": 220
+          },
+          "smartModule/home1/dev/dev6": {
+            "min_accepted_power": 35,
+            "max_accepted_power": 75,
+            "max_accepted_voltage": 240,
+            "min_accepted_voltage": 220
+          },
+          "smartModule/home1/dev/dev7": {
+            "min_accepted_power": 40,
+            "max_accepted_power": 80,
+            "max_accepted_voltage": 240,
+            "min_accepted_voltage": 220
+          },
+          "smartModule/home1/dev/dev8": {
+            "min_accepted_power": 45,
+            "max_accepted_power": 85,
+            "max_accepted_voltage": 240,
+            "min_accepted_voltage": 220
+          },
+          "smartModule/home1/dev/dev9": {
+            "min_accepted_power": 50,
+            "max_accepted_power": 90,
+            "max_accepted_voltage": 240,
+            "min_accepted_voltage": 220
+          },
+          "smartModule/home1/dev/dev10": {
+            "min_accepted_power": 55,
+            "max_accepted_power": 95,
+            "max_accepted_voltage": 240,
+            "min_accepted_voltage": 220
+          },
+          "smartModule/home1/dev/dev11": {
+            "min_accepted_power": 60,
+            "max_accepted_power": 100,
+            "max_accepted_voltage": 240,
+            "min_accepted_voltage": 220
+          }
+        }
+      }
