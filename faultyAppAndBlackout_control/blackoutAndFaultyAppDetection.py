@@ -4,8 +4,12 @@ import sys
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 sys.path.append(PROJECT_ROOT)
+<<<<<<< Updated upstream
 
 from microserviceBase.serviceBase import *
+=======
+#from microserviceBase.serviceBase import *
+>>>>>>> Stashed changes
 import sqlite3
 import time
 
