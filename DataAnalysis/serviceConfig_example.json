@@ -1,0 +1,54 @@
+{
+    "CONFIG": {
+        "activatedMethod": {
+            "MQTT": false,
+            "REST": true
+        },
+        "houseID":null,
+        "userID": null,
+        "deviceID":null,
+        "resourceID": null
+    },
+    "REST": {
+        "endPointID": "E1",
+        "endPointName": "ResourceCatalog",
+        "IPAddress": "192.168.2.145",
+        "port": 8099,
+        "CRUDMethods": {
+            "GET": true,
+            "POST": true,
+            "PUT": true,
+            "DELETE": false,
+            "PATCH": false
+        }
+    },
+    "MQTT": {
+        "endPointID": null,
+        "endPointName": "ResourceCatalog",
+        "autoBroker": false,
+        "brokerAddress": "",
+        "brokerPort": 1883,
+        "subPub": {
+            "sub": false,
+            "pub": false
+        },
+        "clientID": "string",
+        "MQTTTopics": {
+            "sub": [
+                "string"
+            ],
+            "pub": [
+                "string"
+            ]
+        },
+        "QOS": 0
+    },
+    "REGISTRATION": {
+        "enabled": true,
+        "serviceID": null,
+        "serviceName": "",
+        "catalogAddress": "http://192.168.2.145",
+        "catalogPort": 8099,
+        "T_Registration": 0.1
+    }
+}
