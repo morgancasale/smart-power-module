@@ -24,4 +24,4 @@ class Server():
     
 if __name__ == "__main__":
     # Standard configuration to serve the url "localhost:8080"    
-    server = ServiceBase("serviceConfig_example.json", GET=GET(), POST=POST())
+    server = ServiceBase("serviceConfig_example.json", GET=GET(), POST=POST(), PUT=PUT())
