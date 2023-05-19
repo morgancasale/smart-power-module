@@ -44,7 +44,7 @@
     },
     "REGISTRATION": {
         "enabled": true,
-        "serviceID": null,
+        "serviceID": "SNTU0NT",
         "serviceName": "DataAnalysis",
         "catalogAddress": "http://192.168.2.145",
         "catalogPort": 8099,
