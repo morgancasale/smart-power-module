@@ -45,7 +45,7 @@
     "REGISTRATION": {
         "enabled": true,
         "serviceID": null,
-        "serviceName": "",
+        "serviceName": "DataAnalysis",
         "catalogAddress": "http://192.168.2.145",
         "catalogPort": 8099,
         "T_Registration": 0.1
