@@ -85,6 +85,10 @@ class TimeShift():
                 
 if __name__ == "__main__":
   TS= TimeShift()
+   i=0
+    while(i<3): 
+        MPC.manageService("H1")
+        i+=1
  
   #test=TS.getTimeInfo("H1")
   #test1=TS.loadTimeInfo("H1")
