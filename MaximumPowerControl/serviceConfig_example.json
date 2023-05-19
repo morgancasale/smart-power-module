@@ -52,7 +52,7 @@
     "REGISTRATION": {
         "enabled": false,
         "serviceID": "SNTU0NT",
-        "serviceName": "HousePowerControl",
+        "serviceName": "MaxPower",
         "catalogAddress": "http://192.168.2.145",
         "catalogPort": 8099,
         "T_Registration": 0.1
