@@ -23,16 +23,15 @@
         }
     },
     "MQTT": {
-        "endPointID": null,
+       "endPointID": null,
         "endPointName": "ResourceCatalog",
-        "autoBroker": false,
-        "brokerAddress": "",
+        "brokerAddress": "mqtt.eclipseprojects.io",
         "brokerPort": 1883,
         "subPub": {
             "sub": false,
-            "pub": false
+            "pub": true
         },
-        "clientID": "string",
+        "clientID": "smartmodulepoject0002",
         "MQTTTopics": {
             "sub": [
                 "string"
