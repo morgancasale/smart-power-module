@@ -6,6 +6,13 @@ import numpy as np
 import paho.mqtt.client as mqtt
 import datetime
 import time
+import os
+import time
+import sys
+
+#PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+#sys.path.append(PROJECT_ROOT)
+#from microserviceBase.serviceBase import *
 
 class TimeShift():
 
@@ -80,9 +87,8 @@ if __name__ == "__main__":
   TS= TimeShift()
  
   #test=TS.getTimeInfo("H1")
-  test1=TS.loadTimeInfo("H1")
+  #test1=TS.loadTimeInfo("H1")
   #print(test1)
-  test2=TS.manageService("H1")
-  print(test2)
-
-  ciao=1
+  #test2=TS.manageService("H1")
+  #print(test2)
+  #ciao=1
