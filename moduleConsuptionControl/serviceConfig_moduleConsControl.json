@@ -20,7 +20,7 @@
         "endPointName": null,
         "IPAddress": null,
         "port": null,
-        "CRUDMethods": {
+        "CRUDMethods": { 
             "GET": true,
             "POST": false,
             "PUT": false,

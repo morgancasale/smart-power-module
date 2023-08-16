@@ -112,7 +112,7 @@ class StandByPowerDetection():
             "Active": {
             "Module": 0, #id
             #"Switches": switches
-        }}}
+        }}} 
     
         str_msg = json.dumps(msg, indent=2)
 

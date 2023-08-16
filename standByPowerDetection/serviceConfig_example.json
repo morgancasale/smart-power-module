@@ -14,7 +14,7 @@
             "baseTopic": "homeassistant",
             "system": "smartSocket"
         }
-    },
+    }, 
     "REST": {
         "endPointID": null,
         "endPointName": null,

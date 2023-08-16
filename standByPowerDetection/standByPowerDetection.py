@@ -157,4 +157,4 @@ class StandByPowerDetection():
 
 if __name__ == "__main__":
     control= StandByPowerDetection()
-    control.controlAndDisconnect()
+    control.controlAndDisconnect() 

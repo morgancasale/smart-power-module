@@ -32,4 +32,4 @@ while True:
     pass
 
 # Stop the MQTT client loop
-client.loop_stop()
+client.loop_stop() 

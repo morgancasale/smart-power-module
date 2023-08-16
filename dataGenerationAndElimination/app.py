@@ -65,7 +65,7 @@ class Appliances():
         'power': power[0]
         } )
         msg = str(data)
-        return msg
+        return msg 
 
         
 

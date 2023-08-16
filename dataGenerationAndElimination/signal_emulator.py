@@ -58,5 +58,5 @@ if __name__ == "__main__":
     #for i sensori
     #esp32firmware, true autobroker
     #reqres catalogue endpoint
-    #MAC su json, RSSI, autobroker, come parametri con ?
+    #MAC su json, RSSI, autobroker, come parametri con ? 
 
