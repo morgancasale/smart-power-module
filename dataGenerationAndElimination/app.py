@@ -22,10 +22,12 @@ class Appliances():
         voltage= 230
         current= power/voltage
         data = ( {
-        'socketID': ID,
-        'voltage': voltage,
-        'current': current[0],
-        'power': power[0]
+        'DeviceID': ID,
+        'Voltage': voltage,
+        'Current': current[0],
+        'Power': power[0]
+        #Energy
+        #SwitchStates :[0,1,1]
         } )
         msg = str(data)
         return msg
@@ -66,6 +68,5 @@ class Appliances():
         return msg
 
         
-   
 
 

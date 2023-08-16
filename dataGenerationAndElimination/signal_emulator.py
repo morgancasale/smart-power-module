@@ -1,24 +1,21 @@
 #PUBLISHER
-from MyMQTT import *
 from app import *
 import json
 import time
 import datetime as datetime
 import threading
-import re
+import os
+import time
+import sys
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+sys.path.append(PROJECT_ROOT)
+from microserviceBase.serviceBase import *
 
 
 class Emulator:
     def __init__(self):
-     
-        #self.broker="mqtt.eclipseprojects.io"
-        self.broker="broker.emqx.io"
-        self.clientID='shdgfdhjnfbghn'
-        self.port=1883
-        self.client= 'smartmoduleclientprova11'
-        self.client=MyMQTT(self.client, self.port, self.broker )
-        conf_t=json.load(open('C:/Users/hp/Desktop/IOT/lab4_es4/deviceConn_sens/topic.json'))
-        self.topics=conf_t["topics"]
+        self.client= ServiceBase("C:/Users/mirip/Desktop/progetto_IOT/smart-power-module/standByPowerDetection/serviceConfig_example.json")
         self.appClient=Appliances()
 
         self.client.start()
@@ -35,21 +32,31 @@ class Emulator:
 
     #modes:standbypower faulty, blackout 
     def publishApp(self,mode):
-  
         threads = []
-        for topic in self.topics:
-            parts = topic.split("/")
-            dev = parts[-1]
-            msg=self.messageGenerator(mode, dev)
-            thread = threading.Thread(target=self.client.publish, args=(topic,msg))
+        topic="?/smartSocket/data"
+        self.client.start()
+        for i in range(11):
+            #get
+            msg=self.messageGenerator(mode, i)
+            thread = threading.Thread(target=self.client.MQTT.Publish, args=(topic,msg))
             threads.append(thread)
             thread.start()
         for thread in threads:
             thread.join()
+
 
                 
 if __name__ == "__main__":
     sensor=Emulator()
     #sensor.publishApp('standbypower')
     sensor.publishApp('normal')
+    
+    #esp32firmware, true autobroker
+    #request. get dev conn
+    #res catalogue endpoint
+            
+    #for i sensori
+    #esp32firmware, true autobroker
+    #reqres catalogue endpoint
+    #MAC su json, RSSI, autobroker, come parametri con ?
 
