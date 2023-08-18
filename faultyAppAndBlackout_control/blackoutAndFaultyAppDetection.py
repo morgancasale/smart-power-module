@@ -149,39 +149,22 @@ class blackoutAndFaulty():
 
     
 
-
-    def mqttprova(self):
-        
-        topic= "smartSocket/data"
-        
-        msg="pizza"
-        self.client.MQTT.Publish(topic, msg)
-
-        self.client.MQTT.stop()
         
         
-    def MQTTInterface(self, houseID, ID, case):
+    def MQTTInterface(self, ID, case):
         self.client.start()
-        '''self.cur.execute("""SELECT switchesStates
-                            FROM {}
-                            WHERE deviceID = ? """.format(self.modules_and_switches),(ID,))
-        switches = self.cur.fetchone()[0]
-        switches = ['1','0','1']'''
+        topic = "/smartSocket/data"
         if case =='f':
-            topic="SmartModule/{}/dev/{}".format(houseID, ID)
             msg=  {
-                "StandBy power consumption":{  
+                "faulty":{  
                 "Active": {
-                "Module": 0, #id
-                #"Switches": switches
+                "Module": ID, #id
             }}}
         else:  
-            topic="SmartModule/{}".format(houseID)
             msg=  {
-                "???????":{  
+                "blackout":{  
                 "Active": {
-                "Module": 0, #id
-                #"Switches": switches
+                "Module": ID, #id
             }}}
         
         str_msg = json.dumps(msg, indent=2)
@@ -198,7 +181,6 @@ class blackoutAndFaulty():
         self.curHA= self.connHA.cursor()
         self.database= 'states1'
         self.onlineDev='Devices'  # online
-        #self.onlinedev2 = 'DeviceResource_conn' #check Online for lastUpdate
         self.ranges='AppliancesInfo'  #ranges
         self.devices_settings= 'DeviceSettings' #deviceID,enabledSockets,parControl 
         self.housesdev='HouseDev_conn' #Device per house
@@ -233,12 +215,8 @@ class blackoutAndFaulty():
         self.connHA.close()
                                     
 
-if __name__ == "__main__":
-    control= blackoutAndFaulty()
-    i=0
-    while(i<2): 
-        control.controlAndDisconnect()
-        time.sleep(2)
-        i+=1
-    print('end')
- 
+
+control= blackoutAndFaulty()
+while(True): 
+    control.controlAndDisconnect()
+    time.sleep(2)

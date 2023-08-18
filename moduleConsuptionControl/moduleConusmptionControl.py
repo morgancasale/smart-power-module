@@ -99,19 +99,13 @@ class StandByPowerDetection():
                 return None
             
     
-    def MQTTInterface(self, houseID, ID):
+    def MQTTInterface(self, ID):
         self.client.start()
-        '''self.cur.execute("""SELECT switchesStates
-                            FROM {}
-                            WHERE deviceID = ? """.format(self.modules_and_switches),(ID,))
-        switches = self.cur.fetchone()[0]
-        switches = ['1','0','1']'''
-        topic="SmartModule/{}/dev/{}".format(houseID, ID)
+        topic="/smartSocket/data"
         msg=  {
             "StandBy power consumption":{  
             "Active": {
-            "Module": 0, #id
-            #"Switches": switches
+            "Module": ID, #id
         }}} 
     
         str_msg = json.dumps(msg, indent=2)
@@ -147,13 +141,11 @@ class StandByPowerDetection():
                                 
 
 
-if __name__ == "__main__":
-    control= StandByPowerDetection()
-    i=0
-    while(i<3): 
-        control.controlAndNotify()
-        time.sleep(2)
-        i+=1
+
+control= StandByPowerDetection()
+while(True): 
+    control.controlAndNotify()
+    time.sleep(2)
 
 
 

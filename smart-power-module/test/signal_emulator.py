@@ -6,7 +6,7 @@ import time
 import datetime as datetime
 import numpy
 
- 
+
 class Emulator:
     def __init__(self, clientID, topic,broker,port):
         self.topic=topic
