@@ -8,10 +8,10 @@ from microserviceBase.serviceBase import *
 import sqlite3
 
 
-class StandByPowerDetection():
+class ModuleConsumptionControl():
 
     def __init__(self):
-        self.client= ServiceBase("C:/Users/mirip/Desktop/progetto_IOT/smart-power-module/moduleConsumptionControl/serviceConfig_moduleConsControl.json")
+        self.client= ServiceBase("C:/Users/mirip/Desktop/progetto_IOT/smart-power-module/moduleConsuptionControl/serviceConfig_moduleConsControl.json")
     
     def prevValuesCheck(self, moduleID):
         # Retrieve the N largest values of the timestamp column for the given moduleID
@@ -135,14 +135,14 @@ class StandByPowerDetection():
                 last_measurement= self.lastValueCheck(info[0][0])#[id, time,power]
                 if  last_measurement[2] != None:
                     if (  int(last_measurement[2])> value):
-                                self.MQTTInterface(house[0], info[0][0])
+                                self.MQTTInterface( info[0][0])
         self.conn.close()
         self.connHA.close()
                                 
 
 
 
-control= StandByPowerDetection()
+control= ModuleConsumptionControl()
 while(True): 
     control.controlAndNotify()
     time.sleep(2)

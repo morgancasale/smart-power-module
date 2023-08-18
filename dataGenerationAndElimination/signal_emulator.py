@@ -33,7 +33,7 @@ class Emulator:
     #modes:standbypower faulty, blackout 
     def publishApp(self,mode):
         threads = []
-        topic="?/smartSocket/data"
+        topic="/smartSocket/data"
         self.client.start()
         for i in range(11):
             #get
@@ -43,12 +43,13 @@ class Emulator:
             thread.start()
         for thread in threads:
             thread.join()
+            
 
 
                 
 if __name__ == "__main__":
     sensor=Emulator()
-    #sensor.publishApp('standbypower')
+
     sensor.publishApp('normal')
     
     #esp32firmware, true autobroker

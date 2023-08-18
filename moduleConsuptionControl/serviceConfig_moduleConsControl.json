@@ -14,13 +14,13 @@
             "baseTopic": "homeassistant",
             "system": "smartSocket"
         }
-    },
+    }, 
     "REST": {
         "endPointID": null,
         "endPointName": null,
         "IPAddress": null,
         "port": null,
-        "CRUDMethods": { 
+        "CRUDMethods": {
             "GET": true,
             "POST": false,
             "PUT": false,
@@ -29,8 +29,8 @@
         }
     },
     "MQTT": {
-        "endPointID": "mamma",
-        "endPointName": "pizzamandolinod",
+        "endPointID": "asdfghjk",
+        "endPointName": "zsdfghjkl",
         "autoBroker": false,
         "brokerAddress": "broker.emqx.io",
         "brokerPort": 1883,
@@ -40,14 +40,13 @@
             "sub": true,
             "pub": true
         },
-        "clientID": "prova",
+        "clientID": "1234567890",
         "MQTTTopics": {
             "sub": [
-                "smartSocket/data",
-                "pizzapazza/1"
+                "/smartSocket/data"
             ],
             "pub": [
-                "cione/123243"
+                "/smartSocket/data"
             ]
         },
         "QOS": 0

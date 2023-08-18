@@ -145,7 +145,7 @@ class StandByPowerDetection():
                             if (int(prevValues[1])>=1 or int(prevValues[1])<=value):
                                 standByPowercont+=1   
                             if standByPowercont>=5:
-                                self.MQTTInterface(house[0], info[0][0])
+                                self.MQTTInterface(info[0][0])
                                 
 
 
