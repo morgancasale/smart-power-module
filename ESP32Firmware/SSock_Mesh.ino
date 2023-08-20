@@ -40,7 +40,7 @@ void onRecMeshMsg(uint32_t from, String &data) {
   Serial.print("Received data from node " + String(from));
   Serial.println(" : "+ data);
   JSONVar payload = JSON.parse(data);
-  if(payload["deviceID"] == deviceID){
+  if(payload["deviceID"] == deviceID || payload["deviceID"] == "*" ){
     digitalWrite (LED_BUILTIN, payload["state"]);
     SwitchStates[(int) payload["plugID"]] = (int) payload["state"];
   }
