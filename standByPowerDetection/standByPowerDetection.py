@@ -11,7 +11,6 @@ class StandByPowerDetection():
 
     def __init__(self):
         self.client= ServiceBase("C:/Users/mirip/Desktop/progetto_IOT/smart-power-module/standByPowerDetection/serviceConfig_example.json")
-        
     
     def prevValuesCheck(self, moduleID):
         # Retrieve the 10 largest values of the timestamp column for the given moduleID
@@ -103,15 +102,53 @@ class StandByPowerDetection():
             else:
                 return None
             
+    def retrieveSensorData(self, ID):
+        partial = ID[1:]
+        voltageStateID = 'sensor.voltage_' + partial
+        powerStateID = 'sensor.power_' + partial
+        energyStateID = 'sensor.energy_' + partial
+        currentStateID = 'sensor.current_' + partial
+
+        queries = [
+        voltageStateID,
+        currentStateID,
+        powerStateID,
+        energyStateID]
+        
+        sensor_data = []
+    
+        for entity_id in queries:
+            print(entity_id)
+            query = f"""
+            SELECT MAX(last_updated_ts), state
+            FROM {self.database}
+            WHERE entity_id = ?
+            """
+            self.curHA.execute(query, (entity_id,))
+            result = self.curHA.fetchone()
+            sensor_data.append(result[1])
+        return sensor_data #[voltage, current,power,  energy]
+    
+    def retrieveSocket(self,ID):
+        self.cur.execute("""SELECT enabledSockets
+                            FROM {}
+                            WHERE deviceID = ? """.format(self.devices_settings),(ID,))
+        switches = self.cur.fetchone()[0]
+        return switches
     
     def MQTTInterface(self, ID):
         self.client.start()
         topic="/smartSocket/data"
+        sensor_data= self.retrieveSensorData(ID)
+        socket= self.retrieveSocket(ID)
         msg=  {
-            "StandBy power consumption":{  
-            "Active": {
-            "Module": ID, #id
-        }}}
+            "deviceID": ID,# string
+            "Voltage": sensor_data[0] , #float
+            "Current": sensor_data[1], #float
+            "Power": sensor_data[2],#float
+            "Energy":  sensor_data[3],#float
+            "SwitchStates":socket #[ "int", "int", "int"]
+        }
     
         str_msg = json.dumps(msg, indent=2)
 
@@ -123,7 +160,7 @@ class StandByPowerDetection():
         self.connHA = sqlite3.connect('C:/Users/mirip/Desktop/IOT/lab4_es4/testDB_Marika.db')
         self.cur = self.conn.cursor()
         self.curHA= self.connHA.cursor()
-        self.database= 'states1'
+        self.database= 'states'
         self.onlineDev='Devices'  # online
         self.ranges='AppliancesInfo'  #ok
         self.devices_settings= 'DeviceSettings' #deviceID,enabledSockets,parContorl 
@@ -138,11 +175,11 @@ class StandByPowerDetection():
                 standByPowercont=0 
                 value= self.getRange(info[0][0]) #info[i][0] = ID
                 last_measurement= self.lastValueCheck(info[0][0])#[id, time,power]
-                if last_measurement[2] != None :
-                    if (int(last_measurement[2])>=1 or int(last_measurement[2])<=value) and last_measurement!=0:
+                if last_measurement[2] != None and value != None :
+                    if (1<= int(last_measurement[2]) <= int(value) and last_measurement!=0):
                         prevRows= self.prevValuesCheck(info[0][0])
                         for prevValues in prevRows:
-                            if (int(prevValues[1])>=1 or int(prevValues[1])<=value):
+                            if (1<=int(prevValues[1])<=value):
                                 standByPowercont+=1   
                             if standByPowercont>=5:
                                 self.MQTTInterface(info[0][0])

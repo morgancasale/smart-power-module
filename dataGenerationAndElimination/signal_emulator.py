@@ -49,7 +49,7 @@ class Emulator:
                 
 if __name__ == "__main__":
     sensor=Emulator()
-
+    
     sensor.publishApp('normal')
     
     #esp32firmware, true autobroker

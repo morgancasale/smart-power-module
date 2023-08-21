@@ -12,7 +12,7 @@ class ModuleConsumptionControl():
 
     def __init__(self):
         self.client= ServiceBase("C:/Users/mirip/Desktop/progetto_IOT/smart-power-module/moduleConsuptionControl/serviceConfig_moduleConsControl.json")
-    
+
     def prevValuesCheck(self, moduleID):
         # Retrieve the N largest values of the timestamp column for the given moduleID
         partial=moduleID[1:]
@@ -98,27 +98,72 @@ class ModuleConsumptionControl():
             else:
                 return None
             
-    
+            
+            
+            
+    def retrieveSensorData(self, ID):
+        partial = ID[1:]
+        voltageStateID = 'sensor.voltage_' + partial
+        powerStateID = 'sensor.power_' + partial
+        energyStateID = 'sensor.energy_' + partial
+        currentStateID = 'sensor.current_' + partial
+
+        queries = [
+        voltageStateID,
+        currentStateID,
+        powerStateID,
+        energyStateID]
+        
+        sensor_data = []
+
+        for entity_id in queries:
+            print(entity_id)
+            query = f"""
+            SELECT MAX(last_updated_ts), state
+            FROM {self.database}
+            WHERE entity_id = ?
+            """
+            self.curHA.execute(query, (entity_id,))
+            result = self.curHA.fetchone()
+            sensor_data.append(result[1])
+        return sensor_data #[voltage, current,power,  energy]
+
+    def retrieveSocket(self,ID):
+        self.cur.execute("""SELECT enabledSockets
+                            FROM {}
+                            WHERE deviceID = ? """.format(self.devices_settings),(ID,))
+        switches = self.cur.fetchone()[0]
+        return switches
+
     def MQTTInterface(self, ID):
         self.client.start()
         topic="/smartSocket/data"
+        sensor_data= self.retrieveSensorData(ID)
+        socket= self.retrieveSocket(ID)
         msg=  {
-            "StandBy power consumption":{  
-            "Active": {
-            "Module": ID, #id
-        }}} 
-    
+            "deviceID": ID,# string
+            "Voltage": sensor_data[0] , #float
+            "Current": sensor_data[1], #float
+            "Power": sensor_data[2],#float
+            "Energy":  sensor_data[3],#float
+            "SwitchStates":socket #[ "int", "int", "int"]
+        }
+
         str_msg = json.dumps(msg, indent=2)
 
         self.client.MQTT.Publish(topic, str_msg)
         self.client.MQTT.stop() 
+                
+            
+            
+            
 
     def controlAndNotify(self):
         self.conn = sqlite3.connect('C:/Users/mirip/Desktop/IOT/lab4_es4/dbRC.sqlite')
         self.connHA = sqlite3.connect('C:/Users/mirip/Desktop/IOT/lab4_es4/testDB_Marika.db')
         self.cur = self.conn.cursor()
         self.curHA= self.connHA.cursor()
-        self.database= 'states1'
+        self.database= 'states'
         self.onlineDev='Devices'  # online
         self.onlinedev2 = 'DeviceResource_conn' #check Online for lastUpdate
         self.ranges='AppliancesInfo'  #ranges

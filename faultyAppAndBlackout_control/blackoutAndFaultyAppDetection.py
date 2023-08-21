@@ -141,31 +141,88 @@ class blackoutAndFaulty():
         if not faulty_control:
             return False
         else:
-            if (1<int(last_meas[1][2])<range_value[0] or \
+            if (0<=int(last_meas[1][2])<range_value[0] or \
                 range_value[1]<int(last_meas[1][2])<range_value[2] and\
                 self.v_lower_bound<int(last_meas[0][2])<self.v_upper_bound):
                 return False
             else: return True
-
     
+    def retrieveSensorData(self, ID):
+        partial = ID[1:]
+        voltageStateID = 'sensor.voltage_' + partial
+        powerStateID = 'sensor.power_' + partial
+        energyStateID = 'sensor.energy_' + partial
+        currentStateID = 'sensor.current_' + partial
 
+        queries = [
+        voltageStateID,
+        currentStateID,
+        powerStateID,
+        energyStateID]
         
+        sensor_data = []
+    
+        for entity_id in queries:
+            print(entity_id)
+            query = f"""
+            SELECT MAX(last_updated_ts), state
+            FROM {self.database}
+            WHERE entity_id = ?
+            """
+            self.curHA.execute(query, (entity_id,))
+            result = self.curHA.fetchone()
+            sensor_data.append(result[1])
+        return sensor_data #[voltage, current,power,  energy]
+    
+    def retrieveSocket(self,ID):
+        self.cur.execute("""SELECT enabledSockets
+                            FROM {}
+                            WHERE deviceID = ? """.format(self.devices_settings),(ID,))
+        switches = self.cur.fetchone()[0]
+        return switches
+    
+    def MQTTInterface(self, ID):
+        self.client.start()
+        topic="/smartSocket/data"
+        sensor_data= self.retrieveSensorData(ID)
+        socket= self.retrieveSocket(ID)
+        msg=  {
+            "deviceID": ID,# string
+            "Voltage": sensor_data[0] , #float
+            "Current": sensor_data[1], #float
+            "Power": sensor_data[2],#float
+            "Energy":  sensor_data[3],#float
+            "SwitchStates":socket #[ "int", "int", "int"]
+        }
+    
+        str_msg = json.dumps(msg, indent=2)
+
+        self.client.MQTT.Publish(topic, str_msg)
+        self.client.MQTT.stop()       
         
     def MQTTInterface(self, ID, case):
         self.client.start()
         topic = "/smartSocket/data"
         if case =='f':
+            sensor_data= self.retrieveSensorData(ID)
+            socket= self.retrieveSocket(ID)
             msg=  {
-                "faulty":{  
-                "Active": {
-                "Module": ID, #id
-            }}}
+                "deviceID": ID,# string
+                "Voltage": sensor_data[0] , #float
+                "Current": sensor_data[1], #float
+                "Power": sensor_data[2],#float
+                "Energy":  sensor_data[3],#float
+                "SwitchStates":socket #[ "int", "int", "int"]
+            }
         else:  
             msg=  {
-                "blackout":{  
-                "Active": {
-                "Module": ID, #id
-            }}}
+                        "deviceID": '*',
+                        "Voltage": None,
+                        "Current": None, 
+                        "Power": None,
+                        "Energy":  None,
+                        "SwitchStates":None
+                    }
         
         str_msg = json.dumps(msg, indent=2)
 
@@ -179,7 +236,7 @@ class blackoutAndFaulty():
         self.connHA = sqlite3.connect('C:/Users/mirip/Desktop/IOT/lab4_es4/testDB_Marika.db')
         self.cur = self.conn.cursor()
         self.curHA= self.connHA.cursor()
-        self.database= 'states1'
+        self.database= 'states'
         self.onlineDev='Devices'  # online
         self.ranges='AppliancesInfo'  #ranges
         self.devices_settings= 'DeviceSettings' #deviceID,enabledSockets,parControl 
@@ -195,7 +252,7 @@ class blackoutAndFaulty():
                 faulty_cont=0
                 value= self.getRange(info[0][0]) #info[i][0] = ID
                 last_measurement= self.lastValueCheck(info[0][0])#[power, voltage]
-                if last_measurement[0][2] != None:
+                if last_measurement[0][2] != None and value!=None :
                     if self.blackOutRangeCheck(last_measurement) :
                             blackout_cont+=1 
                     if blackout_cont > self.blackout_lim:
