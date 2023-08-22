@@ -21,13 +21,15 @@ class Appliances():
         power=np.random.randint(1,5, 1)
         voltage= 230
         current= power/voltage
+        energy_ws = float(power[0]) * 2
+        energy_kwh = energy_ws / (3600 * 1000)
         data = ( {
         'DeviceID': ID,
         'Voltage': voltage,
         'Current': current[0],
-        'Power': power[0]
-        #Energy
-        #SwitchStates :[0,1,1]
+        'Power': power[0],
+        'Energy': energy_kwh,
+        'switch_state' : [1,0,0]
         } )
         msg = str(data)
         return msg
@@ -58,15 +60,25 @@ class Appliances():
         digits = re.findall(r'\d+', devID)
         ID_num = ''.join(digits)
         ID= 'D' + str(ID_num)
+        energy_ws = float(power[0]) * 2
+        energy_kwh = energy_ws / (3600 * 1000)
         data = ( {
-        'socketID': ID,
-        'voltage': voltage,
-        'current': current[0],
-        'power': power[0]
+        'DeviceID': ID,
+        'Voltage': voltage,
+        'Current': current[0],
+        'Power': power[0],
+        'Energy': energy_kwh,
+        'switch_state' : [1,0,0]
         } )
         msg = str(data)
         return msg 
 
-        
-
+'''msg=  {
+            "deviceID": ID,# string
+            "Voltage": sensor_data[0] , #float
+            "Current": sensor_data[1], #float
+            "Power": sensor_data[2],#float
+            "Energy":  sensor_data[3],#float
+            "SwitchStates":socket #[ "int", "int", "int"]
+        }'''
 

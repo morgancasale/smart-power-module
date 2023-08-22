@@ -15,7 +15,7 @@ from microserviceBase.serviceBase import *
 
 class Emulator:
     def __init__(self):
-        self.client= ServiceBase("C:/Users/mirip/Desktop/progetto_IOT/smart-power-module/standByPowerDetection/serviceConfig_example.json")
+        self.client= ServiceBase("C:/Users/mirip/Desktop/progetto_IOT/smart-power-module/dataGenerationAndElimination/res_catalog_serviceConfig.json")
         self.appClient=Appliances()
 
         self.client.start()

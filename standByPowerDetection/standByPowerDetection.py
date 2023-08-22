@@ -139,16 +139,13 @@ class StandByPowerDetection():
     def MQTTInterface(self, ID):
         self.client.start()
         topic="/smartSocket/data"
-        sensor_data= self.retrieveSensorData(ID)
-        socket= self.retrieveSocket(ID)
-        msg=  {
-            "deviceID": ID,# string
-            "Voltage": sensor_data[0] , #float
-            "Current": sensor_data[1], #float
-            "Power": sensor_data[2],#float
-            "Energy":  sensor_data[3],#float
-            "SwitchStates":socket #[ "int", "int", "int"]
-        }
+        #socket= self.retrieveSocket(ID)
+        #socket_states =  [-1 if item == '0' else 0 for item in socket]
+        #print(socket_states)
+        msg= {
+            "deviceID" : ID, 
+            "states" : [0,0,0]
+            }
     
         str_msg = json.dumps(msg, indent=2)
 
