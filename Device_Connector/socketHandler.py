@@ -210,14 +210,13 @@ class SocketHandler():
                 message = "An error occurred while generating the device: " + str(e)
             )
     
-    def genSocket(MAC, deviceID, RSSI, masterNode):
+    def genSocket(MAC, deviceID, masterNode):
         socket = {}
         try: 
             socket["deviceID"] = deviceID
             socket["MAC"] = MAC
             socket["masterNode"] = masterNode
             socket["HAID"] = None
-            socket["RSSI"] = RSSI
             return socket
         except HTTPError as e:
             raise HTTPError(status=e.status, message=e._message)
@@ -270,7 +269,7 @@ class SocketHandler():
 
         return socketStgs
         
-    def regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, MAC, RSSI):
+    def regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, MAC):
         try:
             headers = {
                 'content-type': "application/json",
@@ -282,7 +281,7 @@ class SocketHandler():
 
             deviceName = "Smart Socket " + ("Master " if bool(masterNode) else "") + deviceID
 
-            socketData = SocketHandler.genSocket(MAC, deviceID, RSSI, masterNode)
+            socketData = SocketHandler.genSocket(MAC, deviceID, masterNode)
             socketStgsData = SocketHandler.genSocketStgs(deviceID, deviceName)
             deviceData = SocketHandler.genDevice(catalogAddress, catalogPort, system, baseTopic, deviceID, deviceName)
 
@@ -311,25 +310,26 @@ class SocketHandler():
                 raise HTTPError(response.status_code, str(response.text))
             
             socketData["masterNode"] = masterNode
-
-            SocketHandler.regSocket_toHA(self, system, baseTopic, deviceID, socketData["masterNode"])
-
-            HAID = SocketHandler.getHAID(HAIP, HAPort, HAToken, deviceID)
-            deviceData["HAID"] = HAID
             
-            response = requests.put(url, headers=headers, data=json.dumps(socketData))
-            if(response.status_code != 200):
-                raise HTTPError(response.status_code, str(response.text))
+            if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
+                SocketHandler.regSocket_toHA(self, system, baseTopic, deviceID, socketData["masterNode"])
 
-            #raise Exception("sandokan!")   
+                HAID = SocketHandler.getHAID(HAIP, HAPort, HAToken, deviceID)
+                deviceData["HAID"] = HAID
+                
+                response = requests.put(url, headers=headers, data=json.dumps(socketData))
+                if(response.status_code != 200):
+                    raise HTTPError(response.status_code, str(response.text))
             
             return socketData
         except HTTPError as e:
-            SocketHandler.delSocket_fromHA(self, deviceID, baseTopic, system)
+            if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]): 
+                SocketHandler.delSocket_fromHA(self, deviceID, baseTopic, system)
             SocketHandler.delDevice_fromCatalog(deviceID, catalogAddress, catalogPort)
             raise HTTPError(status=e.status, message = "An error occurred while registering the socket: " + e._message)
         except Exception as e:
-            SocketHandler.delSocket_fromHA(self, deviceID, baseTopic, system)
+            if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
+                SocketHandler.delSocket_fromHA(self, deviceID, baseTopic, system)
             SocketHandler.delDevice_fromCatalog(deviceID, catalogAddress, catalogPort)
             raise Server_Error_Handler.InternalServerError(
                 message = "An error occurred while registering the socket: " + str(e)
@@ -396,7 +396,7 @@ class SocketHandler():
                         HAToken = self.generalConfigs["CONFIG"]["HomeAssistant"]["token"]
                         system = self.generalConfigs["CONFIG"]["HomeAssistant"]["system"]
                         baseTopic = self.generalConfigs["CONFIG"]["HomeAssistant"]["baseTopic"]
-                        data = SocketHandler.regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, params["MAC"], float(params["RSSI"]))
+                        data = SocketHandler.regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, params["MAC"])
 
                     out["deviceID"] = data["deviceID"]
                     out["masterNode"] = data["masterNode"]

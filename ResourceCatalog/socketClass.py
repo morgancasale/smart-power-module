@@ -9,7 +9,7 @@ from microserviceBase.Error_Handler import *
 class Socket:
     def __init__(self, socketData, newSocket = True):
         self.socketKeys = sorted([
-            "deviceID", "HAID", "MAC", "masterNode", "RSSI"
+            "deviceID", "HAID", "MAC", "masterNode"
         ])
         
         if(newSocket) : self.checkKeys(socketData)
@@ -44,11 +44,6 @@ class Socket:
                     if(not isinstance(socketData[key], bool)):
                         raise Client_Error_Handler.BadRequest(message="Socket's \"" + key + "\" value must be boolean")
                     self.masterNode = socketData["masterNode"]
-                
-                case "RSSI":
-                    if(not isinstance(socketData[key], (int, float))):
-                        raise Client_Error_Handler.BadRequest(message="Socket's \"" + key + "\" value must be a number")
-                    self.RSSI = socketData["RSSI"]
 
     def to_dict(self):
         result = {}

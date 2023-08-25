@@ -2,7 +2,7 @@
 
 String MAC = "00:00:00:00:00:00";
 int wifiChannel = 11;
-int16_t RSSI = 0;
+//int16_t RSSI = 0;
 
 String clientID = "pixxapaxxa";
 String mqttBroker = "broker.hivemq.com";
