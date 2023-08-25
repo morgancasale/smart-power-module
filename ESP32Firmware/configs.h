@@ -20,7 +20,7 @@
 
   extern String MAC;
   extern int wifiChannel;
-  extern int16_t RSSI;
+  //extern int16_t RSSI;
 
   extern String clientID;
   extern String mqttBroker;

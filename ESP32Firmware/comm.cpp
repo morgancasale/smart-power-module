@@ -37,7 +37,7 @@ void setup_wifi() {
   wifiChannel = WiFi.channel();
   Serial.println(wifiChannel);  
 
-  RSSI = WiFi.RSSI();
+  //RSSI = WiFi.RSSI();
 }
 
 JSONVar get(String url, String params){

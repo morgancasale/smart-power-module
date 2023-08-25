@@ -97,7 +97,7 @@ void getRole(){
   url += ":" + String(connectorPort) + "/getRole";
   JSONVar params;
   params["MAC"] = MAC;
-  params["RSSI"] = RSSI;
+  //params["RSSI"] = RSSI;
   params["autoBroker"] = autoBroker;
   params["autoTopics"] = autoTopics;
 
