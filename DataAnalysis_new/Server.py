@@ -1,6 +1,7 @@
 import cherrypy
 import connect_db as cdb
 import APIs
+from serviceBase import ServiceBase #per provare microservice base
 
 class Server():
     exposed = True
