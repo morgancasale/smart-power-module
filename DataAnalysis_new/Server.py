@@ -35,4 +35,4 @@ if __name__ == "__main__":
 #Per provare microservice base    
 # if __name__ == "__main__":
 #     # Standard configuration to serve the url "localhost:8080"    
-#     server = ServiceBase("serviceConfig_example.json", GET=GET(), POST=POST(), PUT=PUT())
+#     server = ServiceBase("serviceConfig_example.json", GET=GET(), PUT=PUT())
