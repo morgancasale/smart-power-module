@@ -99,7 +99,7 @@ class MaxPowerControl():
 
     def myMQTTfunction(self, houseID):
         deviceID=self.controlLastUpdateDevice(houseID)
-        topic="homeassistant/switch/smartSocket/%s/%s" %(houseID,deviceID)
+        topic="/smartSocket/data"
         msg =[{"MaximumPowerControl":{
                 "Active": {
                 "deviceID": deviceID,    
