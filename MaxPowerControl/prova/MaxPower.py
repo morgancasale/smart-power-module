@@ -100,13 +100,10 @@ class MaxPowerControl():
     def myMQTTfunction(self, houseID):
         deviceID=self.controlLastUpdateDevice(houseID)
         topic="/smartSocket/data"
-        msg =[{"MaximumPowerControl":{
-                "Active": {
-                "deviceID": deviceID,    
-                "state":0 
-                }
-                }}
-        ]
+         msg= {
+            "deviceID" : deviceID, 
+            "states" : [0,0,0]
+            }
         str_msg = json.dumps(msg, indent=2)
         self.client.MQTT.Publish(topic, str_msg)
         self.client.MQTT.stop()       
