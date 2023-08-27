@@ -5,16 +5,14 @@ import re
 
 class Appliances():
     def __init__(self) :
-        conf_t=json.load(open('C:/Users/hp/Desktop/IOT/lab4_es4/deviceConn_sens/faultyAppBlackout.json'))
-        self.ranges=conf_t["smartModule"]
-        self.faulty=json.load(open('C:/Users/hp/Desktop/IOT/lab4_es4/deviceConn_sens/faulty_simulation.json'))
-        self.blackout=json.load(open('C:/Users/hp/Desktop/IOT/lab4_es4/deviceConn_sens/blackout_simulation.json'))
-        self.maxPower=json.load(open('C:/Users/hp/Desktop/IOT/lab4_es4/deviceConn_sens/maxPower.json'))
-        self.contatore=json.load(open('C:/Users/hp/Desktop/IOT/lab4_es4/deviceConn_sens/contatore.json'))
-        self.normal=json.load(open('C:/Users/hp/Desktop/IOT/lab4_es4/deviceConn_sens/normalFunctioning.json'))
+        self.faulty=json.load(open('dataGenerationAndElimination/faulty_simulation.json'))
+        self.blackout=json.load(open('dataGenerationAndElimination/blackout_simulation.json'))
+        self.maxPower=json.load(open('dataGenerationAndElimination/maxPower.json'))
+        self.contatore=json.load(open('dataGenerationAndElimination/contatore.json'))
+        self.normal=json.load(open('dataGenerationAndElimination/normalFunctioning.json'))
 
     def standByPowerEmulator(self,devID): #possono avere tutti stesso perchè range molto simile
-        
+        devID= 'D' + str(devID)
         digits = re.findall(r'\d+', devID)
         ID_num = ''.join(digits)
         ID= 'D' + str(ID_num)
@@ -24,7 +22,7 @@ class Appliances():
         energy_ws = float(power[0]) * 2
         energy_kwh = energy_ws / (3600 * 1000)
         data = ( {
-        'DeviceID': ID,
+        'DeviceID': devID,
         'Voltage': voltage,
         'Current': current[0],
         'Power': power[0],
@@ -42,6 +40,7 @@ class Appliances():
     #contatore: potenza supera quella massima supportata dal contatore
     #normal : funziona senza problemi
     def ApplianceEmulator(self,devID,mode):
+        devID= 'D' + str(devID)
         jsonfile=None
         if mode=='faulty':
             jsonfile=self.faulty
@@ -59,11 +58,10 @@ class Appliances():
         current= power/voltage
         digits = re.findall(r'\d+', devID)
         ID_num = ''.join(digits)
-        ID= 'D' + str(ID_num)
         energy_ws = float(power[0]) * 2
         energy_kwh = energy_ws / (3600 * 1000)
         data = ( {
-        'DeviceID': ID,
+        'DeviceID': devID,
         'Voltage': voltage,
         'Current': current[0],
         'Power': power[0],

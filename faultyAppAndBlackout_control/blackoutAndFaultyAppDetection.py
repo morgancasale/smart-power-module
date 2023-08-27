@@ -98,15 +98,14 @@ class blackoutAndFaulty():
                             WHERE deviceID = ? """.format(self.onlineDev),(house_module))
             result = self.cur.fetchall()
             if (result[0][1]==1) : 
-                self.cur.execute("""SELECT deviceID, enabledSockets, parControl
+                self.cur.execute("""SELECT deviceID, enabledSockets, HPMode, faultControl
                                 FROM {}
                                 WHERE deviceID = ? """.format(self.devices_settings),(house_module))
                 settings = self.cur.fetchall()
                 if  (sum([int(x) for x in eval(settings[0][1])])>1):
-                    print('ERRORE')
                     break
-                if(settings[0][2] == 1) :
-                    to_consider.append(result)
+                if(settings[0][2] == 1 and settings[0][3]==1) :
+                    to_consider.append(result[0][0])
         if (to_consider) is not None:
             return (to_consider)
         else: return None   

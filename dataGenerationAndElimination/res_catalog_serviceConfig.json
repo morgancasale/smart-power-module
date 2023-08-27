@@ -2,7 +2,7 @@
     "CONFIG": {
         "activatedMethod": {
             "MQTT": true,
-            "REST": true
+            "REST": false
         },
         "HomeAssistant": {
             "enabled": false,
@@ -26,18 +26,21 @@
         }
     },
     "MQTT": {
-        "endPointID": null,
-        "endPointName": null,
-        "brokerAddress": "",
+        "endPointID": "fghjhgf",
+        "endPointName": "dfghtr",
+        "autoBroker": false,
+        "brokerAddress": "broker.emqx.io",
         "brokerPort": 1883,
+        "username": "",
+        "password": "",
         "subPub": {
             "sub": false,
             "pub": true
         },
-        "clientID": "string",
+        "clientID": "1sdfe",
         "MQTTTopics": {
             "sub": [
-                "string"
+                "/smartSocket/data"
             ],
             "pub": [
                 "/smartSocket/data"
@@ -49,7 +52,7 @@
         "enabled": false,
         "serviceID": "S1",
         "serviceName": "ResourceCatalog",
-        "catalogAddress": "http://192.168.2.145",
+        "catalogAddress": "http://127.0.0.1",
         "catalogPort": 8099,
         "T_Registration": 0.1
     }

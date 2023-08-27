@@ -1,13 +1,13 @@
 {
-    "dev0": {"min": 0, "max": 1, "voltage": 230},
-    "dev1": {"min": 25, "max": 100, "voltage": 260},
-    "dev2": {"min": 118, "max": 200, "voltage": 260},
-    "dev3": {"min": 0, "max": 1, "voltage": 230},
-    "dev4": {"min": 50, "max": 100, "voltage": 230},
-    "dev5": {"min": 1500, "max": 1550, "voltage": 230},
-    "dev6": {"min": 0, "max": 1, "voltage": 230},
-    "dev7": {"min": 0, "max": 1, "voltage": 230},
-    "dev8": {"min": 150, "max": 200, "voltage": 230},
-    "dev9": {"min": 0, "max": 1, "voltage": 230},
-    "dev10": {"min": 0, "max": 1, "voltage": 230}
+    "D0": {"min": 0, "max": 1, "voltage": 230},
+    "D1": {"min": 25, "max": 100, "voltage": 260},
+    "D2": {"min": 118, "max": 200, "voltage": 260},
+    "D3": {"min": 0, "max": 1, "voltage": 230},
+    "D4": {"min": 50, "max": 100, "voltage": 230},
+    "D5": {"min": 1500, "max": 1550, "voltage": 230},
+    "D6": {"min": 0, "max": 1, "voltage": 230},
+    "D7": {"min": 0, "max": 1, "voltage": 230},
+    "D8": {"min": 150, "max": 200, "voltage": 230},
+    "D9": {"min": 0, "max": 1, "voltage": 230},
+    "D10": {"min": 0, "max": 1, "voltage": 230}
 } 

@@ -72,14 +72,14 @@ class StandByPowerDetection():
                             WHERE deviceID = ? """.format(self.onlineDev),(house_module))
             result = self.cur.fetchall()
             if (result[0][1]==1) : 
-                self.cur.execute("""SELECT deviceID, enabledSockets, parControl
+                self.cur.execute("""SELECT deviceID, enabledSockets, parControl, HPMode
                                 FROM {}
                                 WHERE deviceID = ? """.format(self.devices_settings),(house_module))
                 settings = self.cur.fetchall()
                 if  (sum([int(x) for x in eval(settings[0][1])])>1):
                     print('ERRORE')
                     break
-                if(settings[0][2] == 1) :
+                if(settings[0][2] == 1 and settings[0][3]==1) :
                     to_consider.append(result)
         if (to_consider) is not None:
             return (to_consider)
@@ -102,39 +102,6 @@ class StandByPowerDetection():
             else:
                 return None
             
-    def retrieveSensorData(self, ID):
-        partial = ID[1:]
-        voltageStateID = 'sensor.voltage_' + partial
-        powerStateID = 'sensor.power_' + partial
-        energyStateID = 'sensor.energy_' + partial
-        currentStateID = 'sensor.current_' + partial
-
-        queries = [
-        voltageStateID,
-        currentStateID,
-        powerStateID,
-        energyStateID]
-        
-        sensor_data = []
-    
-        for entity_id in queries:
-            print(entity_id)
-            query = f"""
-            SELECT MAX(last_updated_ts), state
-            FROM {self.database}
-            WHERE entity_id = ?
-            """
-            self.curHA.execute(query, (entity_id,))
-            result = self.curHA.fetchone()
-            sensor_data.append(result[1])
-        return sensor_data #[voltage, current,power,  energy]
-    
-    def retrieveSocket(self,ID):
-        self.cur.execute("""SELECT enabledSockets
-                            FROM {}
-                            WHERE deviceID = ? """.format(self.devices_settings),(ID,))
-        switches = self.cur.fetchone()[0]
-        return switches
     
     def MQTTInterface(self, ID):
         self.client.start()
