@@ -1,0 +1,52 @@
+import os
+import sys
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+sys.path.append(PROJECT_ROOT)
+
+from colorama import Fore
+
+from microserviceBase.serviceBase import *
+from microserviceBase.Error_Handler import * 
+
+class ServicesTracker():
+    def __init__(self):
+        self.service = ServiceBase(
+            "OnlineTracker/onlineTracker.json"
+        )
+
+        catalogAddress = self.service.generalConfigs["REGISTRATION"]["catalogAddress"]
+        if("http://" not in catalogAddress):
+            self.catalogAddress = "http://" + self.catalogAddress
+        catalogPort = self.service.generalConfigs["REGISTRATION"]["catalogPort"]
+
+        self.service.start()
+
+        self.OnlineStatusTracker(catalogAddress, catalogPort)
+
+    def OnlineStatusTracker(self, catalogAddress, catalogPort):
+        try:
+            while True:
+                watchDogTimer = 5*60
+
+                url = "%s:%s/updateOnlineStatus"%(catalogAddress, catalogPort)
+                params = [
+                    {"table" : "Services", "timer" : watchDogTimer},
+                    {"table" : "Devices", "timer" : watchDogTimer}, 
+                    {"table" : "DeviceResource_conn", "timer" : watchDogTimer}
+                ]
+
+                headers = {"Content-Type" : "application/json"}
+                response = requests.patch(url, headers=headers, data=json.dumps(params))
+                if(response.status_code != 200):
+                    raise HTTPError(response.status_code, response.text)
+                
+                print(Fore.LIGHTGREEN_EX + "Online status Tracker:\n\t%s"%response.text + Fore.RESET)
+
+                time.sleep(watchDogTimer)
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(
+                message = "An error occurred while updating devices online status" + str(e)
+            )
+        
+if __name__ == "__main__":
+    ServicesTracker()

@@ -1,32 +1,24 @@
 {
     "CONFIG": {
         "activatedMethod": {
-            "MQTT": true,
-            "REST": true
+            "MQTT": false,
+            "REST": false
         },
         "HomeAssistant": {
             "enabled": false,
             "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU",
             "autoHA": false,
-<<<<<<< HEAD
-            "address": "http://127.0.0.1",
-=======
             "address": "http://192.168.2.163",
->>>>>>> origin/main
             "port": 8123,
             "baseTopic": "homeassistant",
             "system": "smartSocket"
         }
     },
     "REST": {
-        "endPointID": "ENTYzMz",
-        "endPointName": "deviceConnector",
-<<<<<<< HEAD
-        "IPAddress": "127.0.0.1",
-=======
-        "IPAddress": "192.168.2.145",
->>>>>>> origin/main
-        "port": 8067,
+        "endPointID": null,
+        "endPointName": null,
+        "IPAddress": null,
+        "port": null,
         "CRUDMethods": {
             "GET": true,
             "POST": false,
@@ -36,14 +28,10 @@
         }
     },
     "MQTT": {
-        "endPointID": "ENTYzMz",
-        "endPointName": "deviceConnector",
-<<<<<<< HEAD
-        "autoBroker": false,
-=======
+        "endPointID": null,
+        "endPointName": null,
         "autoBroker": true,
->>>>>>> origin/main
-        "brokerAddress": "broker.emqx.io",
+        "brokerAddress": "broker.hivemq.com",
         "brokerPort": 1883,
         "username": "",
         "password": "",
@@ -55,8 +43,7 @@
         "MQTTTopics": {
             "sub": [
                 "smartSocket/data",
-                "homeassistant/#",
-                "homeassistant/switch/smartSockets/+/control/#"
+                "pizzapazza/1"
             ],
             "pub": [
                 "smartSocket/control",
@@ -66,14 +53,10 @@
         "QOS": 0
     },
     "REGISTRATION": {
-        "enabled": false,
-        "serviceID": "SNTk3MD",
-        "serviceName": "deviceConnector",
-<<<<<<< HEAD
-        "catalogAddress": "http://127.0.0.1",
-=======
+        "enabled": true,
+        "serviceID": "SODE2NT",
+        "serviceName": "serviceTracker",
         "catalogAddress": "http://192.168.2.145",
->>>>>>> origin/main
         "catalogPort": 8099,
         "T_Registration": 1
     }
