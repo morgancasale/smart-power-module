@@ -46,7 +46,7 @@ class DataAnalysis():
                 print(topic)
                 print(msg)
                 self.client.MQTT.Publish(topic, msg)
-            self.client.MQTT.stop()
+            #self.client.MQTT.stop()
             return result_df
         else:
             return None
@@ -67,7 +67,7 @@ class DataAnalysis():
                     print(topic)
                     print(msg)
                     self.client.MQTT.Publish(topic, msg)
-                self.client.MQTT.stop()
+                #self.client.MQTT.stop()
                 return result_df
             else:
                 return None
@@ -97,7 +97,7 @@ class DataAnalysis():
                     topic='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(statistic_format,result['device_id'].iloc[i])
                     msg='{"energy": %f}' % (result['sensor.energy'].iloc[i])
                     self.client.MQTT.Publish(topic, msg)
-                self.client.MQTT.stop() 
+                #self.client.MQTT.stop() 
                 return result
         else:
                 return None
@@ -109,6 +109,7 @@ class DataAnalysis():
     def compute_hourlytotdata(self):
         base_df=self.getalldata()
         self.compute_data(base_df,'%Y-%m-%d %H:00:00',False,'hourly_tot')
+        
     
     def get_hourlydata(self):
         query="SELECT entity_id, state, strftime('%Y-%m-%d %H:%M:%S', datetime(last_updated_ts, 'unixepoch')) as timestamp\
