@@ -16,8 +16,8 @@ from microserviceBase.serviceBase import *
 class TimeShift():
 
     def __init__(self):
-        self.conn = cdb.Connect("Data_DB/db.sqlite").create_connection()
-        self.curs = self.conn.cursor()
+        self.conn = sqlite3.connect("Data_DB/db.sqlite")
+        self.curs = self.conn.cursor()        
         self.client = ServiceBase("codici/serviceConfig_example.json")
         self.client.start()
     
@@ -57,7 +57,7 @@ class TimeShift():
                             }
                     str_msg = json.dumps(msg, indent=2)
                     self.client.MQTT.Publish(topic, str_msg)
-                    self.client.MQTT.stop() 
+                    #self.client.MQTT.stop() 
                     
                     # Se il servizio ha una fine programmata, aspetto fino a quel momento
                     if row['enableEnd']:
@@ -71,7 +71,7 @@ class TimeShift():
                             }
                         str_msg = json.dumps(msg, indent=2)
                         self.client.MQTT.Publish(topic, str_msg)
-                        self.client.MQTT.stop() 
+                        #self.client.MQTT.stop() 
 
     def manageServiceforall(self):
         query="SELECT houseID\
