@@ -16,9 +16,9 @@ from microserviceBase.serviceBase import *
 class MaxPowerControl():
 
     def __init__(self):
-        self.conn1 = cdb.Connect("Data_DB/testDB.db").create_connection()
+        self.conn1 = sqlite3.connect("Data_DB/testDB.db")
         self.curs1 = self.conn1.cursor()
-        self.conn2 = cdb.Connect("Data_DB/db.sqlite").create_connection()
+        self.conn2 = sqlite3.connect("Data_DB/db.sqlite")
         self.curs2 = self.conn2.cursor()        
         self.client = ServiceBase("prova/serviceConfig_example.json")
         self.client.start()
