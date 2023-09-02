@@ -20,6 +20,7 @@ class DataAnalysis():
         self.conn2 = sqlite3.connect("Data_DB/db.sqlite")
         self.curs2 = self.conn2.cursor()        
         self.client = ServiceBase("codes/serviceConfig_example.json")
+        self.cost= 118.35 
         self.client.start()
     
     def process_df(self,df):
@@ -41,11 +42,13 @@ class DataAnalysis():
         result_df = result_df.rename(columns={'attribute': 'entity_id'})
         if not result_df.empty:
             for i in range(len(result_df)):
-                topic='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(format_statistic,houseID)
-                msg='{"energy": %f}' % (result_df['state'].iloc[i])
-                print(topic)
-                print(msg)
-                self.client.MQTT.Publish(topic, msg)
+                topic1='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(format_statistic,houseID)
+                msg1='{"energy": %f}' % (result_df['state'].iloc[i])
+                self.client.MQTT.Publish(topic1, msg1)
+
+                topic2='/homeassistant/sensor/smartSocket/data_analysis/%s_cost/%s/state' %(format_statistic,houseID)
+                msg2='{"energy": %f}' % (result_df['state'].iloc[i]*self.cost)
+                self.client.MQTT.Publish(topic2, msg2)
             #self.client.MQTT.stop()
             return result_df
         else:
@@ -62,11 +65,13 @@ class DataAnalysis():
             result_df['state'] = result_df['state'].astype(int)
             if not result_df.empty:
                 for i in range(len(result_df)):
-                    topic='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(format_statistic,houseID)
-                    msg='{"energy": %f}' % (result_df['state'].iloc[i])
-                    print(topic)
-                    print(msg)
-                    self.client.MQTT.Publish(topic, msg)
+                    topic1='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(format_statistic,houseID)
+                    msg1='{"energy": %f}' % (result_df['state'].iloc[i])
+                    self.client.MQTT.Publish(topic1, msg1)
+
+                    topic2='/homeassistant/sensor/smartSocket/data_analysis/%s_cost/%s/state' %(format_statistic,houseID)
+                    msg2='{"energy": %f}' % (result_df['state'].iloc[i]*self.cost)
+                    self.client.MQTT.Publish(topic2, msg2)
                 #self.client.MQTT.stop()
                 return result_df
             else:
@@ -94,9 +99,13 @@ class DataAnalysis():
             result = df.groupby(['device_id', 'formatted_timestamp']).sum(numeric_only=True).reset_index()    
         if not result.empty:
                 for i in range(len(result)):
-                    topic='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(statistic_format,result['device_id'].iloc[i])
-                    msg='{"energy": %f}' % (result['sensor.energy'].iloc[i])
-                    self.client.MQTT.Publish(topic, msg)
+                    topic1='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(statistic_format,result['device_id'].iloc[i])
+                    msg1='{"energy": %f}' % (result['sensor.energy'].iloc[i])
+                    self.client.MQTT.Publish(topic1, msg1)
+
+                    topic2='/homeassistant/sensor/smartSocket/data_analysis/%s_cost/%s/state' %(statistic_format,result['device_id'].iloc[i])
+                    msg2='{"energy": %f}' % (result['sensor.energy'].iloc[i]*self.cost)
+                    self.client.MQTT.Publish(topic2, msg2)
                 #self.client.MQTT.stop() 
                 return result
         else:
@@ -358,10 +367,10 @@ class DataAnalysis():
             self.compute_dailyDataHouse(houseID)
             self.compute_monthlyDataHouse(houseID)
             self.compute_yearlyDataHouse(houseID)
-
+        
 if __name__ == "__main__":
     DA= DataAnalysis()
     while(True): 
         DA.process_data()
         time.sleep(5*60)
-        
+
