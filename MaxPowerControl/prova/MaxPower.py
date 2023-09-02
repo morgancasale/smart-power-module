@@ -106,7 +106,7 @@ class MaxPowerControl():
             }
         str_msg = json.dumps(msg, indent=2)
         self.client.MQTT.Publish(topic, str_msg)
-        self.client.MQTT.stop()       
+        #self.client.MQTT.stop()       
 
     def controlPowerforall(self):
         query="SELECT houseID\
