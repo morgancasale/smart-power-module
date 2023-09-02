@@ -358,5 +358,10 @@ class DataAnalysis():
             self.compute_dailyDataHouse(houseID)
             self.compute_monthlyDataHouse(houseID)
             self.compute_yearlyDataHouse(houseID)
-        
 
+if __name__ == "__main__":
+    DA= DataAnalysis()
+    while(True): 
+        DA.process_data()
+        time.sleep(5*60)
+        
