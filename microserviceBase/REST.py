@@ -167,7 +167,8 @@ class RESTServer(Thread):
                     if(not isinstance(self.configs[key], str)):
                         raise self.clientErrorHandler.BadRequest(message=key + " parameter must be a string")
                     match key:
-                        case "endPointID": self.endPointID = self.configs[key]
+                        case "endPointID":
+                            self.endPointID = self.configs[key]
                         case "endPointName": self.endPointName = self.configs[key]
                         case "IPAddress": self.IPAddress = self.configs[key]
                 case "port":
@@ -185,8 +186,6 @@ class RESTServer(Thread):
 
     def check_and_loadConfigs(self):        
         try:
-
-
             self.checkParams()
             self.validateParams()
             

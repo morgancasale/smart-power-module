@@ -5,6 +5,7 @@ from .register import *
 from .Error_Handler import *
 
 from threading import Event
+import dns.resolver
 
 class ServiceBase(object):
     def __init__(self, config_file=None, 
@@ -28,10 +29,15 @@ class ServiceBase(object):
             self.PUT = PUT
             self.DELETE = DELETE
             self.PATCH = PATCH
-
             self.Notifier = Notifier
 
-            self.configParams = ["activatedMethod", "HomeAssistant", "houseID", "userID", "deviceID", "resourceID"]
+            self.configParams = {
+                "CONFIG": {
+                    "activatedMethod": ["REST", "MQTT"],
+                    "HomeAssistant": ["enabled", "token", "autoHA", "mDNS", "address", "port"]
+                },
+                "REGISTRATION": ["enabled", "serviceID", "serviceName", "catalog_mDNS", "catalogAddress", "catalogPort", "T_Registration"]
+            }
 
             self.check_and_loadConfigs()
 
@@ -83,7 +89,6 @@ class ServiceBase(object):
         try:
             self.generalConfigs = json.load(open(self.config_file, 'r'))
 
-            self.configs = self.generalConfigs["CONFIG"]
             self.checkParams()
             self.validateParams()
         
@@ -93,9 +98,97 @@ class ServiceBase(object):
             raise self.serverErrorHandler.InternalServerError(message="An error occurred while loading configs: \u0085\u0009" + str(e))
         
     def checkParams(self):
-        if(not all(key in self.configParams for key in list(self.configs.keys()))):
-            raise self.clientErrorHandler.BadRequest(message="Missing parameters in config file")
-   
+        message = "Missing parameters in config file"
+        for key in self.generalConfigs:
+            if(key == "CONFIG" or key == "REGISTRATION"):
+                if(key not in self.configParams.keys()):
+                    raise self.clientErrorHandler.BadRequest(message = message)
+
+                if type(self.configParams[key]) is dict:
+                    for subKey in self.configParams[key]:
+                        if(subKey not in self.generalConfigs[key]):
+                            raise self.clientErrorHandler.BadRequest(message = message)
+                        if(sorted(self.configParams[key][subKey]) != sorted(self.generalConfigs[key][subKey].keys())):
+                            raise self.clientErrorHandler.BadRequest(message = message)
+                elif type(self.configParams[key]) is list:
+                    if(sorted(self.configParams[key]) != sorted(self.generalConfigs[key].keys())):
+                        raise self.clientErrorHandler.BadRequest(message = message)
+                else:
+                    raise self.clientErrorHandler.BadRequest(message = message)
+                
+    def validate_HA_Params(self):
+        configs = self.generalConfigs["CONFIG"]["HomeAssistant"]
+        params = ["enabled", "token", "address", "port"] 
+        if(not all(key in configs.keys() for key in params)):
+            raise self.clientErrorHandler.BadRequest(message="Missing parameters in HomeAssistant configs")
+        
+        for key in configs.keys():
+            match key:
+                case ("enabled" | "autoHA"):
+                    if(not isinstance(configs["enabled"], bool)):
+                        raise self.clientErrorHandler.BadRequest(message="HomeAssistant enabled parameter must be a boolean")
+                case ("token" | "baseTopic" | "system"):
+                    if(not isinstance(configs[key], str)):
+                        raise self.clientErrorHandler.BadRequest(message="HomeAssistant " + key + " parameter must be a string")
+                    self.HAToken = configs[key]
+                case "mDNS":
+                    if(not isinstance(configs[key], str)):
+                        message = "HomeAssistant " + key + " parameter must be a string"
+                        raise self.clientErrorHandler.BadRequest(message=message)
+                    trueIP = "http://"+self.resolvemDNS(configs[key])
+                    self.updateConfigFile(["CONFIG", "HomeAssistant"], {"address": trueIP})
+                    self.HAIP = trueIP
+                case "address":
+                    cond = configs[key] != None
+                    cond &= not isinstance(configs[key], str)
+                    if(cond):
+                        raise self.clientErrorHandler.BadRequest(message="HomeAssistant " + key + " parameter must be a string")
+                    self.HAIP = configs[key]
+                case "port":
+                    if(configs[key] != None):
+                        cond = not isinstance(configs["port"], int)
+                        cond |= configs["port"] < 0 or configs["port"] > 65535
+                        if(cond):
+                            raise self.clientErrorHandler.BadRequest(message="HomeAssistant port parameter must be an integer between 0 and 65535")
+                    self.HAPort = configs[key]
+                    
+                case ("address" | "port"):
+                    cond = not configs["autoHA"]
+                    cond &= (configs["address"] == None or configs["port"] == None)
+                    if(cond):
+                        raise self.clientErrorHandler.BadRequest(message="HomeAssistant address and port parameters must be specified if autoHA is not enabled")
+    
+    def validate_registrationParams(self):
+        configs = self.generalConfigs["CONFIG"]["REGISTRATION"]
+        params = ["enabled", "serviceID", "serviceName", "catalog_mDNS", "catalogAddress", "catalogPort", "T_Registration"]
+        if(not all(key in self.configs["REGISTRATION"].keys() for key in params)):
+            raise self.clientErrorHandler.BadRequest(message="Missing parameters in REGISTRATION configs")
+        
+        for key in self.configs["REGISTRATION"].keys():
+            match key:
+                case ("enabled"):
+                    if(not isinstance(configs[key], bool)):
+                        raise self.clientErrorHandler.BadRequest(message="REGISTRATION enabled parameter must be a boolean")
+                case ("serviceID" | "serviceName" | "catalog_mDNS" | "catalogAddress"):
+                    if(not isinstance(configs[key], str)):
+                        raise self.clientErrorHandler.BadRequest(message="REGISTRATION " + key + " parameter must be a string")
+                    if(key == "catalog_mDNS"):
+                        trueIP = "http://"+self.resolvemDNS(self.configs["REGISTRATION"][key])
+                        self.generalConfigs["REGISTRATION"]["catalogAddress"] = trueIP
+                        self.updateConfigFile(["CONFIG", "REGISTRATION"], {"catalogAddress": trueIP})
+
+                case ("catalogPort"):
+                    cond = not isinstance(configs["port"], int)
+                    cond |= configs["port"] < 0 or configs["port"] > 65535
+                    if(cond):
+                        raise self.clientErrorHandler.BadRequest(message="REGISTRATION port parameter must be an integer between 0 and 65535")
+                
+                case ("T_Registration"):
+                    cond = not isinstance(configs["T_Registration"], (int, float))
+                    cond |= configs["T_Registration"] < 0
+                    if(cond):
+                        raise self.clientErrorHandler.BadRequest(message="REGISTRATION T_Registration parameter must be a positive number")
+
     def validateParams(self):
         for key in self.configParams:
             match key:
@@ -116,37 +209,9 @@ class ServiceBase(object):
                         if(not all(isinstance(item, str) for item in self.configs[key])):
                             raise self.clientErrorHandler.BadRequest(message=key + " parameter must be a list of strings")
                 case "HomeAssistant":
-                    params = ["enabled", "token", "address", "port"] 
-                    if(not all(key in self.configs["HomeAssistant"].keys() for key in params)):
-                        raise self.clientErrorHandler.BadRequest(message="Missing parameters in HomeAssistant configs")
-                    for key in self.configs["HomeAssistant"].keys():
-                        match key:
-                            case ("enabled" | "autoHA"):
-                                if(not isinstance(self.configs["HomeAssistant"]["enabled"], bool)):
-                                    raise self.clientErrorHandler.BadRequest(message="HomeAssistant enabled parameter must be a boolean")
-                            case ("token" | "baseTopic" | "system"):
-                                if(not isinstance(self.configs["HomeAssistant"][key], str)):
-                                    raise self.clientErrorHandler.BadRequest(message="HomeAssistant " + key + " parameter must be a string")
-                                self.HAToken = self.configs["HomeAssistant"][key]
-                            case "address":
-                                cond = self.configs["HomeAssistant"][key] != None
-                                cond &= not isinstance(self.configs["HomeAssistant"][key], str)
-                                if(cond):
-                                    raise self.clientErrorHandler.BadRequest(message="HomeAssistant " + key + " parameter must be a string")
-                                self.HAIP = self.configs["HomeAssistant"][key]
-                            case "port":
-                                if(self.configs["HomeAssistant"][key] != None):
-                                    cond = not isinstance(self.configs["HomeAssistant"]["port"], int)
-                                    cond |= self.configs["HomeAssistant"]["port"] < 0 or self.configs["HomeAssistant"]["port"] > 65535
-                                    if(cond):
-                                        raise self.clientErrorHandler.BadRequest(message="HomeAssistant port parameter must be an integer between 0 and 65535")
-                                self.HAPort = self.configs["HomeAssistant"][key]
-                                
-                            case ("address" | "port"):
-                                cond = not self.configs["HomeAssistant"]["autoHA"]
-                                cond &= (self.configs["HomeAssistant"]["address"] == None or self.configs["HomeAssistant"]["port"] == None)
-                                if(cond):
-                                    raise self.clientErrorHandler.BadRequest(message="HomeAssistant address and port parameters must be specified if autoHA is not enabled")
+                    self.validate_HA_Params()
+                case "REGISTRATION":
+                    self.validate_registrationParams()      
 
     def updateConfigFile(self, keys, dict):
         if(not isinstance(keys, list)): keys = [keys]
@@ -217,7 +282,16 @@ class ServiceBase(object):
             raise HTTPError(status=e.status, message="An error occurred while notifying Home Assistant: \u0085\u0009" + e._message)
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError(message="An error occurred while notifying Home Assistant: \u0085\u0009" + str(e))
-            
+    
+    def resolvemDNS(self, mDNS):
+        try:
+            resolver = dns.resolver.Resolver()
+            resolver.nameservers = ["224.0.0.251"]
+            resolver.port = 5353
+            sol = resolver.resolve(mDNS, "A")
+            return str(sol[0].to_text())
+        except Exception as e:
+            raise self.serverErrorHandler.InternalServerError(message="An error occurred while resolving mDNS: \u0085\u0009" + str(e))
 
 
 if __name__ == "__main__":
