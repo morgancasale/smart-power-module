@@ -34,14 +34,14 @@ class ServiceBase(object):
             self.configParams = {
                 "CONFIG": {
                     "activatedMethod": ["REST", "MQTT"],
-                    "HomeAssistant": ["enabled", "token", "autoHA", "mDNS", "address", "port"]
+                    "HomeAssistant": ["enabled", "token", "autoHA", "HA_mDNS", "address", "port"]
                 },
                 "REGISTRATION": ["enabled", "serviceID", "serviceName", "catalog_mDNS", "catalogAddress", "catalogPort", "T_Registration"]
             }
 
             self.check_and_loadConfigs()
 
-            if(self.configs["HomeAssistant"]["enabled"] and self.configs["HomeAssistant"]["autoHA"]):
+            if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"] and self.generalConfigs["CONFIG"]["HomeAssistant"]["autoHA"]):
                 self.getHAEndpoint()
 
             self.events = {
@@ -61,7 +61,7 @@ class ServiceBase(object):
                 self.events["startEvent"].set()
 
             self.MQTT = None
-            if(self.configs["activatedMethod"]["MQTT"]):
+            if(self.generalConfigs["CONFIG"]["activatedMethod"]["MQTT"]):
                 self.MQTT = MQTTServer(
                     3, "MQTTThread", self.events, self.generalConfigs["MQTT"], self.generalConfigs,
                     self.config_file, self.init_MQTT_func, self.Notifier
@@ -69,7 +69,7 @@ class ServiceBase(object):
                 self.MQTT.start()
             
             self.REST = None
-            if(self.configs["activatedMethod"]["REST"]):
+            if(self.generalConfigs["CONFIG"]["activatedMethod"]["REST"]):
                 self.REST = RESTServer(
                     2, "RESTThread", self.events, self.generalConfigs["REST"], self.generalConfigs,
                     self.init_REST_func, self.add_REST_funcs, self.MQTT,
@@ -99,7 +99,7 @@ class ServiceBase(object):
         
     def checkParams(self):
         message = "Missing parameters in config file"
-        for key in self.generalConfigs:
+        for key in self.generalConfigs.keys():
             if(key == "CONFIG" or key == "REGISTRATION"):
                 if(key not in self.configParams.keys()):
                     raise self.clientErrorHandler.BadRequest(message = message)
@@ -111,10 +111,11 @@ class ServiceBase(object):
                         if(sorted(self.configParams[key][subKey]) != sorted(self.generalConfigs[key][subKey].keys())):
                             raise self.clientErrorHandler.BadRequest(message = message)
                 elif type(self.configParams[key]) is list:
-                    if(sorted(self.configParams[key]) != sorted(self.generalConfigs[key].keys())):
+                    a = sorted(self.configParams[key])
+                    b = sorted(self.generalConfigs[key].keys())
+                    if(a != b):
+                        print("here")
                         raise self.clientErrorHandler.BadRequest(message = message)
-                else:
-                    raise self.clientErrorHandler.BadRequest(message = message)
                 
     def validate_HA_Params(self):
         configs = self.generalConfigs["CONFIG"]["HomeAssistant"]
@@ -131,7 +132,7 @@ class ServiceBase(object):
                     if(not isinstance(configs[key], str)):
                         raise self.clientErrorHandler.BadRequest(message="HomeAssistant " + key + " parameter must be a string")
                     self.HAToken = configs[key]
-                case "mDNS":
+                case "HA_mDNS":
                     if(not isinstance(configs[key], str)):
                         message = "HomeAssistant " + key + " parameter must be a string"
                         raise self.clientErrorHandler.BadRequest(message=message)
@@ -159,12 +160,12 @@ class ServiceBase(object):
                         raise self.clientErrorHandler.BadRequest(message="HomeAssistant address and port parameters must be specified if autoHA is not enabled")
     
     def validate_registrationParams(self):
-        configs = self.generalConfigs["CONFIG"]["REGISTRATION"]
+        configs = self.generalConfigs["REGISTRATION"]
         params = ["enabled", "serviceID", "serviceName", "catalog_mDNS", "catalogAddress", "catalogPort", "T_Registration"]
-        if(not all(key in self.configs["REGISTRATION"].keys() for key in params)):
+        if(not all(key in configs.keys() for key in params)):
             raise self.clientErrorHandler.BadRequest(message="Missing parameters in REGISTRATION configs")
         
-        for key in self.configs["REGISTRATION"].keys():
+        for key in configs.keys():
             match key:
                 case ("enabled"):
                     if(not isinstance(configs[key], bool)):
@@ -173,43 +174,47 @@ class ServiceBase(object):
                     if(not isinstance(configs[key], str)):
                         raise self.clientErrorHandler.BadRequest(message="REGISTRATION " + key + " parameter must be a string")
                     if(key == "catalog_mDNS"):
-                        trueIP = "http://"+self.resolvemDNS(self.configs["REGISTRATION"][key])
+                        trueIP = "http://"+self.resolvemDNS(configs[key])
                         self.generalConfigs["REGISTRATION"]["catalogAddress"] = trueIP
-                        self.updateConfigFile(["CONFIG", "REGISTRATION"], {"catalogAddress": trueIP})
+                        self.updateConfigFile(["REGISTRATION"], {"catalogAddress": trueIP})
 
                 case ("catalogPort"):
-                    cond = not isinstance(configs["port"], int)
-                    cond |= configs["port"] < 0 or configs["port"] > 65535
+                    cond = not isinstance(configs[key], int)
+                    cond |= configs[key] < 0 or configs[key] > 65535
                     if(cond):
                         raise self.clientErrorHandler.BadRequest(message="REGISTRATION port parameter must be an integer between 0 and 65535")
                 
                 case ("T_Registration"):
-                    cond = not isinstance(configs["T_Registration"], (int, float))
-                    cond |= configs["T_Registration"] < 0
+                    cond = not isinstance(configs[key], (int, float))
+                    cond |= configs[key] < 0
                     if(cond):
                         raise self.clientErrorHandler.BadRequest(message="REGISTRATION T_Registration parameter must be a positive number")
 
     def validateParams(self):
         for key in self.configParams:
+            configs = self.generalConfigs[key]
             match key:
-                case "activatedMethod":
-                    methods = ["REST", "MQTT"]
-                    
-                    if (not all(key in methods for key in self.configs["activatedMethod"].keys())):
-                        raise self.clientErrorHandler.BadRequest(message="Missing methods in activatedMethod parameter")
+                case "CONFIG":
+                    for subKey in self.configParams[key]:
+                        match subKey:
+                            case "activatedMethod":
+                                methods = sorted(["REST", "MQTT"])
+                                
+                                if (methods != sorted(configs["activatedMethod"].keys())):
+                                    raise self.clientErrorHandler.BadRequest(message="Missing methods in activatedMethod parameter")
 
-                    err_cond = not isinstance(self.configs["activatedMethod"]["REST"], bool)
-                    err_cond = err_cond or not isinstance(self.configs["activatedMethod"]["MQTT"], bool)
-                    if(err_cond):
-                        raise self.clientErrorHandler.BadRequest(message="activatedMethod parameters must be boolean")
-                case ("houseID", "userID", "resourceID", "deviceID"):
-                    if(self.configs[key] != None):
-                        if(not isinstance(self.configs[key], list)):
-                            raise self.clientErrorHandler.BadRequest(message=key + " parameter must be a list or null")
-                        if(not all(isinstance(item, str) for item in self.configs[key])):
-                            raise self.clientErrorHandler.BadRequest(message=key + " parameter must be a list of strings")
-                case "HomeAssistant":
-                    self.validate_HA_Params()
+                                err_cond = not isinstance(configs["activatedMethod"]["REST"], bool)
+                                err_cond = err_cond or not isinstance(configs["activatedMethod"]["MQTT"], bool)
+                                if(err_cond):
+                                    raise self.clientErrorHandler.BadRequest(message="activatedMethod parameters must be boolean")
+                            case ("houseID", "userID", "resourceID", "deviceID"):
+                                if(configs[key] != None):
+                                    if(not isinstance(configs[key], list)):
+                                        raise self.clientErrorHandler.BadRequest(message=key + " parameter must be a list or null")
+                                    if(not all(isinstance(item, str) for item in configs[key])):
+                                        raise self.clientErrorHandler.BadRequest(message=key + " parameter must be a list of strings")
+                            case "HomeAssistant":
+                                self.validate_HA_Params()
                 case "REGISTRATION":
                     self.validate_registrationParams()      
 
@@ -261,17 +266,17 @@ class ServiceBase(object):
             >>>    "message": "Notification message"
             >>> }
         """
-        if(not self.configs["HomeAssistant"]["enabled"]):
+        if(not self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
             raise self.clientErrorHandler.BadRequest(message="Home Assistant connection is not enabled")
 
         try:
             url = "%s:%s/api/services/notify/persistent_notification" % (
-                self.configs["HomeAssistant"]["address"], 
-                self.configs["HomeAssistant"]["port"]
+                self.generalConfigs["CONFIG"]["HomeAssistant"]["address"], 
+                self.generalConfigs["CONFIG"]["HomeAssistant"]["port"]
             )
 
             headers = {
-                "Authorization": "Bearer " + self.configs["HomeAssistant"]["token"],
+                "Authorization": "Bearer " + self.generalConfigs["CONFIG"]["HomeAssistant"]["token"],
                 'content-type': "application/json",
             }
 
