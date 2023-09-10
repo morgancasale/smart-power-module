@@ -8,7 +8,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir
 sys.path.append(PROJECT_ROOT)
 
 from microserviceBase.Error_Handler import *
-from microserviceBase import randomB64String
+from microserviceBase.utility import randomB64String
 
 from cherrypy import request as cherrypyRequest
 

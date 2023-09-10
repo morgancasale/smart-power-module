@@ -34,7 +34,7 @@ class ServiceBase(object):
             self.configParams = {
                 "CONFIG": {
                     "activatedMethod": ["REST", "MQTT"],
-                    "HomeAssistant": ["enabled", "token", "autoHA", "HA_mDNS", "address", "port"]
+                    "HomeAssistant": ["enabled", "token", "autoHA", "HA_mDNS", "address", "port", "baseTopic", "system"],
                 },
                 "REGISTRATION": ["enabled", "serviceID", "serviceName", "catalog_mDNS", "catalogAddress", "catalogPort", "T_Registration"]
             }
