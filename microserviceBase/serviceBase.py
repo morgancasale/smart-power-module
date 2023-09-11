@@ -7,6 +7,8 @@ from .Error_Handler import *
 from threading import Event
 import dns.resolver
 
+IN_DOCKER = os.environ.get("IN_DOCKER", False)
+
 class ServiceBase(object):
     def __init__(self, config_file=None, 
                  init_REST_func=None, add_REST_funcs = None, 
@@ -34,7 +36,7 @@ class ServiceBase(object):
             self.configParams = {
                 "CONFIG": {
                     "activatedMethod": ["REST", "MQTT"],
-                    "HomeAssistant": ["enabled", "token", "autoHA", "HA_mDNS", "address", "port", "baseTopic", "system"],
+                    "HomeAssistant": ["enabled", "token", "autoHA", "HA_mDNS", "address", "port"]
                 },
                 "REGISTRATION": ["enabled", "serviceID", "serviceName", "catalog_mDNS", "catalogAddress", "catalogPort", "T_Registration"]
             }
@@ -43,6 +45,13 @@ class ServiceBase(object):
 
             if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"] and self.generalConfigs["CONFIG"]["HomeAssistant"]["autoHA"]):
                 self.getHAEndpoint()
+            
+            # Wait for the catalog to be ready
+            cond = bool(IN_DOCKER)
+            cond &= self.generalConfigs["REGISTRATION"]["enabled"]
+            cond &= self.generalConfigs["REGISTRATION"]["serviceName"] != "ResourceCatalog"
+            if(cond):
+                time.sleep(5)
 
             self.events = {
                 "startEvent" : Event(),
@@ -108,7 +117,10 @@ class ServiceBase(object):
                     for subKey in self.configParams[key]:
                         if(subKey not in self.generalConfigs[key]):
                             raise self.clientErrorHandler.BadRequest(message = message)
-                        if(sorted(self.configParams[key][subKey]) != sorted(self.generalConfigs[key][subKey].keys())):
+                        a = sorted(self.generalConfigs[key][subKey].keys())
+                        b = sorted(self.configParams[key][subKey])
+                        diff = list(set(a)-set(b))
+                        if(len(list(set(b).intersection(diff)))>0):
                             raise self.clientErrorHandler.BadRequest(message = message)
                 elif type(self.configParams[key]) is list:
                     a = sorted(self.configParams[key])
@@ -173,10 +185,20 @@ class ServiceBase(object):
                 case ("serviceID" | "serviceName" | "catalog_mDNS" | "catalogAddress"):
                     if(not isinstance(configs[key], str)):
                         raise self.clientErrorHandler.BadRequest(message="REGISTRATION " + key + " parameter must be a string")
-                    if(key == "catalog_mDNS"):
-                        trueIP = "http://"+self.resolvemDNS(configs[key])
-                        self.generalConfigs["REGISTRATION"]["catalogAddress"] = trueIP
-                        self.updateConfigFile(["REGISTRATION"], {"catalogAddress": trueIP})
+                    if(configs["enabled"]):
+                        if(key == "catalog_mDNS" and not IN_DOCKER):
+                            trueIP = "http://" + self.resolvemDNS(configs[key])
+                            print("Resolved mDNS: " + trueIP)
+                            self.generalConfigs["REGISTRATION"]["catalogAddress"] = trueIP
+                            self.updateConfigFile(["REGISTRATION"], {"catalogAddress": trueIP})
+                        if(key == "catalogAddress" and IN_DOCKER):
+                            try:
+                                trueIP = "http://" + socket.gethostbyname("resourcecatalog")
+                                print("Resolved catalog: " + trueIP)
+                                self.generalConfigs["REGISTRATION"]["catalogAddress"] = trueIP
+                                self.updateConfigFile(["REGISTRATION"], {"catalogAddress": trueIP})
+                            except Exception:
+                                continue
 
                 case ("catalogPort"):
                     cond = not isinstance(configs[key], int)
@@ -189,7 +211,9 @@ class ServiceBase(object):
                     cond |= configs[key] < 0
                     if(cond):
                         raise self.clientErrorHandler.BadRequest(message="REGISTRATION T_Registration parameter must be a positive number")
-
+        
+        print("Catalog address: " + self.generalConfigs["REGISTRATION"]["catalogAddress"])
+        
     def validateParams(self):
         for key in self.configParams:
             configs = self.generalConfigs[key]
@@ -301,5 +325,3 @@ class ServiceBase(object):
 
 if __name__ == "__main__":
     Service = ServiceBase()
-    
-       

@@ -1,7 +1,8 @@
 import cherrypy
 import cherrypy_cors
-import json
+import os
 import requests
+import socket
 
 from threading import Thread, Event, current_thread
 
@@ -170,7 +171,16 @@ class RESTServer(Thread):
                         case "endPointID":
                             self.endPointID = self.configs[key]
                         case "endPointName": self.endPointName = self.configs[key]
-                        case "IPAddress": self.IPAddress = self.configs[key]
+                        case "IPAddress":
+                            self.IPAddress = self.configs[key]
+
+                            if(self.IPAddress == "127.0.0.1" or self.IPAddress == "localhost"):
+                                localIP = socket.gethostbyname(socket.gethostname())
+                                self.IPAddress = localIP
+
+                            DOCKER_IP = os.environ.get("DOCKER_IP", None)
+                            if(DOCKER_IP != None):
+                                self.IPAddress = DOCKER_IP
                 case "port":
                     if(not isinstance(self.configs[key], int)):
                         raise self.clientErrorHandler.BadRequest(message=key + " parameter must be a integer")
@@ -229,8 +239,8 @@ class RESTServer(Thread):
         cherrypy_cors.install()
         
         cherrypy.config.update({
-            'server.socket_host': webServices.configs["IPAddress"],
-            'server.socket_port': webServices.configs["port"],
+            'server.socket_host': webServices.IPAddress,
+            'server.socket_port': webServices.port,
             'cors.expose.on': True
         })
         

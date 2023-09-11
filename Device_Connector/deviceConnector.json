@@ -18,7 +18,7 @@
     "REST": {
         "endPointID": "ENTYzMz",
         "endPointName": "deviceConnector",
-        "IPAddress": "192.168.2.145",
+        "IPAddress": "127.0.0.1",
         "port": 8067,
         "CRUDMethods": {
             "GET": true,
@@ -55,7 +55,7 @@
         "QOS": 0
     },
     "REGISTRATION": {
-        "enabled": false,
+        "enabled": true,
         "serviceID": "SNTk3MD",
         "serviceName": "deviceConnector",
         "catalog_mDNS": "smartsocket.local",
