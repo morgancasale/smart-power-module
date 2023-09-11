@@ -4,6 +4,8 @@ String MAC = "00:00:00:00:00:00";
 int wifiChannel = 11;
 //int16_t RSSI = 0;
 
+String connectorIP = "192.168.2.145";
+
 String clientID = "pixxapaxxa";
 String mqttBroker = "broker.hivemq.com";
 int mqttPort = 1883;

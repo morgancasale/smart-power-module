@@ -3,8 +3,10 @@ import time
 import sys
 import json
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-sys.path.append(PROJECT_ROOT)
+IN_DOCKER = os.environ.get("IN_DOCKER", False)
+if not IN_DOCKER:
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    sys.path.append(PROJECT_ROOT)
 
 from microserviceBase.serviceBase import *
 
@@ -67,7 +69,9 @@ def notifier(topic, payload):
     data = json.loads(payload)
     print("The temperature is: " + str(data["temperature"]) + "°C")
 
-server = ServiceBase("Device_Connector/deviceConnector.json", GET=GET, init_REST_func=REST_init, Notifier=notifier)
+configFile_loc = "deviceConnector.json"
+if(not IN_DOCKER): configFile_loc = "Device_Connector/" + configFile_loc
+server = ServiceBase(configFile_loc, GET=GET, init_REST_func=REST_init, Notifier=notifier)
 server.start()
 
 def translateMAC(MAC):

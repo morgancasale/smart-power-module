@@ -4,8 +4,12 @@ import sqlite3 as sq
 
 import os
 import sys
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-sys.path.append(PROJECT_ROOT)
+import socket
+
+IN_DOCKER = os.environ.get("IN_DOCKER", False)
+if not IN_DOCKER:
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    sys.path.append(PROJECT_ROOT)
 
 from house import *
 from houseSettings import *
@@ -26,8 +30,11 @@ class ResourceCatalog:
             raise Server_Error_Handler.InternalServerError(message="The DB file does not exist")
         self.DBPath = DBPath
 
+        configFile_loc = "serviceConfig.json"
+        if(not IN_DOCKER): configFile_loc = "ResourceCatalog/" + configFile_loc
+
         self.server = ServiceBase(
-            "ResourceCatalog/serviceConfig.json", 
+            configFile_loc,
             GET=self.handleGetRequest, POST=self.handlePostRequest, 
             PUT=self.handlePutRequest, PATCH=self.handlePatchRequest,
             DELETE=self.handleDeleteRequest
@@ -47,7 +54,10 @@ class ResourceCatalog:
                 case "checkPresence":
                     for entry in params:
                         return self.checkPresence(entry)
-                     
+                    
+                case "getNetworkIP":
+                    return socket.gethostbyname(socket.gethostname())
+                
                 case "exit":
                     return self.exit(self.filename)
 
@@ -484,4 +494,7 @@ class ResourceCatalog:
             raise Server_Error_Handler.InternalServerError(message="An error occurred while updating a connection:\u0085\u0009" + str(e))        
 
 if __name__ == "__main__":
-    resourceCatalog = ResourceCatalog("ResourceCatalog/db.sqlite")
+    DBPath = "db.sqlite"
+    if not IN_DOCKER:
+        DBPath = "ResourceCatalog/" + DBPath
+    resourceCatalog = ResourceCatalog(DBPath)

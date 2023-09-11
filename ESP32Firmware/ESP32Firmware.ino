@@ -2,6 +2,7 @@
 #include "configs.h"
 #include "comm.h"
 #include "sensor.h"
+#define LED_BUILTIN 2
 
 TaskHandle_t parLoop;
 int SwitchStates[3]={0,0,0};
@@ -40,7 +41,8 @@ void onRecMeshMsg(uint32_t from, String &data) {
   Serial.print("Received data from node " + String(from));
   Serial.println(" : "+ data);
   JSONVar payload = JSON.parse(data);
-  if(payload["deviceID"] == deviceID || payload["deviceID"] == "*" ){
+  String temp = JSON.stringify(payload["deviceID"]);
+  if(temp == deviceID || temp == "*" ){
     digitalWrite (LED_BUILTIN, payload["state"]);
     SwitchStates[(int) payload["plugID"]] = (int) payload["state"];
   }
@@ -53,7 +55,7 @@ void readSwitchStates(JSONVar &payload){
 }
 
 void sendData2Mesh(){
-  float temp = read_temp();
+  float temp = random(250,340)/10;
 
   JSONVar payload;
   payload["deviceID"] = deviceID;
@@ -173,6 +175,7 @@ void loop() {
 }
 
 void setup() {
+  randomSeed(analogRead(0));
   // initialize digital pin LED_BUILTIN as an output.
   pinMode (LED_BUILTIN, OUTPUT);
 
@@ -182,6 +185,8 @@ void setup() {
   Serial.println(xPortGetCoreID());
 
   setup_wifi();
+
+  findSystem();
 
   getRole();
 

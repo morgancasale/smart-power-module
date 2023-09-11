@@ -6,7 +6,8 @@
   #include <PubSubClient.h>
   #include "painlessMesh.h"
   #include <Arduino_JSON.h>
-  
+  #include <ESPmDNS.h>
+
   extern WiFiClient wifiClient;
   extern PubSubClient mqttClient;
   extern Scheduler nodeScheduler;
@@ -14,6 +15,8 @@
 
   void setup_wifi();
   JSONVar get(String url, String params);
+
+  extern void findSystem();
 
   void onConnectionEstablished();
   void setup_mqtt();

@@ -1,7 +1,10 @@
 import os
 import sys
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-sys.path.append(PROJECT_ROOT)
+
+IN_DOCKER = os.environ.get("IN_DOCKER", False)
+if not IN_DOCKER:
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    sys.path.append(PROJECT_ROOT)
 
 from threading import Thread
 from colorama import Fore
@@ -36,8 +39,12 @@ class DeviceConnector():
         self.delSocket_fromHA = SocketHandler.delSocket_fromHA       # del servizio
         #self.handleDelete_byHA = SocketHandler.handleDeleteSocket_byHA
 
+        configFile_loc = "deviceConnector.json"
+        if(not IN_DOCKER): configFile_loc = "Device_Connector/" + configFile_loc
         self.service = ServiceBase(
-            "Device_Connector/deviceConnector.json", GET=self.regSocket_toCatalog, PUT=self.handleUpdate_toHA, 
+            configFile_loc,
+            GET = self.regSocket_toCatalog, 
+            PUT = self.handleUpdate_toHA, 
             Notifier = notify
         )
 
@@ -50,33 +57,6 @@ class DeviceConnector():
 
         self.service.MQTT.Subscribe("smartSocket/data")
         self.service.MQTT.Subscribe("homeassistant/switch/smartSocket/+/control/#")
-
-        '''OnlineStatusTracker = Thread(target=self.OnlineStatusTracker, args=(self.catalogAddress, self.catalogPort))
-        OnlineStatusTracker.start()'''
-
-    '''def OnlineStatusTracker(self, catalogAddress, catalogPort):
-        try:
-            while True:
-                watchDogTimer = 5*60
-
-                url = "%s:%s/updateOnlineStatus"%(catalogAddress, catalogPort)
-                params = [
-                    {"table" : "Devices", "timer" : watchDogTimer}, 
-                    {"table" : "DeviceResource_conn", "timer" : watchDogTimer}
-                ]
-
-                headers = {"Content-Type" : "application/json"}
-                response = requests.patch(url, headers=headers, data=json.dumps(params))
-                if(response.status_code != 200):
-                    raise HTTPError(response.status_code, response.text)
-                
-                print(Fore.LIGHTGREEN_EX + "Online status Tracker:\n\t%s"%response.text + Fore.RESET)
-
-                time.sleep(watchDogTimer)
-        except Exception as e:
-            raise Server_Error_Handler.InternalServerError(
-                message = "An error occurred while updating devices online status" + str(e)
-            )'''
 
     def setOnlineStatus(self, deviceID, status):
         try:

@@ -1,0 +1,34 @@
+version: "3.9"
+
+networks:
+  frontend:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+services:
+  resourcecatalog:
+    container_name: Resource_Catalog
+    image: resourcecatalog
+    ports:
+    - 8099:8099
+    - 15672:15672
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.2
+    healthcheck: # to allow other containers to wait for this one
+      test: ["CMD", "curl", "-f", "http://localhost:15672"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  deviceconnector:
+    container_name: Device_Connector
+    image: deviceconnector
+    ports:
+    - 8067:8067
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.3
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
