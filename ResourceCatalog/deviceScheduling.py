@@ -1,7 +1,10 @@
 import os
 import sys
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-sys.path.append(PROJECT_ROOT)
+
+IN_DOCKER = os.environ.get("IN_DOCKER", False)
+if not IN_DOCKER:
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    sys.path.append(PROJECT_ROOT)
 
 from utility import *
 import time

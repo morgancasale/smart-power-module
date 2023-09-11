@@ -1,4 +1,5 @@
 CherryPy==18.8.0
+pandas==2.0.0
 cherrypy_cors==1.6
 dnspython==2.4.2
 paho_mqtt==1.6.1

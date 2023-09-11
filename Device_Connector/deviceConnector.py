@@ -1,7 +1,10 @@
 import os
 import sys
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-sys.path.append(PROJECT_ROOT)
+
+IN_DOCKER = os.environ.get("IN_DOCKER", False)
+if not IN_DOCKER:
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    sys.path.append(PROJECT_ROOT)
 
 from threading import Thread
 from colorama import Fore
@@ -36,8 +39,12 @@ class DeviceConnector():
         self.delSocket_fromHA = SocketHandler.delSocket_fromHA       # del servizio
         #self.handleDelete_byHA = SocketHandler.handleDeleteSocket_byHA
 
+        configFile_loc = "deviceConnector.json"
+        if(not IN_DOCKER): configFile_loc = "Device_Connector/" + configFile_loc
         self.service = ServiceBase(
-            "Device_Connector/deviceConnector.json", GET=self.regSocket_toCatalog, PUT=self.handleUpdate_toHA, 
+            configFile_loc,
+            GET = self.regSocket_toCatalog, 
+            PUT = self.handleUpdate_toHA, 
             Notifier = notify
         )
 

@@ -1,5 +1,7 @@
 CherryPy==18.8.0
+colorama==0.4.4
+Requests==2.31.0
 cherrypy_cors==1.6
 dnspython==2.4.2
 paho_mqtt==1.6.1
-Requests==2.31.0
+six==1.16.0
