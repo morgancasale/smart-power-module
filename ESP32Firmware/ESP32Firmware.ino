@@ -186,6 +186,8 @@ void setup() {
 
   setup_wifi();
 
+  findSystem();
+
   getRole();
 
   WiFi.disconnect();
