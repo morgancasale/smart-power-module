@@ -96,7 +96,7 @@ class ResourceCatalog:
                 
                 case "regSocket":
                     for socketData in params:
-                        entry = Socket(socketData, newSocket = True)
+                        entry = Socket(self.DBPath, socketData, newSocket = True)
 
                         entry.save2DB(self.DBPath)
                     return "Socket registration was successful"
@@ -167,7 +167,7 @@ class ResourceCatalog:
                 
                 case "setSocket":
                     for socketData in params:
-                        entry = Socket(socketData)
+                        entry = Socket(self.DBPath, socketData)
                         entry.set2DB(self.DBPath)
                     return "Socket update was successful"
                 
@@ -260,7 +260,7 @@ class ResourceCatalog:
                 
                 case "updateSocket":
                     for socketData in params:
-                        entry = Socket(socketData)
+                        entry = Socket(self.DBPath, socketData)
                         entry.updateDB(self.DBPath)
                     return "Socket update was successful"
 

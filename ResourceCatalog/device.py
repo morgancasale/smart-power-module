@@ -32,19 +32,22 @@ class Device:
         
 
     def checkKeys(self, deviceData):
-        if(not all(key in self.deviceKeys for key in deviceData.keys())): # Check if all keys of deviceKeys are present in deviceData
+        a = set(deviceData.keys())
+        b = set(self.deviceKeys)
+        if(not b.issubset(a)): # Check if all keys of deviceKeys are present in deviceData
             raise Client_Error_Handler.BadRequest(message="Missing one or more keys")
 
     def checkSaveValues(self, deviceData):
         for key in deviceData.keys():
             match key:
-                case ("deviceID" | "deviceName" | "userID"):
+                case ("deviceID" | "deviceName" | "userID" | "houseID"):
                     if(not isinstance(deviceData[key], str)):
                         raise Client_Error_Handler.BadRequest(message="Device's \"" + key + "\" value must be string")
                     match key:
                         case "deviceID": self.deviceID = deviceData["deviceID"]
                         case "deviceName": self.deviceName = deviceData["deviceName"]
                         case "userID": self.userID = deviceData["userID"]
+                        case "houseID": self.houseID = deviceData["houseID"]
                     
                 case "endPoints":
                     for endPointData in deviceData["endPoints"]:
@@ -68,11 +71,14 @@ class Device:
     def save2DB(self, DBPath):
         EP_Dev_conn = []
         Res_Dev_conn = []
+        House_Dev_conn = [self.houseID]
         try:
             if(check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
                 raise Client_Error_Handler.BadRequest(message="A device with ID \"" + self.deviceID + "\" already exists in the database")
             if(self.userID != None and not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
-                raise Client_Error_Handler.NotFound(message="The user with ID \"" + self.userID + "\" does not exist in the database")            
+                raise Client_Error_Handler.NotFound(message="The user with ID \"" + self.userID + "\" does not exist in the database")
+            if(self.houseID != None and not check_presence_inDB(DBPath, "Houses", "houseID", self.houseID)):
+                raise Client_Error_Handler.NotFound(message="The house with ID \"" + self.houseID + "\" does not exist in the database")   
 
             for endPoint in self.endPoints:
                 endPoint.set2DB(DBPath)
@@ -96,6 +102,10 @@ class Device:
             for ResID in Res_Dev_conn:
                 entry = {"deviceID": self.deviceID, "resourceID": ResID, "Online": self.Online, "lastUpdate": self.lastUpdate}
                 save_entry2DB(DBPath, "DeviceResource_conn", entry)
+
+            # Save the connection between the device and the house
+            entry = {"houseID": self.houseID, "deviceID": self.deviceID, "lastUpdate": self.lastUpdate}
+            save_entry2DB(DBPath, "HouseDev_conn", entry)
             
             save_entry2DB(DBPath, "Devices", self.to_dict())
         except HTTPError as e:
@@ -249,7 +259,7 @@ class Device:
         except Exception as e:
             raise Server_Error_Handler.InternalServerError(message="An error occurred while cleaning the DB from devices:\u0085\u0009" + str(e))
 
-    def setOnlineStatus(entries):
+    def setOnlineStatus(DBPath, entries):
         newDeviceIDs = []
         newEndPointIDs = []
         newResourceIDs = []

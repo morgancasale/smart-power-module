@@ -10,19 +10,19 @@ from utility import *
 from microserviceBase.Error_Handler import *
 
 class Socket:
-    def __init__(self, socketData, newSocket = True):
+    def __init__(self, DBPath,socketData, newSocket = True):
         self.socketKeys = sorted([
             "deviceID", "HAID", "MAC", "masterNode"
         ])
         
         if(newSocket) : self.checkKeys(socketData)
-        self.checkSaveValues(socketData)
+        self.checkSaveValues(DBPath, socketData)
 
     def checkKeys(self, socketData):
         if(not sorted(socketData.keys()) == self.socketKeys):
             raise Client_Error_Handler.BadRequest(message="Missing one or more keys")
         
-    def checkSaveValues(self, socketData):
+    def checkSaveValues(self, DBPath, socketData):
         for key in socketData.keys():
             match key:
                 case ("deviceID"):
