@@ -13,7 +13,8 @@
             "port": 8123,
             "baseTopic": "homeassistant",
             "system": "smartSocket"
-        }
+        },
+        "houseID": "H1"
     },
     "REST": {
         "endPointID": "ENTYzMz",

@@ -165,7 +165,7 @@ class Resource:
                 self.resourceID + "\" to the DB:\u0085\u0009" + str(e)
             )
 
-    def setOnlineStatus(newResIDs, connTable):
+    def setOnlineStatus(DBPath, newResIDs, connTable):
         try:
             allResIDs = getIDs_fromDB(DBPath, connTable, "resourceID")
             missingResIDs = list(set(allResIDs) - set(newResIDs))

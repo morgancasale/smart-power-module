@@ -55,6 +55,8 @@ class DeviceConnector():
  
         self.service.start()
 
+        #self.genHouseSensor()
+
         self.service.MQTT.Subscribe("smartSocket/data")
         self.service.MQTT.Subscribe("homeassistant/switch/smartSocket/+/control/#")
 

@@ -6,7 +6,8 @@ from device import *
 from cherrypy import HTTPError
 
 class Service:
-    def __init__(self, serviceData, newService = False):
+    def __init__(self, DBPath, serviceData, newService = False):
+        self.DBPath = DBPath
         self.serviceKeys = ["serviceID", "serviceName"]
         self.connTables = ["ServiceHouse_conn", "ServiceUser_conn", "ServiceDevice_conn", "ServiceRes_conn", "ServiceEndP_conn"]
 
@@ -22,7 +23,9 @@ class Service:
             self.lastUpdate = time.time()
     
     def checkKeys(self, serviceData):
-        if(not all(key in serviceData.keys() for key in self.serviceKeys)):
+        a = set(sorted(serviceData.keys()))
+        b = set(sorted(self.serviceKeys))
+        if(not b.issubset(a)):
             raise HTTPError(status=400, message="Missing one or more keys")
 
     def checkSaveValues(self, serviceData):
@@ -58,7 +61,7 @@ class Service:
                 case _:
                     raise HTTPError(status=400, message="Unexpected key \"" + key + "\"")
         
-        self.checkPresenceOfConnectedinDB(DBPath, serviceData)
+        self.checkPresenceOfConnectedinDB(self.DBPath, serviceData)
         
 
     def to_dict(self):
@@ -81,7 +84,10 @@ class Service:
         tables = ["Houses", "Users", "Devices", "Resources"]
         for table, connectedID in zip(tables,connectedIDs):
             if(connectedID in serviceData.keys()):
-                for ID in serviceData[connectedID]:
+                temp = serviceData[connectedID]
+                if(not isinstance(temp, list)):
+                    temp = [temp]
+                for ID in temp:
                     if(not check_presence_inDB(DBPath, table, connectedID, ID)):
                         raise HTTPError(status=400, message="A " + table[:-1] + " with ID \"" + ID + "\" does not exist in the database")
 
@@ -266,7 +272,7 @@ class Service:
             a = HTTPError(status=400, message="An error occurred while retrieving service with ID \"" + serviceID + "\" from the DB:\u0085\u0009" + str(e))
             raise a
 
-    def setOnlineStatus(entries):
+    def setOnlineStatus(DBPath,entries):
         newServiceIDs = []
         newEndPointIDs = []
         newResourceIDs = []
@@ -283,6 +289,6 @@ class Service:
         entry = {"serviceID": missingServiceIDs, "Online": False, "lastUpdate": time.time()}
 
         update_entry_inDB(DBPath, "Services", "serviceID", entry)
-        EndPoint.setOnlineStatus(newEndPointIDs)
-        Resource.setOnlineStatus(newResourceIDs, "ServiceRes_conn")
+        EndPoint.setOnlineStatus(DBPath, newEndPointIDs)
+        Resource.setOnlineStatus(DBPath, newResourceIDs, "ServiceRes_conn")
     

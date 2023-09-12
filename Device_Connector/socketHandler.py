@@ -199,11 +199,12 @@ class SocketHandler():
         return endPoint
 
 
-    def genDevice(catalogAddress, catalogPort, system, baseTopic, deviceID, deviceName):
+    def genDevice(catalogAddress, catalogPort, system, baseTopic, deviceID, deviceName, houseID):
         try:
             device = {}
             device["deviceID"] = deviceID
             device["deviceName"] = deviceName
+            device["houseID"] = houseID
 
             device["Resources"] = SocketHandler.genResources()
             device["endPoints"] = [SocketHandler.genEndpoints(catalogAddress, catalogPort, system, baseTopic, deviceID)]
@@ -272,7 +273,7 @@ class SocketHandler():
 
         return socketStgs
         
-    def regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, MAC):
+    def regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, MAC, houseID):
         try:
             headers = {
                 'content-type': "application/json",
@@ -286,7 +287,7 @@ class SocketHandler():
 
             socketData = SocketHandler.genSocket(MAC, deviceID, masterNode)
             socketStgsData = SocketHandler.genSocketStgs(deviceID, deviceName)
-            deviceData = SocketHandler.genDevice(catalogAddress, catalogPort, system, baseTopic, deviceID, deviceName)
+            deviceData = SocketHandler.genDevice(catalogAddress, catalogPort, system, baseTopic, deviceID, deviceName, houseID)
 
             url = "%s:%s/setDevice" % (
                 catalogAddress,
@@ -399,7 +400,8 @@ class SocketHandler():
                         HAToken = self.generalConfigs["CONFIG"]["HomeAssistant"]["token"]
                         system = self.generalConfigs["CONFIG"]["HomeAssistant"]["system"]
                         baseTopic = self.generalConfigs["CONFIG"]["HomeAssistant"]["baseTopic"]
-                        data = SocketHandler.regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, params["MAC"])
+                        houseID = self.generalConfigs["CONFIG"]["houseID"]
+                        data = SocketHandler.regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, params["MAC"], houseID)
 
                     out["deviceID"] = data["deviceID"]
                     out["masterNode"] = data["masterNode"]

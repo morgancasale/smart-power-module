@@ -38,7 +38,7 @@ class ServiceBase(object):
                     "activatedMethod": ["REST", "MQTT"],
                     "HomeAssistant": ["enabled", "token", "autoHA", "HA_mDNS", "address", "port"]
                 },
-                "REGISTRATION": ["enabled", "serviceID", "serviceName", "catalog_mDNS", "catalogAddress", "catalogPort", "T_Registration"]
+                "REGISTRATION": ["enabled", "serviceID", "serviceName", "catalogAddress", "catalogPort", "T_Registration"]
             }
 
             self.check_and_loadConfigs()
@@ -125,8 +125,9 @@ class ServiceBase(object):
                 elif type(self.configParams[key]) is list:
                     a = sorted(self.configParams[key])
                     b = sorted(self.generalConfigs[key].keys())
-                    if(a != b):
-                        print("here")
+                    diff = list(set(a)-set(b))
+                    if(len(list(set(b).intersection(diff))) > 0):
+                        print("pesce")
                         raise self.clientErrorHandler.BadRequest(message = message)
                 
     def validate_HA_Params(self):
@@ -173,7 +174,7 @@ class ServiceBase(object):
     
     def validate_registrationParams(self):
         configs = self.generalConfigs["REGISTRATION"]
-        params = ["enabled", "serviceID", "serviceName", "catalog_mDNS", "catalogAddress", "catalogPort", "T_Registration"]
+        params = ["enabled", "serviceID", "serviceName", "catalogAddress", "catalogPort", "T_Registration"]
         if(not all(key in configs.keys() for key in params)):
             raise self.clientErrorHandler.BadRequest(message="Missing parameters in REGISTRATION configs")
         

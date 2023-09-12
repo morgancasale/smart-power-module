@@ -205,7 +205,7 @@ class Register(Thread):
                 if(cond):
                     service["houseID"] = self.generalConfigs["CONFIG"]["houseID"]
 
-                cond = "houseID" in self.generalConfigs["CONFIG"] and self.generalConfigs["CONFIG"]["houseID"] != None
+                cond = "userID" in self.generalConfigs["CONFIG"] and self.generalConfigs["CONFIG"]["userID"] != None
                 if(cond):
                     service["userID"] = self.generalConfigs["CONFIG"]["userID"]
 

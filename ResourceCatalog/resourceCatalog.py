@@ -109,7 +109,7 @@ class ResourceCatalog:
                 
                 case "regService":
                     for serviceData in params:
-                        entry = Service(serviceData, newService = True)
+                        entry = Service(self.DBPath, serviceData, newService = True)
                         entry.save2DB(self.DBPath)
                     return "Service registration was successful"
                 
@@ -173,7 +173,7 @@ class ResourceCatalog:
                 
                 case "setService":
                     for serviceData in params:
-                        entry = Service(serviceData)
+                        entry = Service(self.DBPath, serviceData)
                         entry.set2DB(self.DBPath)
                     return "Service update was successful"
 
@@ -193,7 +193,7 @@ class ResourceCatalog:
                     entries = []
 
                     for serviceData in params:
-                        entry = Service(serviceData, newService = True)
+                        entry = Service(self.DBPath, serviceData, newService = True)
                         entries.append(entry)
                         entry.set2DB(self.DBPath)
                     
@@ -266,7 +266,7 @@ class ResourceCatalog:
 
                 case "updateService":
                     for serviceData in params:
-                        entry = Service(serviceData)
+                        entry = Service(self.DBPath, serviceData)
                         entry.updateDB(self.DBPath)
                     return "Service update was successful"
                 

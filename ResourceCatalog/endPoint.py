@@ -293,7 +293,7 @@ class EndPoint:
         
         return True
 
-    def setOnlineStatus(newEPIDs):
+    def setOnlineStatus(DBPath,newEPIDs):
         try:
             allEPIDs = getIDs_fromDB(DBPath, "EndPoints", "endPointID")
 

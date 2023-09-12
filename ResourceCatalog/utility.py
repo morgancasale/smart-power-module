@@ -14,7 +14,6 @@ import re
 
 from cherrypy import HTTPError
 
-DBPath = "db.sqlite"
 broker = "broker.hivemq.com"
 
 from microserviceBase.serviceBase import *
