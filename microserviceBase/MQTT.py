@@ -118,7 +118,7 @@ class MQTTServer(Thread):
     def OnMessageReceived(self, a, b, message):
         self.subNotifier(self, message.topic, message.payload)
 
-    def Publish(self, topics, message, retain=False):
+    def Publish(self, topics, message, retain=False, talk = True):
         while(not self.connected):
             time.sleep(5)
         if(not isinstance(topics, list)):
@@ -128,10 +128,10 @@ class MQTTServer(Thread):
                 self.checkTopic(topic, "pub")
                 if(len(self.publishtopics)>1):
                     for publishtopic in  self.publishtopics:
-                        print("Publishing '%s' at topic '%s'" % (message, publishtopic))
+                        if(talk): print("Publishing '%s' at topic '%s'" % (message, publishtopic))
                         self.Client.publish(publishtopic, message, self.QOS, retain=retain)
                 else:
-                    print("Publishing '%s' at topic '%s'" % (message, topic))
+                    if(talk): print("Publishing '%s' at topic '%s'" % (message, topic))
                     self.Client.publish(topic, message, self.QOS, retain=retain)
         else:
             raise self.clientErrorHandler.BadRequest(

@@ -396,7 +396,10 @@ class ResourceCatalog:
                     case "AppliancesInfo":
                         reconstructedData.append(Appliance.DB_to_dict(self.DBPath, sel))
                     case _:
-                        raise Server_Error_Handler.NotImplemented(message="Unexpected invalid table")
+                        if("_conn" in table):
+                            reconstructedData.append(sel)
+                        else:
+                            raise Server_Error_Handler.NotImplemented(message="Unexpected invalid table")
                     
             return reconstructedData
         except HTTPError as e:
