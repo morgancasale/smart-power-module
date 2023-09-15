@@ -132,14 +132,13 @@ class TimeShift():
      def update_remove_info(self,repeat,deviceID):
         repeat-=1
         if repeat>0:
-            query="UPDATE DeviceScheduling SET repeat = ? WHERE deviceID = ?"
             try:
                 catalogAddress = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
                 catalogPort = self.client.generalConfigs["REGISTRATION"]["catalogPort"]
-                url = "%s:%s/getInfo" % (catalogAddress, str(catalogPort))
-                params = {"table": "DeviceScheduling", "keyName": "repeat", "keyValue": "*"}      
-                
-                requests.patch(url, params=params)            
+                url = "%s:%s/setDeviceSettings" % (catalogAddress, str(catalogPort))
+                data={"deviceID":deviceID,"repeat":repeat}
+                data=json.dumps(data)
+                requests.put(url, json=data)            
                 
         elif repeat==0:
             try:
