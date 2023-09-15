@@ -150,7 +150,7 @@ class TimeShift():
                 requests.delete(url, params=params) 
             
 
-     def manageService(self, houseID):
+      def manageService(self, houseID):
         current_time = time.time()
         comb_res = self.getTimeInfo(houseID)
         deviceSchedule = pd.DataFrame(comb_res, columns=['deviceID','mode', 'startTime','enableEnd','endTime','repeat'])
