@@ -1,7 +1,6 @@
 import os
 import time
 import sys
-
 IN_DOCKER = os.environ.get("IN_DOCKER", False)
 if not IN_DOCKER:
     PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
@@ -27,8 +26,8 @@ class MaxPowerControl():
             testDB_loc = "testDB.db"
             if(not IN_DOCKER):
                 testDB_loc = "MaxPowerControl/" + testDB_loc
-            self.DBConn = sqlite3.connect(testDB_loc)
-            self.DBCurs = self.DBConn.cursor()  
+            self.HADBConn = sqlite3.connect(testDB_loc)
+            self.HADBCur = self.HADBConn.cursor()  
 
             while(True):
                 self.controlPowerforall()
@@ -54,8 +53,9 @@ class MaxPowerControl():
                     FROM states1\
                     WHERE entity_id LIKE 'sensor.power%'\
                     GROUP BY deviceID"
-            self.DBCurs.execute(query1)
-            rows1 = self.DBCurs.fetchall()
+            self.HADBCur.execute(query1)
+            rows1 = self.HADBCur.fetchall()
+            print("ciao")
         except HTTPError as e:
             message = "An error occurred while retriving info from HomeAssistant DB " + e._message
             raise HTTPError(status=e.status, message=message)
