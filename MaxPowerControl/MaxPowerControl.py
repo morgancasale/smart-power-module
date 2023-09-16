@@ -17,6 +17,7 @@ class MaxPowerControl():
 
     def __init__(self):
         try:
+            print(str(os.path.isfile("HomeAssistant/testDB.db")))
             config_file = "MaxPowerControl.json"
             if(not IN_DOCKER):
                 config_file = "MaxPowerControl/" + config_file
@@ -26,6 +27,8 @@ class MaxPowerControl():
             testDB_loc = "testDB.db"
             if(not IN_DOCKER):
                 testDB_loc = "MaxPowerControl/" + testDB_loc
+            else:
+                testDB_loc = "HomeAssistant/testDB.db" #da aggiornare poi con home assistant
             self.HADBConn = sqlite3.connect(testDB_loc)
             self.HADBCur = self.HADBConn.cursor()  
 

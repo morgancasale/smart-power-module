@@ -16,6 +16,8 @@ services:
     networks:
       frontend:
         ipv4_address: 172.20.0.2
+    volumes:
+      - ./ResourceCatalog:/ResCat
     healthcheck: # to allow other containers to wait for this one
       test: ["CMD", "curl", "-f", "http://localhost:15672"]
       interval: 30s
@@ -39,5 +41,18 @@ services:
     networks:
       frontend:
         ipv4_address: 172.20.0.5
+    volumes:
+      - ./MaxPowerControl:/HomeAssistant
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+
+  standbypowerdetection:
+    container_name: Standby_Power_Detection
+    image: standbypowerdetection
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.6
+    volumes:
+      - ./MaxPowerControl:/HomeAssistant
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog

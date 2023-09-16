@@ -452,13 +452,14 @@ class ResourceCatalog:
             except Exception as e:
                 raise Server_Error_Handler.InternalServerError(message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
 
-            if len(selectedData) == 0:
-                message = "No entry found in table \"" + table
-                message += "\" with key " + keyName + " and values " + "[\"" + "\", \"".join(keyValue) + "\"]"
-                raise Client_Error_Handler.NotFound(message=message)
+            reconstructedData = []
 
-            reconstructedData = None
-            reconstructedData = ResourceCatalog.reconstructJson(self, table, selectedData, entry, verbose=verbose)
+            if len(selectedData) == 0:
+                """message = "No entry found in table \"" + table
+                message += "\" with key " + keyName + " and values " + "[\"" + "\", \"".join(keyValue) + "\"]"
+                raise Client_Error_Handler.NotFound(message=message)"""
+            else:
+                reconstructedData = ResourceCatalog.reconstructJson(self, table, selectedData, entry, verbose=verbose)
             
             return json.dumps(reconstructedData)
         except HTTPError as e:
@@ -500,4 +501,6 @@ if __name__ == "__main__":
     DBPath = "db.sqlite"
     if not IN_DOCKER:
         DBPath = "ResourceCatalog/" + DBPath
+    else:
+        DBPath = "ResCat/" + DBPath
     resourceCatalog = ResourceCatalog(DBPath)
