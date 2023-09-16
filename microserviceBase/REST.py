@@ -155,8 +155,6 @@ class RESTServer(Thread):
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError(message="An error occurred while checking input functions: \u0085\u0009" + str(e))
         
-
-
     def checkParams(self):
         if(not all(key in self.configParams for key in self.configs.keys())):
             raise self.clientErrorHandler.BadRequest(message="Missing parameters in config file")
