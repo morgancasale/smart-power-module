@@ -17,7 +17,6 @@ class MaxPowerControl():
 
     def __init__(self):
         try:
-            print(str(os.path.isfile("HomeAssistant/testDB.db")))
             config_file = "MaxPowerControl.json"
             if(not IN_DOCKER):
                 config_file = "MaxPowerControl/" + config_file
