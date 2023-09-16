@@ -374,15 +374,15 @@ class ResourceCatalog:
             for sel in selectedData:
                 match table:
                     case "Houses":
-                        reconstructedData.append(House.DB_to_dict(self.DBPath, sel, verbose))
+                        reconstructedData.append(House.DB_to_dict(self.DBPath, sel, verbose=verbose))
                     case "HouseSettings":
                         reconstructedData.append(HouseSettings.DB_to_dict(self.DBPath, sel))
                     case "Services":
-                        reconstructedData.append(Service.DB_to_dict(self.DBPath, sel, verbose))
+                        reconstructedData.append(Service.DB_to_dict(self.DBPath, sel, verbose=verbose))
                     case "Users":
-                        reconstructedData.append(User.DB_to_dict(self.DBPath, sel, verbose))
+                        reconstructedData.append(User.DB_to_dict(self.DBPath, sel, verbose=verbose))
                     case "Devices":
-                        reconstructedData.append(Device.DB_to_dict(self.DBPath, sel, verbose))
+                        reconstructedData.append(Device.DB_to_dict(self.DBPath, sel, verbose=verbose))
                     case "Sockets":
                         reconstructedData.append(Socket.DB_to_dict(self.DBPath, sel))
                     case "Resources":
@@ -425,7 +425,7 @@ class ResourceCatalog:
             keyName = entry["keyName"]
             keyValue = entry["keyValue"]
             verbose = False
-            if("verbose" in entry.keys()): verbose = entry["verbose"]        
+            if("verbose" in entry.keys()): verbose = (entry["verbose"] == "True")        
 
             selectedData = None
 
