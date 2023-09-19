@@ -186,11 +186,11 @@ class StandByPowerDetection():
         return house_list
 
     def controlAndDisconnect(self):
-        HADB_loc = "testDB.db"
+        HADB_loc = "testDB.db" #TODO : Da aggiornare poi con home assistant
         if(not IN_DOCKER):
             HADB_loc = "MaxPowerControl/" + HADB_loc
         else:
-            HADB_loc = "HomeAssistant/testDB.db" #da aggiornare poi con home assistant
+            HADB_loc = "HomeAssistant/" + HADB_loc 
 
         self.HAConn = sqlite3.connect(HADB_loc)
         self.HACur = self.HAConn.cursor()
@@ -205,6 +205,8 @@ class StandByPowerDetection():
         
         for house in house_list:
             modules = self.houseInfo(house)
+            if(modules is None):
+                break
             for info in modules:
                 standByPowercont=0 
                 value = self.getRange(info[0]["deviceID"]) #info[i][0] = ID
