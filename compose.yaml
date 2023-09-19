@@ -56,3 +56,14 @@ services:
       - ./MaxPowerControl:/HomeAssistant
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog
+
+  blackoutfaultydetection:
+    container_name: Blackout_Faulty_Detection
+    image: blackoutfaultydetection
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.7
+    volumes:
+      - ./MaxPowerControl:/HomeAssistant
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
