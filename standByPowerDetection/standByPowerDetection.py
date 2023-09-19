@@ -25,8 +25,11 @@ class StandByPowerDetection():
     
     def prevValuesCheck(self, moduleID):
         # Retrieve the 10 largest values of the timestamp column for the given moduleID
-        partial=moduleID[1:]
-        powerStateID= 'sensor.power_' + partial
+        if(self.client.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
+            partial = self.client.getHAID(moduleID)
+        else:
+            partial = "_"+moduleID[1:]
+        powerStateID = 'sensor.power' + partial
         self.HACur.execute("""
             SELECT entity_id, state FROM (
                 SELECT entity_id, state, ROW_NUMBER() 
@@ -44,11 +47,11 @@ class StandByPowerDetection():
     def lastValueCheck(self, ID):
 
         if(self.client.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
-            partial = self.client.getHAID(ID)
+            partial = self.client.getHAID(ID) #TODO: check if "_" is needed
         else:
-            partial = ID[1:]
+            partial = "_"+ID[1:]
 
-        powerStateID = 'sensor.power_' + partial
+        powerStateID = 'sensor.power' + partial
         #return [(ID, max_timestamp, power)]
         #  retrieve the maximum value of timestamp column for each ID
         self.HACur.execute("""
@@ -135,15 +138,16 @@ class StandByPowerDetection():
         #this method retrieves the modules belonging to each home that are on
         #and have one device connected to them
         to_consider=[]
+
         house_modules = self.getHouseDevList(house_ID)
         for house_module in house_modules :
             result = self.getDeviceInfo(house_module)
-            if (True or result[0]["Online"]) :
+            if (result[0]["Online"]) :
                 settings = self.getDeviceSettingsInfo(house_module)[0]
                 # If parasitic control is enabled and the module is in high power mode
-                if(settings["parControl"] == 1 and settings["HPMode"]==1) :
+                if(settings["HPMode"] == 1 and settings["parControl"] == 1) :
                     to_consider.append(result)
-        if (to_consider) is not None:
+        if len(to_consider) > 0:
             return to_consider
         else: return None   
         
