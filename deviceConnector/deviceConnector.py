@@ -40,7 +40,7 @@ class DeviceConnector():
         #self.handleDelete_byHA = SocketHandler.handleDeleteSocket_byHA
 
         configFile_loc = "deviceConnector.json"
-        if(not IN_DOCKER): configFile_loc = "Device_Connector/" + configFile_loc
+        if(not IN_DOCKER): configFile_loc = "deviceConnector/" + configFile_loc
         self.service = ServiceBase(
             configFile_loc,
             GET = self.regSocket_toCatalog, 

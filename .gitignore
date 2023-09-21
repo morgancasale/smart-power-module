@@ -1,6 +1,6 @@
-/ResourceCatalog/__pycache__
-/ResourceCatalog/test.py
-/ResourceCatalog/server.py
+/resourceCatalog/__pycache__
+/resourceCatalog/test.py
+/resourceCatalog/server.py
 
 /microserviceBase/__pycache__
 /microserviceBase/test.py
@@ -10,7 +10,7 @@ HomeAssistant_Connector/
 test.py
 .vscode
 
-/Device_Connector/__pycache__
+/deviceConnector/__pycache__
 
 /deviceSim
 

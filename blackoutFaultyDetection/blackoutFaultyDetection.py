@@ -28,6 +28,7 @@ class blackoutAndFaulty():
             config_file = "blackoutFaultyDetection/" + config_file
 
         self.client = ServiceBase(config_file)
+        self.client.start()
 
         while(True):
             try:
@@ -103,8 +104,8 @@ class blackoutAndFaulty():
         return power, voltage
     
     def lastValueCheck(self, HAID):
-        powerStateID= 'sensor.voltage' + HAID
-        voltageStateID= 'sensor.power' + HAID
+        powerStateID = 'sensor.power' + HAID
+        voltageStateID = 'sensor.voltage' + HAID
         
         #  retrieve the maximum value of timestamp column for each ID
         self.curHA.execute("""
@@ -290,7 +291,7 @@ class blackoutAndFaulty():
     def controlAndDisconnect(self):
         HADB_loc = "testDB.db" #TODO : Da aggiornare poi con home assistant
         if(not IN_DOCKER):
-            HADB_loc = "MaxPowerControl/" + HADB_loc
+            HADB_loc = "maxPowerControl/" + HADB_loc
         else:
             HADB_loc = "HomeAssistant/" + HADB_loc
 
@@ -308,31 +309,30 @@ class blackoutAndFaulty():
         for house in houses:
             blackout_cont = 0
             modules =  self.houseInfo(house)
-            if modules is None:
-                break
-            for module in modules:
-                HAID = self.getHAID(module)
-                faulty_cont = 0
-                value = self.getRange(module) #info[i][0] = ID
-                last_measurement = self.lastValueCheck(HAID)#[power, voltage]
-                if last_measurement["voltage"] != None and value != None :
-                    if self.blackOutRangeCheck(last_measurement["voltage"]) :
-                        blackout_cont += 1 
-                    if blackout_cont > self.blackout_lim:
-                        print('Predicted blackout in house %s', house)
-                        self.MQTTInterface(module, 'b')
-                        break
-                    if self.faultyCheck(value, last_measurement, module):
-                        prevVoltage, prevPower = self.PrevValuesCheck(HAID)
-                        readings = list(zip(prevVoltage, prevPower))
-                        for reading in readings:
-                            r = {"voltage": reading[0], "power": reading[1]}
-                            if self.faultyCheck(value, r, module):
-                                faulty_cont += 1   
-                                if faulty_cont >= self.faultyLim:
-                                    print("Device with ID " + module + " is faulty!")
-                                    self.MQTTInterface( module, 'f')
-                                    break
+            if modules is not None:
+                for module in modules:
+                    HAID = self.getHAID(module)
+                    faulty_cont = 0
+                    value = self.getRange(module) #info[i][0] = ID
+                    last_measurement = self.lastValueCheck(HAID)#[power, voltage]
+                    if last_measurement["voltage"] != None and value != None :
+                        if self.blackOutRangeCheck(last_measurement["voltage"]) :
+                            blackout_cont += 1 
+                        if blackout_cont > self.blackout_lim:
+                            print('Predicted blackout in house %s', house)
+                            self.MQTTInterface(module, 'b')
+                            break
+                        if self.faultyCheck(value, last_measurement, module):
+                            prevVoltage, prevPower = self.PrevValuesCheck(HAID)
+                            readings = list(zip(prevVoltage, prevPower))
+                            for reading in readings:
+                                r = {"voltage": reading[0], "power": reading[1]}
+                                if self.faultyCheck(value, r, module):
+                                    faulty_cont += 1   
+                                    if faulty_cont >= self.faultyLim:
+                                        print("Device with ID " + module + " is faulty!")
+                                        self.MQTTInterface( module, 'f')
+                                        break
         self.connHA.close()
                                     
 

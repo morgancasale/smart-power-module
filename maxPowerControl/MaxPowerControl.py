@@ -13,19 +13,19 @@ import requests
 
 from microserviceBase.serviceBase import *
 
-class MaxPowerControl():
+class maxPowerControl():
 
     def __init__(self):
         try:
-            config_file = "MaxPowerControl.json"
+            config_file = "maxPowerControl.json"
             if(not IN_DOCKER):
-                config_file = "MaxPowerControl/" + config_file
+                config_file = "maxPowerControl/" + config_file
             self.client = ServiceBase(config_file)
             self.client.start()
 
             testDB_loc = "testDB.db"
             if(not IN_DOCKER):
-                testDB_loc = "MaxPowerControl/" + testDB_loc
+                testDB_loc = "maxPowerControl/" + testDB_loc
             else:
                 testDB_loc = "HomeAssistant/testDB.db" #da aggiornare poi con home assistant
             self.HADBConn = sqlite3.connect(testDB_loc)
@@ -193,4 +193,4 @@ class MaxPowerControl():
     
 
 if __name__ == "__main__":
-    MPC = MaxPowerControl()
+    MPC = maxPowerControl()

@@ -188,7 +188,7 @@ class StandByPowerDetection():
     def controlAndDisconnect(self):
         HADB_loc = "testDB.db" #TODO : Da aggiornare poi con home assistant
         if(not IN_DOCKER):
-            HADB_loc = "MaxPowerControl/" + HADB_loc
+            HADB_loc = "maxPowerControl/" + HADB_loc
         else:
             HADB_loc = "HomeAssistant/" + HADB_loc 
 

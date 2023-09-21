@@ -70,7 +70,7 @@ def notifier(topic, payload):
     print("The temperature is: " + str(data["temperature"]) + "°C")
 
 configFile_loc = "deviceConnector.json"
-if(not IN_DOCKER): configFile_loc = "Device_Connector/" + configFile_loc
+if(not IN_DOCKER): configFile_loc = "deviceConnector/" + configFile_loc
 server = ServiceBase(configFile_loc, GET=GET, init_REST_func=REST_init, Notifier=notifier)
 server.start()
 

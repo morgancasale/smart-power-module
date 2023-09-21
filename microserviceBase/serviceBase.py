@@ -49,7 +49,7 @@ class ServiceBase(object):
             # Wait for the catalog to be ready
             cond = bool(IN_DOCKER)
             cond &= self.generalConfigs["REGISTRATION"]["enabled"]
-            cond &= self.generalConfigs["REGISTRATION"]["serviceName"] != "ResourceCatalog"
+            cond &= self.generalConfigs["REGISTRATION"]["serviceName"] != "resourceCatalog"
             if(cond):
                 time.sleep(5)
 
@@ -194,7 +194,7 @@ class ServiceBase(object):
                             self.updateConfigFile(["REGISTRATION"], {"catalogAddress": trueIP})
                         if(key == "catalogAddress" and IN_DOCKER):
                             try:
-                                trueIP = "http://" + socket.gethostbyname("resourcecatalog")
+                                trueIP = "http://" + socket.gethostbyname("resourceCatalog")
                                 print("Resolved catalog: " + trueIP)
                                 self.generalConfigs["REGISTRATION"]["catalogAddress"] = trueIP
                                 self.updateConfigFile(["REGISTRATION"], {"catalogAddress": trueIP})

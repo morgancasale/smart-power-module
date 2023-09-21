@@ -14,7 +14,7 @@
     },
     "REST": {
         "endPointID": "E1",
-        "endPointName": "ResourceCatalogServer",
+        "endPointName": "resourceCatalogServer",
         "IPAddress": "127.0.0.1",
         "port": 8099,
         "CRUDMethods": {
@@ -48,7 +48,7 @@
     "REGISTRATION": {
         "enabled": false,
         "serviceID": "S1",
-        "serviceName": "ResourceCatalog",
+        "serviceName": "resourceCatalog",
         "catalogAddress": "http://192.168.2.145",
         "catalogPort": 8099,
         "T_Registration": 0.1

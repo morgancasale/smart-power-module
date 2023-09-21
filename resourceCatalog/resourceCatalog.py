@@ -24,14 +24,14 @@ from service import *
 from microserviceBase.serviceBase import *
 from cherrypy import HTTPError
 
-class ResourceCatalog:
+class resourceCatalog:
     def __init__(self, DBPath):
         if(not os.path.isfile(DBPath)):
             raise Server_Error_Handler.InternalServerError(message="The DB file does not exist")
         self.DBPath = DBPath
 
         configFile_loc = "serviceConfig.json"
-        if(not IN_DOCKER): configFile_loc = "ResourceCatalog/" + configFile_loc
+        if(not IN_DOCKER): configFile_loc = "resourceCatalog/" + configFile_loc
 
         self.server = ServiceBase(
             configFile_loc,
@@ -459,7 +459,7 @@ class ResourceCatalog:
                 message += "\" with key " + keyName + " and values " + "[\"" + "\", \"".join(keyValue) + "\"]"
                 raise Client_Error_Handler.NotFound(message=message)"""
             else:
-                reconstructedData = ResourceCatalog.reconstructJson(self, table, selectedData, entry, verbose=verbose)
+                reconstructedData = resourceCatalog.reconstructJson(self, table, selectedData, entry, verbose=verbose)
             
             return json.dumps(reconstructedData)
         except HTTPError as e:
@@ -500,7 +500,7 @@ class ResourceCatalog:
 if __name__ == "__main__":
     DBPath = "db.sqlite"
     if not IN_DOCKER:
-        DBPath = "ResourceCatalog/" + DBPath
+        DBPath = "resourceCatalog/" + DBPath
     else:
         DBPath = "ResCat/" + DBPath
-    resourceCatalog = ResourceCatalog(DBPath)
+    resourceCatalog = resourceCatalog(DBPath)
