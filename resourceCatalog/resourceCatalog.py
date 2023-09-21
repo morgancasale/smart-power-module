@@ -459,7 +459,7 @@ class resourceCatalog:
                 message += "\" with key " + keyName + " and values " + "[\"" + "\", \"".join(keyValue) + "\"]"
                 raise Client_Error_Handler.NotFound(message=message)"""
             else:
-                reconstructedData = resourceCatalog.reconstructJson(self, table, selectedData, entry, verbose=verbose)
+                reconstructedData = resourceCatalog.reconstructJson(table, selectedData, entry, verbose)
             
             return json.dumps(reconstructedData)
         except HTTPError as e:
