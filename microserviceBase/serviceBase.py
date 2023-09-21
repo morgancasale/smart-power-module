@@ -213,7 +213,7 @@ class ServiceBase(object):
                     if(cond):
                         raise self.clientErrorHandler.BadRequest(message="REGISTRATION T_Registration parameter must be a positive number")
         
-        print("Catalog address: " + self.generalConfigs["REGISTRATION"]["catalogAddress"])
+        #print("Catalog address: " + self.generalConfigs["REGISTRATION"]["catalogAddress"])
         
     def validateParams(self):
         for key in self.configParams:

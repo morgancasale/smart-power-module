@@ -14,14 +14,21 @@ from microserviceBase.serviceBase import *
 class StandByPowerDetection():
 
     def __init__(self):
-        config_file = "standByPowerDetection.json"
-        if(not IN_DOCKER):
-            config_file = "standByPowerDetection/" + config_file
-        self.client = ServiceBase(config_file)
+        try:
+            config_file = "standByPowerDetection.json"
+            if(not IN_DOCKER):
+                config_file = "standByPowerDetection/" + config_file
+            self.client = ServiceBase(config_file)
 
-        while(True):
-            self.controlAndDisconnect() 
-            time.sleep(2)
+            while(True):
+                self.controlAndDisconnect() 
+                time.sleep(2)
+        except HTTPError as e:
+            message = "An error occurred while running the service: \u0085\u0009" + e._message
+            raise Exception(message)
+        except Exception as e:
+            message = "An error occurred while running the service: \u0085\u0009" + str(e)
+            raise Exception(message)
     
     def prevValuesCheck(self, moduleID):
         # Retrieve the 10 largest values of the timestamp column for the given moduleID

@@ -13,7 +13,6 @@ import sqlite3
 
 
 class blackoutAndFaulty():
-
     def __init__(self):
         
         # uk range
@@ -35,9 +34,11 @@ class blackoutAndFaulty():
                 self.controlAndDisconnect()
                 time.sleep(2)
             except HTTPError as e:
-                raise HTTPError(status=e.status, message ="An error occurred running the Blackout and Fault detection service: " + e._message)
+                message = "An error occurred running the Blackout and Fault detection service: " + e._message
+                raise Exception(message)
             except Exception as e:
-                raise Server_Error_Handler.InternalServerError(message="An error occurred running the Blackout and Fault detection service: " + str(e))
+                message = "An error occurred running the Blackout and Fault detection service: " + str(e)
+                raise Exception(message)
 
     def getCatalogInfo(self, table, keyName, keyValue, verbose=False):
         try:

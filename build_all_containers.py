@@ -3,6 +3,7 @@ import os
 images = [
     "resourceCatalog",
     "deviceConnector",
+    "onlineTracker",
     "blackoutFaultyDetection",
     "maxPowerControl",
     "moduleConsumptionControl",

@@ -14,16 +14,23 @@ import sqlite3
 class ModuleConsumptionControl():
 
     def __init__(self):
-        config_file = "moduleConsumptionControl.json"
-        if(not IN_DOCKER):
-            config_file = "moduleConsumptionControl/" + config_file
+        try:
+            config_file = "moduleConsumptionControl.json"
+            if(not IN_DOCKER):
+                config_file = "moduleConsumptionControl/" + config_file
 
-        self.client = ServiceBase(config_file)
-        self.client.start()
+            self.client = ServiceBase(config_file)
+            self.client.start()
 
-        while(True): 
-            self.controlAndNotify()
-            time.sleep(2)
+            while(True): 
+                self.controlAndNotify()
+                time.sleep(2)
+        except HTTPError as e:
+            message = "An error occurred while running the service: \u0085\u0009" + e._message
+            raise Exception(message)
+        except Exception as e:
+            message = "An error occurred while running the service: \u0085\u0009" + str(e)
+            raise Exception(message)
 
     def getCatalogInfo(self, table, keyName, keyValue, verbose=False):
         try:

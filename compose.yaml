@@ -35,6 +35,15 @@ services:
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog
 
+  onlinetracker:
+    container_name: onlineTracker
+    image: onlinetracker
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.4
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+
   maxpowercontrol:
     container_name: maxPowerControl
     image: maxpowercontrol
@@ -63,6 +72,17 @@ services:
     networks:
       frontend:
         ipv4_address: 172.20.0.7
+    volumes:
+      - ./maxPowerControl:/HomeAssistant
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+
+  moduleconsumptioncontrol:
+    container_name: moduleConsumptionControl
+    image: moduleconsumptioncontrol
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.8
     volumes:
       - ./maxPowerControl:/HomeAssistant
     depends_on: # wait for resourcecatalog to be ready

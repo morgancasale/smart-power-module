@@ -1,7 +1,10 @@
 import os
 import sys
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-sys.path.append(PROJECT_ROOT)
+
+IN_DOCKER = os.environ.get("IN_DOCKER", False)
+if not IN_DOCKER:
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    sys.path.append(PROJECT_ROOT)
 
 from colorama import Fore
 
@@ -10,13 +13,13 @@ from microserviceBase.Error_Handler import *
 
 class ServicesTracker():
     def __init__(self):
-        self.service = ServiceBase(
-            "OnlineTracker/onlineTracker.json"
-        )
+        configFile_loc = "onlineTracker.json"
+        if(not IN_DOCKER):
+            configFile_loc = "onlineTracker/" + configFile_loc
+        
+        self.service = ServiceBase(configFile_loc)
 
         catalogAddress = self.service.generalConfigs["REGISTRATION"]["catalogAddress"]
-        if("http://" not in catalogAddress):
-            self.catalogAddress = "http://" + self.catalogAddress
         catalogPort = self.service.generalConfigs["REGISTRATION"]["catalogPort"]
 
         self.service.start()

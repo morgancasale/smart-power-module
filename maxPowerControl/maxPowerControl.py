@@ -36,10 +36,10 @@ class maxPowerControl():
                 time.sleep(5)
         except HTTPError as e:
             message = "An error occurred while running the service: \u0085\u0009" + e._message
-            raise HTTPError(status=e.status, message=message)
+            raise Exception(message)
         except Exception as e:
             message = "An error occurred while running the service: \u0085\u0009" + str(e)
-            raise Server_Error_Handler.InternalServerError(message=message)
+            raise Exception(message)
             
 
     """
@@ -57,7 +57,6 @@ class maxPowerControl():
                     GROUP BY deviceID"
             self.HADBCur.execute(query1)
             rows1 = self.HADBCur.fetchall()
-            print("ciao")
         except HTTPError as e:
             message = "An error occurred while retriving info from HomeAssistant DB " + e._message
             raise HTTPError(status=e.status, message=message)
