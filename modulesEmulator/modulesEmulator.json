@@ -1,0 +1,61 @@
+{
+    "CONFIG": {
+        "activatedMethod": {
+            "MQTT": true,
+            "REST": false
+        },
+        "HomeAssistant": {
+            "enabled": false,
+            "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU", 
+            "autoHA" : false,
+            "HA_mDNS": "smartsocket.local",
+            "address" : "http://192.168.2.163",
+            "port" : 8123
+        }
+    },
+    "REST": {
+        "endPointID": null,
+        "endPointName": null,
+        "IPAddress": null,
+        "port": null,
+        "CRUDMethods": {
+            "GET": true,
+            "POST": true,
+            "PUT": true,
+            "DELETE": true,
+            "PATCH": true
+        }
+    },
+    "MQTT": {
+        "endPointID": "EMODULESEMULATOR",
+        "endPointName": "modulesEmulator",
+        "autoBroker": false,
+        "brokerAddress": "broker.emqx.io",
+        "brokerPort": 1883,
+        "username": "",
+        "password": "",
+        "subPub": {
+            "sub": false,
+            "pub": true
+        },
+        "clientID": "modulesEmulator",
+        "MQTTTopics": {
+            "sub": [
+                "/smartSocket/control"
+            ],
+            "pub": [
+                "/smartSocket/data"
+            ]
+        },
+        "QOS": 0
+    },
+    "REGISTRATION": {
+        "enabled": true,
+        "serviceID": "SMODULESEMULATOR",
+        "serviceName": "modulesEmulator",
+        "catalog_mDNS": "smartsocket.local",
+        "catalogAddress": "http://127.0.0.1",
+        "catalogPort": 8099,
+        "T_Registration": 0.1
+    }
+}
