@@ -5,8 +5,8 @@
 
   #define wifiSSID "Belkincul-"
   #define wifiPWD "ravintolakuparipannu2"
-  #define hostName "SmartSocket"
-  #define connectorIP "192.168.2.145"
+  #define systemName "SmartSocket"
+  #define system_mDNS "smartsocket.local"
   #define connectorPort 8067
 
   #define autoBroker true
@@ -21,6 +21,8 @@
   extern String MAC;
   extern int wifiChannel;
   //extern int16_t RSSI;
+
+  extern String connectorIP;
 
   extern String clientID;
   extern String mqttBroker;

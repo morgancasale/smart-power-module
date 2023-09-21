@@ -1,0 +1,24 @@
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install avahi-utils -y
+
+RUN apt-get install -y curl
+
+# set the kernel to use
+FROM python:3.10.9-slim
+# copy the requirements file
+COPY resourceCatalog/requirements.txt requirements.txt
+ADD /microserviceBase /microserviceBase
+# install the needed requirements
+RUN pip3 install -r requirements.txt
+RUN pip3 install -r /microserviceBase/requirements.txt
+
+ENV IN_DOCKER Yes
+ENV DOCKER_IP "172.20.0.2"
+
+EXPOSE 15672
+
+# copy the all the file in the container
+COPY /resourceCatalog .
+# the command that will be executed when the container will start
+CMD ["python3", "resourceCatalog.py"]

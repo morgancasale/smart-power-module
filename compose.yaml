@@ -1,0 +1,89 @@
+version: "3.9"
+
+networks:
+  frontend:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+services:
+  resourcecatalog:
+    container_name: resourceCatalog
+    image: resourcecatalog
+    ports:
+    - 8099:8099
+    - 15672:15672
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.2
+    volumes:
+      - ./resourceCatalog:/ResCat
+    healthcheck: # to allow other containers to wait for this one
+      test: ["CMD", "curl", "-f", "http://localhost:15672"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  deviceconnector:
+    container_name: deviceConnector
+    image: deviceconnector
+    ports:
+    - 8067:8067
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.3
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+
+  onlinetracker:
+    container_name: onlineTracker
+    image: onlinetracker
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.4
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+
+  maxpowercontrol:
+    container_name: maxPowerControl
+    image: maxpowercontrol
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.5
+    volumes:
+      - ./maxPowerControl:/HomeAssistant
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+
+  standbypowerdetection:
+    container_name: standbyPowerDetection
+    image: standbypowerdetection
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.6
+    volumes:
+      - ./maxPowerControl:/HomeAssistant
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+
+  blackoutfaultydetection:
+    container_name: blackoutFaultyDetection
+    image: blackoutfaultydetection
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.7
+    volumes:
+      - ./maxPowerControl:/HomeAssistant
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+
+  moduleconsumptioncontrol:
+    container_name: moduleConsumptionControl
+    image: moduleconsumptioncontrol
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.8
+    volumes:
+      - ./maxPowerControl:/HomeAssistant
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog

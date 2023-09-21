@@ -6,10 +6,11 @@
         },
         "HomeAssistant": {
             "enabled": false,
-            "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU", 
-            "autoHA" : false,
-            "address" : "http://192.168.2.163",
-            "port" : 8123
+            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU",
+            "autoHA": false,
+            "HA_mDNS": "smartsocket.local",
+            "address": "http://192.168.2.144",
+            "port": 8123
         }
     },
     "REST": {
@@ -49,7 +50,8 @@
         "enabled": false,
         "serviceID": "S1",
         "serviceName": "resourceCatalog",
-        "catalogAddress": "http://192.168.2.145",
+        "catalog_mDNS": "smartsocket.local",
+        "catalogAddress": "http://192.168.2.143",
         "catalogPort": 8099,
         "T_Registration": 0.1
     }

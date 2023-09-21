@@ -90,6 +90,27 @@ JSONVar get(String url, String params){
   return JSON.parse(payload);
 }
 
+void findSystem(){
+  while(mdns_init()!= ESP_OK){
+    delay(1000);
+    Serial.println("Starting MDNS...");
+  }
+ 
+  Serial.println("MDNS started");
+
+  IPAddress trueIP;
+  while (trueIP.toString() == "0.0.0.0") {
+    Serial.println("Resolving host...");
+    delay(250);
+    String host = system_mDNS;
+    host.replace(".local", "");
+    trueIP = MDNS.queryHost(host);
+  }
+  Serial.print("Host resolved: ");
+  Serial.println(trueIP);
+  connectorIP = trueIP.toString();
+}
+
 void setup_mqtt(){
   Serial.print("connecting to mqtt broker...");
   while (!mqttClient.connect(clientID.c_str())) {
@@ -133,7 +154,7 @@ void init_mesh(){
 
   if(masterNode){
     socket_mesh.stationManual(wifiSSID, wifiPWD);
-    socket_mesh.setHostname(hostName);
+    socket_mesh.setHostname(systemName);
     Serial.println("Set station settings.");
   } else {
     nodeScheduler.addTask(MeshSender);

@@ -5,8 +5,6 @@ import sys
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 sys.path.append(PROJECT_ROOT)
 import sqlite3
-import pandas as pd
-import numpy as np
 
 
 from microserviceBase.serviceBase import *
@@ -14,12 +12,17 @@ from microserviceBase.serviceBase import *
 class DataAnalysis():
 
     def __init__(self):
-        self.conn1 = sqlite3.connect("Data_DB/testDB.db")
+
+        self.conn1 = sqlite3.connect("Data_Analysis/testDB.db")
         self.curs1 = self.conn1.cursor()
-        self.conn2 = sqlite3.connect("Data_DB/db.sqlite")
-        self.curs2 = self.conn2.cursor()        
-        self.client = ServiceBase("marika/serviceConfig_example.json")
+        self.client = ServiceBase("Data_Analysis/data_analysis.json")
+        self.cost = 118.35 
         self.client.start()
+
+        while(True): 
+            self.process_data()
+            time.sleep(5*60)
+
     
     def process_df(self,df):
         df['attribute'] = df['entity'].apply(lambda x: x[:-2] if x.endswith('_2') else x)
@@ -40,11 +43,15 @@ class DataAnalysis():
         result_df = result_df.rename(columns={'attribute': 'entity_id'})
         if not result_df.empty:
             for i in range(len(result_df)):
-                topic='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(format_statistic,houseID)
-                msg='{"energy": %f}' % (result_df['state'].iloc[i])
-                print(topic)
-                print(msg)
-                self.client.MQTT.Publish(topic, msg)
+
+                topic1='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(format_statistic,houseID)
+                msg1='{"energy": %f}' % (result_df['state'].iloc[i])
+                self.client.MQTT.Publish(topic1, msg1)
+
+                topic2='/homeassistant/sensor/smartSocket/data_analysis/%s_cost/%s/state' %(format_statistic,houseID)
+                msg2='{"energy": %f}' % (result_df['state'].iloc[i]*self.cost)
+                self.client.MQTT.Publish(topic2, msg2)
+
             #self.client.MQTT.stop()
             return result_df
         else:
@@ -61,11 +68,15 @@ class DataAnalysis():
             result_df['state'] = result_df['state'].astype(int)
             if not result_df.empty:
                 for i in range(len(result_df)):
-                    topic='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(format_statistic,houseID)
-                    msg='{"energy": %f}' % (result_df['state'].iloc[i])
-                    print(topic)
-                    print(msg)
-                    self.client.MQTT.Publish(topic, msg)
+
+                    topic1='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(format_statistic,houseID)
+                    msg1='{"energy": %f}' % (result_df['state'].iloc[i])
+                    self.client.MQTT.Publish(topic1, msg1)
+
+                    topic2='/homeassistant/sensor/smartSocket/data_analysis/%s_cost/%s/state' %(format_statistic,houseID)
+                    msg2='{"energy": %f}' % (result_df['state'].iloc[i]*self.cost)
+                    self.client.MQTT.Publish(topic2, msg2)
+
                 #self.client.MQTT.stop()
                 return result_df
             else:
@@ -84,25 +95,42 @@ class DataAnalysis():
         result=self.process_df(df)
         return result
 
-    def compute_data(self,df,time_format,avg,statistic_format):
+
+    '''
+        This function calculates the average or the total energy consumption for each device in a given time period (hourly, daily, monthly, yearly).
+        The result is published on the MQTT broker.
+        It takes as input:
+            - df: the dataframe containing the data to be processed
+            - time_format: the format of the timestamp
+            - avg: a boolean value that indicates whether the average or the total energy consumption has to be calculated
+            - statistic_format: the format of the statistic (hourly_avg, hourly_tot, daily_avg, daily_tot, monthly_avg, monthly_tot, yearly_avg, yearly_tot)
+    '''
+    def compute_data(self, df, time_format, avg, statistic_format):
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         df['formatted_timestamp'] = df['timestamp'].dt.strftime(time_format)
-        if avg==True:
+        if avg == True:
+
             result = df.groupby(['device_id', 'formatted_timestamp']).mean(numeric_only=True).reset_index()    
         else:
             result = df.groupby(['device_id', 'formatted_timestamp']).sum(numeric_only=True).reset_index()    
         if not result.empty:
-                for i in range(len(result)):
-                    topic='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(statistic_format,result['device_id'].iloc[i])
-                    msg='{"energy": %f}' % (result['sensor.energy'].iloc[i])
-                    self.client.MQTT.Publish(topic, msg)
-                #self.client.MQTT.stop() 
-                return result
+
+            for i in range(len(result)):
+                topic1='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(statistic_format,result['device_id'].iloc[i])
+                msg1='{"energy": %f}' % (result['sensor.energy'].iloc[i])
+                self.client.MQTT.Publish(topic1, msg1)
+
+                topic2='/homeassistant/sensor/smartSocket/data_analysis/%s_cost/%s/state' %(statistic_format,result['device_id'].iloc[i])
+                msg2='{"energy": %f}' % (result['sensor.energy'].iloc[i]*self.cost)
+                self.client.MQTT.Publish(topic2, msg2)
+            #self.client.MQTT.stop() 
+            return result
         else:
-                return None
+            return None
 
     def compute_hourlyavgdata(self):
-        base_df=self.getalldata()
+        base_df = self.getalldata()
+
         self.compute_data(base_df,'%Y-%m-%d %H:00:00',True,'hourly_avg')
     
     def compute_hourlytotdata(self):
@@ -358,3 +386,9 @@ class DataAnalysis():
             self.compute_monthlyDataHouse(houseID)
             self.compute_yearlyDataHouse(houseID)
         
+
+
+service = DataAnalysis()
+
+
+

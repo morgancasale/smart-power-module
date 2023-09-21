@@ -1,0 +1,4 @@
+CherryPy==18.8.0
+colorama==0.4.4
+Requests==2.31.0
+six==1.16.0

@@ -1,0 +1,64 @@
+{
+    "CONFIG": {
+        "activatedMethod": {
+            "MQTT": true,
+            "REST": false
+        },
+        "HomeAssistant": {
+            "enabled": false,
+            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU",
+            "autoHA": false,
+            "HA_mDNS": "smartsocket.local",
+            "address": "http://192.168.1.73",
+            "port": 8123,
+            "baseTopic": "homeassistant",
+            "system": "smartSocket"
+        },
+        "houseID": "H1"
+    },
+    "REST": {
+        "endPointID": null,
+        "endPointName": null,
+        "IPAddress": null,
+        "port": null,
+        "CRUDMethods": {
+            "GET": true,
+            "POST": false,
+            "PUT": false,
+            "DELETE": false,
+            "PATCH": false
+        }
+    },
+    "MQTT": {
+        "endPointID": "ESTANDBYPOWERCONTROL",
+        "endPointName": "standByPowerControl",
+        "autoBroker": false,
+        "brokerAddress": "broker.emqx.io",
+        "brokerPort": 1883,
+        "username": "",
+        "password": "",
+        "subPub": {
+            "sub": true,
+            "pub": true
+        },
+        "clientID": "standByPowerControl",
+        "MQTTTopics": {
+            "sub": [
+                "/smartSocket/data"
+            ],
+            "pub": [
+                "/smartSocket/control"
+            ]
+        },
+        "QOS": 0
+    },
+    "REGISTRATION": {
+        "enabled": true,
+        "serviceID": "SSTANDBYPOWERCONTROL",
+        "serviceName": "standByPowerControl",
+        "catalog_mDNS": "smartsocket.local",
+        "catalogAddress": "http://192.168.1.73",
+        "catalogPort": 8099,
+        "T_Registration": 1
+    }
+}
