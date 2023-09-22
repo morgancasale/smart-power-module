@@ -37,14 +37,22 @@ void onRecMeshMsgBridge(uint32_t from, String &data) {
   }
 }
 
+void setSwitchState(int states){
+  digitalWrite (LED_BUILTIN, states[1]);
+  for(int i=0; i<3; i++){
+    if((int)states[i] != -1){
+      SwitchStates[i] = states[i];
+    }
+  }
+}
+
 void onRecMeshMsg(uint32_t from, String &data) {
   Serial.print("Received data from node " + String(from));
   Serial.println(" : "+ data);
   JSONVar payload = JSON.parse(data);
   String temp = JSON.stringify(payload["deviceID"]);
   if(temp == deviceID || temp == "*" ){
-    digitalWrite (LED_BUILTIN, payload["state"]);
-    SwitchStates[(int) payload["plugID"]] = (int) payload["state"];
+    setSwitchState(payload["states"]);
   }
 }
 

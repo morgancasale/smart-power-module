@@ -147,8 +147,8 @@ class DeviceSchedule:
                 message="An error occurred while cleaning the DB from devices:\u0085\u0009" + str(e)
             )
     
-    def DB_to_dict(DBPath, deviceID):
-        query = "SELECT * FROM DeviceScheduling WHERE deviceID = '" + deviceID + "'"
+    def DB_to_dict(DBPath, data):
+        query = "SELECT * FROM DeviceScheduling WHERE deviceID = '" + data["deviceID"] + "'"
         try:
             data = DBQuery_to_dict(DBPath, query)
 
