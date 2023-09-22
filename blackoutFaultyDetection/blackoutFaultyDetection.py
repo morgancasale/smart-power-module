@@ -19,8 +19,8 @@ class blackoutAndFaulty():
         self.v_upper_bound=253
         self.v_lower_bound=216
         #how many measures should be incorrect to consider a blackout
-        self.blackout_lim = 5
-        self.faultyLim = 0
+        self.blackout_lim = 4 #number of devices
+        self.faultyLim = 4 #number of measurements
 
         config_file = "blackoutFaultyDetection.json"
         if(not IN_DOCKER):
@@ -135,19 +135,6 @@ class blackoutAndFaulty():
         return {"power": power, "voltage": voltage} 
         #[ID, power, time], [id, voltage, time]
     
-    '''    
-    def moduleInfo(self):
-        #this method retrieves the status of the module, if the module is off
-        #there is no need to check for standBy power
-        self.Res#Cur.execute("""SELECT *
-                        FROM {}""".format(self.modules_and_switches))
-        result = self.Res#Cur.fetchall()
-        if result is not None:
-            return (result)
-        else:
-            return None
-    '''       
-    
     def getHouseDevList(self, houseID="*"):
         try:
             result = self.getCatalogInfo("HouseDev_conn", "houseID", houseID)
@@ -226,36 +213,6 @@ class blackoutAndFaulty():
             is_not_faulty &= (self.v_lower_bound < int(last_meas["voltage"]) < self.v_upper_bound)
            
             return not is_not_faulty
-    
-    def retrieveSensorData(self, ID):
-        if(self.client.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
-            partial = self.client.getHAID(ID)
-        else:
-            partial = "_"+ID[1:]
-        powerStateID= 'sensor.voltage' + partial
-        voltageStateID= 'sensor.power' + partial
-        energyStateID = 'sensor.energy' + partial
-        currentStateID = 'sensor.current' + partial
-
-        queries = [
-        voltageStateID,
-        currentStateID,
-        powerStateID,
-        energyStateID]
-        
-        sensor_data = []
-    
-        for entity_id in queries:
-            print(entity_id)
-            query = f"""
-            SELECT MAX(last_updated_ts), state
-            FROM {self.database}
-            WHERE entity_id = ?
-            """
-            self.curHA.execute(query, (entity_id,))
-            result = self.curHA.fetchone()
-            sensor_data.append(result[1])
-        return sensor_data #[voltage, current,power,  energy]
     
     def retrieveSocket(self,ID):
         switches = self.getDeviceSettingsInfo(ID)[0]["enabledSockets"]
