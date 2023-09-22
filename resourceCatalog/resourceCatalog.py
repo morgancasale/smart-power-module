@@ -34,13 +34,14 @@ class resourceCatalog:
         if(not IN_DOCKER): configFile_loc = "resourceCatalog/" + configFile_loc
 
         self.server = ServiceBase(
-            configFile_loc,
+            configFile_loc, isCatalog=True,
             GET=self.handleGetRequest, POST=self.handlePostRequest, 
             PUT=self.handlePutRequest, PATCH=self.handlePatchRequest,
             DELETE=self.handleDeleteRequest
         )
         self.server.start()
-        
+
+        self.server.advertise_catalog()      
     
     def handleGetRequest(self, *uri, **params):
         cmd = uri[1]

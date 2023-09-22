@@ -10,12 +10,14 @@ import dns.resolver
 IN_DOCKER = os.environ.get("IN_DOCKER", False)
 
 class ServiceBase(object):
-    def __init__(self, config_file=None, 
+    def __init__(self, config_file=None, isCatalog=False, 
                  init_REST_func=None, add_REST_funcs = None, 
                  init_MQTT_func = None, add_MQTT_funcs = None, 
                  GET=None, POST=None, PUT=None, DELETE=None, PATCH=None, 
                  Notifier=None):
-        try: 
+        try:
+            self.isCatalog = isCatalog
+
             self.clientErrorHandler = Client_Error_Handler()
             self.serverErrorHandler = Server_Error_Handler()
             self.config_file = config_file
@@ -149,7 +151,7 @@ class ServiceBase(object):
                     if(not isinstance(configs[key], str)):
                         message = "HomeAssistant " + key + " parameter must be a string"
                         raise self.clientErrorHandler.BadRequest(message=message)
-                    if (os.name != "nt"):
+                    if(not self.isCatalog):             
                         trueIP = "http://"+self.resolvemDNS(configs[key])
                         self.updateConfigFile(["CONFIG", "HomeAssistant"], {"address": trueIP})
                         self.HAIP = trueIP
@@ -188,12 +190,11 @@ class ServiceBase(object):
                     if(not isinstance(configs[key], str)):
                         raise self.clientErrorHandler.BadRequest(message="REGISTRATION " + key + " parameter must be a string")
                     if(configs["enabled"]):
-                        if(key == "catalog_mDNS" and not IN_DOCKER):
-                            if (os.name != "nt"):
-                                trueIP = "http://" + self.resolvemDNS(configs[key])
-                                print("Resolved mDNS: " + trueIP)
-                                self.generalConfigs["REGISTRATION"]["catalogAddress"] = trueIP
-                                self.updateConfigFile(["REGISTRATION"], {"catalogAddress": trueIP})
+                        if(key == "catalog_mDNS" and not IN_DOCKER and not self.isCatalog):                            
+                            trueIP = "http://" + self.resolvemDNS(configs[key])
+                            print("Resolved mDNS: " + trueIP)
+                            self.generalConfigs["REGISTRATION"]["catalogAddress"] = trueIP
+                            self.updateConfigFile(["REGISTRATION"], {"catalogAddress": trueIP})
                         if(key == "catalogAddress" and IN_DOCKER):
                             try:
                                 trueIP = "http://" + socket.gethostbyname("resourceCatalog")
@@ -318,11 +319,25 @@ class ServiceBase(object):
     
     def resolvemDNS(self, mDNS):
         try:
-            resolver = dns.resolver.Resolver()
-            resolver.nameservers = ["224.0.0.251"]
-            resolver.port = 5353
-            sol = resolver.resolve(mDNS, "A")
-            return str(sol[0].to_text())
+            if(os.name != "nt"):
+                resolver = dns.resolver.Resolver()
+                resolver.nameservers = ["224.0.0.251"]
+                resolver.port = 5353
+                sol = resolver.resolve(mDNS, "A")
+                return str(sol[0].to_text())
+            else:
+                PORT = 50000
+                MAGIC = "smartSocket" #to make sure we don't confuse or get confused by other programs
+                from socket import socket, AF_INET, SOCK_DGRAM
+
+                s = socket(AF_INET, SOCK_DGRAM) #create UDP socket
+                s.bind(('', PORT))
+                data, addr = s.recvfrom(1024) #wait for a packet
+                if data.startswith(MAGIC.encode()):
+                    IP = data[len(MAGIC):].decode()
+                    print ("got service announcement from %s", IP)
+
+                return IP
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError(message="An error occurred while resolving mDNS: \u0085\u0009" + str(e))
 
@@ -389,6 +404,28 @@ class ServiceBase(object):
                 getting devices info from Home Assistant: \u0085\u0009
             """ + str(e)
             raise Server_Error_Handler.InternalServerError(message=message)
+        
+    """To remove later"""    
+    def advertise_catalog(self):
+        PORT = 50000
+        MAGIC = "smartSocket" #to make sure we don't confuse or get confused by other programs
+
+        from time import sleep
+        from socket import socket, AF_INET, SOCK_DGRAM, SOL_SOCKET, SO_BROADCAST, gethostbyname, gethostname
+
+        s = socket(AF_INET, SOCK_DGRAM) #create UDP socket
+        s.bind(('', 0))
+        s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1) #this is a broadcast socket
+        my_ip= gethostbyname(gethostname()) #get our IP. Be careful if you have multiple network interfaces or IPs
+
+        while True:
+            data = MAGIC + my_ip
+            data = data.encode()
+            temp = "<broadcast>"
+            temp = temp.encode()
+            s.sendto(data, (temp, PORT))
+            print ("sent service announcement")
+            sleep(5)
 
 if __name__ == "__main__":
     Service = ServiceBase()
