@@ -1,0 +1,56 @@
+{
+    "CONFIG": {
+        "activatedMethod": {
+            "MQTT": false,
+            "REST": true
+        },
+        "HomeAssistant": {
+            "enabled": false,
+            "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU", 
+            "autoHA" : false,
+            "address" : "http://192.168.2.163",
+            "port" : 8123
+        }
+    },
+    "REST": {
+        "endPointID": "E1",
+        "endPointName": "resourceCatalogServer",
+        "IPAddress": "127.0.0.1",
+        "port": 8099,
+        "CRUDMethods": {
+            "GET": true,
+            "POST": true,
+            "PUT": true,
+            "DELETE": true,
+            "PATCH": true
+        }
+    },
+    "MQTT": {
+        "endPointID": null,
+        "endPointName": null,
+        "brokerAddress": "",
+        "brokerPort": 1883,
+        "subPub": {
+            "sub": false,
+            "pub": false
+        },
+        "clientID": "string",
+        "MQTTTopics": {
+            "sub": [
+                "string"
+            ],
+            "pub": [
+                "string"
+            ]
+        },
+        "QOS": 0
+    },
+    "REGISTRATION": {
+        "enabled": false,
+        "serviceID": "S1",
+        "serviceName": "resourceCatalog",
+        "catalogAddress": "http://192.168.2.145",
+        "catalogPort": 8099,
+        "T_Registration": 0.1
+    }
+}

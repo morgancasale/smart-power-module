@@ -62,24 +62,6 @@ class ModuleConsumptionControl():
         except HTTPError as e:
             raise e
 
-    def prevValuesCheck(self, moduleID):
-        # Retrieve the N largest values of the timestamp column for the given moduleID
-        partial=moduleID[1:]
-        powerStateID= 'sensor.power_' + partial
-        self.curHA.execute("""
-            SELECT entity_id, state FROM (
-                SELECT entity_id, state, ROW_NUMBER() 
-                OVER (ORDER BY last_updated_ts DESC) AS row_num
-                FROM {}
-                WHERE entity_id = ?
-            )
-            WHERE row_num <= 5 """.format(self.database), (powerStateID,))
-        results = self.curHA.fetchall()
-        
-        #for result in results:
-        #    print(f"ID: {result[0]}, timestamp: {result[1]}")
-        return results
-
     def lastValueCheck(self, HAID):
         powerStateID = 'sensor.power' + HAID
 
@@ -95,19 +77,6 @@ class ModuleConsumptionControl():
             return float(result)
         else:
             return None 
-    
-    ''' 
-    def moduleInfo(self):
-        #this method retrieves the status of the module, if the module is off
-        #there is no need to check for standBy power
-        self.CatCu#r.execute("""SELECT *
-                        FROM {}""".format(self.modules_and_switches))
-        result = self.CatCu#r.fetchall()
-        if result is not None:
-            return (result)
-        else:
-            return None        
-    '''
               
     def getHouseDevList(self, houseID="*"):
         try:
