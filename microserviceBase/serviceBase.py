@@ -149,9 +149,10 @@ class ServiceBase(object):
                     if(not isinstance(configs[key], str)):
                         message = "HomeAssistant " + key + " parameter must be a string"
                         raise self.clientErrorHandler.BadRequest(message=message)
-                    trueIP = "http://"+self.resolvemDNS(configs[key])
-                    self.updateConfigFile(["CONFIG", "HomeAssistant"], {"address": trueIP})
-                    self.HAIP = trueIP
+                    if (os.name != "nt"):
+                        trueIP = "http://"+self.resolvemDNS(configs[key])
+                        self.updateConfigFile(["CONFIG", "HomeAssistant"], {"address": trueIP})
+                        self.HAIP = trueIP
                 case "address":
                     cond = configs[key] != None
                     cond &= not isinstance(configs[key], str)
@@ -188,10 +189,11 @@ class ServiceBase(object):
                         raise self.clientErrorHandler.BadRequest(message="REGISTRATION " + key + " parameter must be a string")
                     if(configs["enabled"]):
                         if(key == "catalog_mDNS" and not IN_DOCKER):
-                            trueIP = "http://" + self.resolvemDNS(configs[key])
-                            print("Resolved mDNS: " + trueIP)
-                            self.generalConfigs["REGISTRATION"]["catalogAddress"] = trueIP
-                            self.updateConfigFile(["REGISTRATION"], {"catalogAddress": trueIP})
+                            if (os.name != "nt"):
+                                trueIP = "http://" + self.resolvemDNS(configs[key])
+                                print("Resolved mDNS: " + trueIP)
+                                self.generalConfigs["REGISTRATION"]["catalogAddress"] = trueIP
+                                self.updateConfigFile(["REGISTRATION"], {"catalogAddress": trueIP})
                         if(key == "catalogAddress" and IN_DOCKER):
                             try:
                                 trueIP = "http://" + socket.gethostbyname("resourceCatalog")
