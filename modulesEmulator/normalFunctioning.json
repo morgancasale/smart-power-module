@@ -1,0 +1,13 @@
+{
+    "D0": {"min": 100, "max": 110, "voltage": 230},
+    "D1": {"min": 500, "max": 550, "voltage": 230},
+    "D2": {"min": 600, "max": 620, "voltage": 230},
+    "D3": {"min": 0, "max": 1, "voltage": 230},
+    "D4": {"min": 50, "max": 100, "voltage": 230},
+    "D5": {"min": 1500, "max": 1550, "voltage": 230},
+    "D6": {"min": 0, "max": 1, "voltage": 230},
+    "D7": {"min": 0, "max": 1, "voltage": 230},
+    "D8": {"min": 150, "max": 200, "voltage": 230},
+    "D9": {"min": 0, "max": 1, "voltage": 230},
+    "D10": {"min": 0, "max": 1, "voltage": 230}
+} 

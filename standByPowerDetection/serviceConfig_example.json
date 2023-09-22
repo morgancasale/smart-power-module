@@ -9,7 +9,8 @@
             "enabled": false,
             "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU",
             "autoHA": false,
-            "address": "http://192.168.2.163",
+            "HA_mDNS": "smartsocket.local",
+            "address": "http://192.168.2.144",
             "port": 8123,
             "baseTopic": "homeassistant",
             "system": "smartSocket"
@@ -52,10 +53,16 @@
         "QOS": 0
     },
     "REGISTRATION": {
+<<<<<<<< HEAD:standByPowerDetection/serviceConfig_example.json
         "enabled": false,
         "serviceID": "SODE2NT",
+========
+        "enabled": true,
+        "serviceID": "SONLINETRACKER",
+>>>>>>>> origin/Morgan:onlineTracker/onlineTracker.json
         "serviceName": "serviceTracker",
-        "catalogAddress": "http://192.168.2.145",
+        "catalog_mDNS": "smartsocket.local",
+        "catalogAddress": "http://192.168.2.144",
         "catalogPort": 8099,
         "T_Registration": 1
     }

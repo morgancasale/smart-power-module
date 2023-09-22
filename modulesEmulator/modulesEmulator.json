@@ -8,15 +8,16 @@
             "enabled": false,
             "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU", 
             "autoHA" : false,
+            "HA_mDNS": "smartsocket.local",
             "address" : "http://192.168.2.163",
             "port" : 8123
         }
     },
     "REST": {
-        "endPointID": "E1",
-        "endPointName": "resourceCatalogServer",
-        "IPAddress": "127.0.0.1",
-        "port": 8099,
+        "endPointID": null,
+        "endPointName": null,
+        "IPAddress": null,
+        "port": null,
         "CRUDMethods": {
             "GET": true,
             "POST": true,
@@ -26,8 +27,8 @@
         }
     },
     "MQTT": {
-        "endPointID": "fghjhgf",
-        "endPointName": "dfghtr",
+        "endPointID": "EMODULESEMULATOR",
+        "endPointName": "modulesEmulator",
         "autoBroker": false,
         "brokerAddress": "broker.emqx.io",
         "brokerPort": 1883,
@@ -37,10 +38,10 @@
             "sub": false,
             "pub": true
         },
-        "clientID": "1sdfe",
+        "clientID": "modulesEmulator",
         "MQTTTopics": {
             "sub": [
-                "/smartSocket/data"
+                "/smartSocket/control"
             ],
             "pub": [
                 "/smartSocket/data"
@@ -49,15 +50,11 @@
         "QOS": 0
     },
     "REGISTRATION": {
-        "enabled": false,
-        "serviceID": "S1",
-<<<<<<< HEAD:dataGenerationAndElimination/res_catalog_serviceConfig.json
-        "serviceName": "ResourceCatalog",
+        "enabled": true,
+        "serviceID": "SMODULESEMULATOR",
+        "serviceName": "modulesEmulator",
+        "catalog_mDNS": "smartsocket.local",
         "catalogAddress": "http://127.0.0.1",
-=======
-        "serviceName": "resourceCatalog",
-        "catalogAddress": "http://192.168.2.145",
->>>>>>> origin/Morgan:microserviceBase/serviceConfig_example.json
         "catalogPort": 8099,
         "T_Registration": 0.1
     }
