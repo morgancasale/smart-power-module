@@ -20,7 +20,7 @@ class ApplianceTypeCard extends LitElement {
         };
     }
 
-    catalogAddress = "192.168.2.145";
+    catalogAddress = "127.0.0.1";
     catalogPort = 8099;
     
     constructor(){

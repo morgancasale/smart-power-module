@@ -12,7 +12,7 @@ import "https://cdn.skypack.dev/@material/web@1.0.0-pre.4/radio/radio.js";
 
 //import "../ha-frontend/src/panels/lovelace/entity-rows/hui-input-datetime-entity-row"
 
-import "./configs.js";
+//import "./configs.js";
 
 class SchedulerCard extends LitElement {
   static get properties() {
@@ -27,8 +27,8 @@ class SchedulerCard extends LitElement {
     };
   }
 
-  //catalogAddress = "192.168.2.145";
-  //catalogPort = 8099;
+  catalogAddress = "127.0.0.1";
+  catalogPort = 8099;
 
   constructor(){
     super();

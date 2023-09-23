@@ -9,7 +9,7 @@ import "https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js";
 
 import "./socket-settings.js";
 import "./house-settings.js";
-import "./configs.js";
+//import "./configs.js";
 
 class MainPage extends LitElement {
     static get properties() {
@@ -33,8 +33,8 @@ class MainPage extends LitElement {
         this.baseState = window.location.pathname + window.location.search;
     }
 
-    //catalogAddress = "192.168.2.145";
-    //catalogPort = 8099;
+    catalogAddress = "127.0.0.1";
+    catalogPort = 8099;
 
     onHashChange(){
         var main_page = window.document.querySelector("body");
