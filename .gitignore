@@ -25,3 +25,6 @@ test.py
 /homeAssistant/data/home-assistant.log
 /homeAssistant/data/home-assistant.log.1
 
+/mosquitto/data
+/mosquitto/log
+
