@@ -16,3 +16,12 @@ test.py
 
 /Data_DB
 
+/homeAssistant/data/.cloud
+/homeAssistant/data/.storage
+/homeAssistant/data/deps
+/homeAssistant/data/lsiopy
+/homeAssistant/data/www
+/homeAssistant/data/.HA_VERSION
+/homeAssistant/data/home-assistant.log
+/homeAssistant/data/home-assistant.log.1
+

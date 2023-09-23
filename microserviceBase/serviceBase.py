@@ -151,7 +151,7 @@ class ServiceBase(object):
                     if(not isinstance(configs[key], str)):
                         message = "HomeAssistant " + key + " parameter must be a string"
                         raise self.clientErrorHandler.BadRequest(message=message)
-                    if(not self.isCatalog):             
+                    if(not self.isCatalog and not IN_DOCKER):             
                         trueIP = "http://"+self.resolvemDNS(configs[key])
                         self.updateConfigFile(["CONFIG", "HomeAssistant"], {"address": trueIP})
                         self.HAIP = trueIP
@@ -197,6 +197,7 @@ class ServiceBase(object):
                             self.updateConfigFile(["REGISTRATION"], {"catalogAddress": trueIP})
                         if(key == "catalogAddress" and IN_DOCKER):
                             try:
+                                print("ciao")
                                 trueIP = "http://" + socket.gethostbyname("resourceCatalog")
                                 print("Resolved catalog: " + trueIP)
                                 self.generalConfigs["REGISTRATION"]["catalogAddress"] = trueIP

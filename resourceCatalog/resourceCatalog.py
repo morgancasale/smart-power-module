@@ -203,7 +203,7 @@ class resourceCatalog:
                 
                 case "setDeviceSettings":
                     for DeviceSettingsData in params:
-                        entry = DeviceSettings(DeviceSettingsData, newSettings = True)
+                        entry = DeviceSettings(self.DBPath, DeviceSettingsData, newSettings = True)
                         entry.set2DB(self.DBPath)
                     return "Device settings update was successful"
                 
