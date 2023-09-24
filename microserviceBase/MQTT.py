@@ -179,8 +179,11 @@ class MQTTServer(Thread):
         self.Client.loop_stop()
         self.Client.disconnect()
 
-
-
+    def notifyHA(self, msg, talk=False):
+        topic = "socket_settings/notifier"
+        msg = json.dumps(msg)
+        self.Publish(topic, msg, talk = talk)
+    
     def updateConfigFile(self, dict):
         try:
 
@@ -298,10 +301,6 @@ class MQTTServer(Thread):
                self.Subscribe(newtopic)
         else:
             raise self.clientErrorHandler.BadRequest("Error subscriber not activated")
-
-
-
-
 
     def checkParams(self):
         if (not sorted(self.configParams) == sorted(self.configs.keys())):
