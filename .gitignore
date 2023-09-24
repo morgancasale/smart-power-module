@@ -18,6 +18,8 @@ test.py
 
 /maxPowerControl/testDB.db-*
 
+/homeAssistant/data/.vscode-server
+/homeAssistant/data/.ash_history
 /homeAssistant/data/.cloud
 /homeAssistant/data/.storage
 /homeAssistant/data/deps
@@ -30,6 +32,7 @@ test.py
 /homeAssistant/data/testDB.db
 /homeAssistant/HADB/HADB.db-*
 /homeAssistant/HADB/HADB.db.*
+/homeAssistant/data/.homeassistant
 
 /mosquitto/data
 /mosquitto/log
