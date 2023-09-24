@@ -1,10 +1,12 @@
-automation SS_notifier:
-  - alias: SS_notifier
+- id: SS_notifier
+  alias: SS_notifier
+  
   trigger:
     - platform: mqtt
       topic: socket_settings/notifier
+    
   action:
-    - service: persistent_notification.create
-    d ata_template:
-        title: "{{ trigger.payload.title }}"
-        message: "{{ trigger.payload.msg }}"
+    service: persistent_notification.create
+    data:
+      title: "{{ trigger.payload_json.title }}"
+      message: "{{ trigger.payload_json.message }}"
