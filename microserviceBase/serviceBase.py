@@ -148,13 +148,18 @@ class ServiceBase(object):
                         raise self.clientErrorHandler.BadRequest(message="HomeAssistant " + key + " parameter must be a string")
                     self.HAToken = configs[key]
                 case "HA_mDNS":
+                    trueIP = ""
                     if(not isinstance(configs[key], str)):
                         message = "HomeAssistant " + key + " parameter must be a string"
                         raise self.clientErrorHandler.BadRequest(message=message)
                     if(not self.isCatalog and not IN_DOCKER):             
-                        trueIP = "http://"+self.resolvemDNS(configs[key])
-                        self.updateConfigFile(["CONFIG", "HomeAssistant"], {"address": trueIP})
-                        self.HAIP = trueIP
+                        trueIP = "http://" + self.resolvemDNS(configs[key])
+                    if(IN_DOCKER):
+                        #trueIP = "http://" + socket.gethostbyname("homeassistant")
+                        trueIP = "127.0.0.1"
+
+                    self.updateConfigFile(["CONFIG", "HomeAssistant"], {"address": trueIP})
+                    self.HAIP = trueIP
                 case "address":
                     cond = configs[key] != None
                     cond &= not isinstance(configs[key], str)

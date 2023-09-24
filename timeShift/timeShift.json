@@ -5,7 +5,7 @@
             "REST": false
         },
         "HomeAssistant": {
-            "enabled": false,
+            "enabled": true,
             "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU",
             "autoHA": false,
             "HA_mDNS": "smartsocket.local",
