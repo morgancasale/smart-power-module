@@ -29,7 +29,7 @@
     "MQTT": {
         "endPointID": "EMODULESEMULATOR",
         "endPointName": "modulesEmulator",
-        "autoBroker": false,
+        "autoBroker": true,
         "brokerAddress": "broker.emqx.io",
         "brokerPort": 1883,
         "username": "",

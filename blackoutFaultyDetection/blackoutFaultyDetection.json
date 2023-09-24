@@ -31,7 +31,7 @@
     "MQTT": {
         "endPointID": "EBLACKOUTFAULTY",
         "endPointName": "blackoutFaultyDetection",
-        "autoBroker": false,
+        "autoBroker": true,
         "brokerAddress": "broker.emqx.io",
         "brokerPort": 1883,
         "username": "",

@@ -3,8 +3,11 @@ from .Error_Handler import *
 import time
 import paho.mqtt.client as MQTT
 import requests
+import os
 
 from threading import Thread, Event, current_thread
+
+IN_DOCKER = os.environ.get("IN_DOCKER", False)
 
 class MQTTServer(Thread):
     def __init__(self, threadID, threadName, events, configs,generalConfigs,configs_file, init_func=None, Notifier=None):
@@ -48,8 +51,11 @@ class MQTTServer(Thread):
 
 
                     broker_AddPort = response.json()[0]
-
-                    self.broker = broker_AddPort["IPAddress"]
+                    
+                    if(not IN_DOCKER):
+                        self.broker = broker_AddPort["IPAddress"]
+                    else:
+                        self.broker = "172.20.0.10"
                     self.brokerPort = broker_AddPort["port"]
                     self.username = broker_AddPort["MQTTUser"]
                     self.password = broker_AddPort["MQTTPassword"]
@@ -298,7 +304,7 @@ class MQTTServer(Thread):
 
 
     def checkParams(self):
-        if (not self.configParams == sorted(self.configs.keys())):
+        if (not sorted(self.configParams) == sorted(self.configs.keys())):
             raise self.clientErrorHandler.BadRequest(
                 "Missing parameters in config file")
 

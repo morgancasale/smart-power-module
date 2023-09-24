@@ -197,7 +197,6 @@ class ServiceBase(object):
                             self.updateConfigFile(["REGISTRATION"], {"catalogAddress": trueIP})
                         if(key == "catalogAddress" and IN_DOCKER):
                             try:
-                                print("ciao")
                                 trueIP = "http://" + socket.gethostbyname("resourceCatalog")
                                 print("Resolved catalog: " + trueIP)
                                 self.generalConfigs["REGISTRATION"]["catalogAddress"] = trueIP
