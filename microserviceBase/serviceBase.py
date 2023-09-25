@@ -7,6 +7,9 @@ from .Error_Handler import *
 from threading import Event
 import dns.resolver
 
+import sqlite3 as sq
+import pandas as pd
+
 IN_DOCKER = os.environ.get("IN_DOCKER", False)
 
 class ServiceBase(object):
@@ -47,6 +50,11 @@ class ServiceBase(object):
 
             if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"] and self.generalConfigs["CONFIG"]["HomeAssistant"]["autoHA"]):
                 self.getHAEndpoint()
+                
+                if(IN_DOCKER): 
+                    self.HADB_path = "DB/HADB.db"
+                else:
+                    self.HADB_path = "homeAssistant/HADB/HADB.db"   
             
             # Wait for the catalog to be ready
             cond = bool(IN_DOCKER)
@@ -367,6 +375,29 @@ class ServiceBase(object):
             s.sendto(data, (temp, PORT))
             print ("sent service announcement")
             sleep(5)
+
+    def getMetaHAIDs(self, deviceID):
+        if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
+            try:
+                conn = sq.connect(self.HADB_path)
+
+                deviceID = deviceID.lower()
+                query = "SELECT * FROM states_meta WHERE entity_id LIKE '%"+deviceID+"%'"
+                selectedData = pd.read_sql_query(query, conn).to_dict(orient="records")
+                conn.close()
+
+                result = []
+                for data in selectedData:
+                    result.append({
+                        "metaID": data["metadata_id"],
+                        "entityID": data["entity_id"].split(deviceID+"_")[1]
+                    })
+                
+                return result
+            except Exception as e:
+                raise self.serverErrorHandler.InternalServerError(message="An error occurred while getting Home Assistant IDs: \u0085\u0009" + str(e))
+        else:
+            raise self.clientErrorHandler.BadRequest(message="Home Assistant is not enabled")
 
 if __name__ == "__main__":
     Service = ServiceBase()

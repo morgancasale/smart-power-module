@@ -319,7 +319,7 @@ class SocketHandler():
             if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
                 SocketHandler.regSocket_toHA(self, system, baseTopic, deviceID, socketData["masterNode"])
 
-                deviceData["HAID"] = json.dumps(self.getMetaHAIDs(deviceID))
+                deviceData["HAID"] = None
                 
                 response = requests.put(url, headers=headers, data=json.dumps(socketData))
                 if(response.status_code != 200):
