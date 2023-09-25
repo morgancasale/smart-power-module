@@ -369,33 +369,33 @@ class resourceCatalog:
         except Exception as e:
             raise Server_Error_Handler.InternalServerError(message="An error occurred while handling the DELETE request:\u0085\u0009" + str(e))   
 
-    def reconstructJson(self, table, selectedData, requestEntry, verbose = False):
+    def reconstructJson(DBPath, table, selectedData, requestEntry, verbose = False):
         reconstructedData = []
         try:
             for sel in selectedData:
                 match table:
                     case "Houses":
-                        reconstructedData.append(House.DB_to_dict(self.DBPath, sel, verbose=verbose))
+                        reconstructedData.append(House.DB_to_dict(DBPath, sel, verbose=verbose))
                     case "HouseSettings":
-                        reconstructedData.append(HouseSettings.DB_to_dict(self.DBPath, sel))
+                        reconstructedData.append(HouseSettings.DB_to_dict(DBPath, sel))
                     case "Services":
-                        reconstructedData.append(Service.DB_to_dict(self.DBPath, sel, verbose=verbose))
+                        reconstructedData.append(Service.DB_to_dict(DBPath, sel, verbose=verbose))
                     case "Users":
-                        reconstructedData.append(User.DB_to_dict(self.DBPath, sel, verbose=verbose))
+                        reconstructedData.append(User.DB_to_dict(DBPath, sel, verbose=verbose))
                     case "Devices":
-                        reconstructedData.append(Device.DB_to_dict(self.DBPath, sel, verbose=verbose))
+                        reconstructedData.append(Device.DB_to_dict(DBPath, sel, verbose=verbose))
                     case "Sockets":
-                        reconstructedData.append(Socket.DB_to_dict(self.DBPath, sel))
+                        reconstructedData.append(Socket.DB_to_dict(DBPath, sel))
                     case "Resources":
-                        reconstructedData.append(Resource.DB_to_dict(self.DBPath, sel, requestEntry))
+                        reconstructedData.append(Resource.DB_to_dict(DBPath, sel, requestEntry))
                     case "EndPoints":
-                        reconstructedData.append(EndPoint.DB_to_dict(self.DBPath, sel))
+                        reconstructedData.append(EndPoint.DB_to_dict(DBPath, sel))
                     case "DeviceSettings":
-                        reconstructedData.append(DeviceSettings.DB_to_dict(self.DBPath, sel))
+                        reconstructedData.append(DeviceSettings.DB_to_dict(DBPath, sel))
                     case "DeviceScheduling":
-                        reconstructedData.append(DeviceSchedule.DB_to_dict(self.DBPath, sel))
+                        reconstructedData.append(DeviceSchedule.DB_to_dict(DBPath, sel))
                     case "AppliancesInfo":
-                        reconstructedData.append(Appliance.DB_to_dict(self.DBPath, sel))
+                        reconstructedData.append(Appliance.DB_to_dict(DBPath, sel))
                     case _:
                         if("_conn" in table):
                             reconstructedData.append(sel)
@@ -460,7 +460,7 @@ class resourceCatalog:
                 message += "\" with key " + keyName + " and values " + "[\"" + "\", \"".join(keyValue) + "\"]"
                 raise Client_Error_Handler.NotFound(message=message)"""
             else:
-                reconstructedData = resourceCatalog.reconstructJson(table, selectedData, entry, verbose)
+                reconstructedData = resourceCatalog.reconstructJson(self.DBPath, table, selectedData, entry, verbose)
             
             return json.dumps(reconstructedData)
         except HTTPError as e:
