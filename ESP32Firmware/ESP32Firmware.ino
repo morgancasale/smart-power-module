@@ -37,11 +37,11 @@ void onRecMeshMsgBridge(uint32_t from, String &data) {
   }
 }
 
-void setSwitchState(int states){
-  digitalWrite (LED_BUILTIN, states[1]);
+void setSwitchState(JSONVar states){
+  digitalWrite (LED_BUILTIN, (int)states[1]);
   for(int i=0; i<3; i++){
     if((int)states[i] != -1){
-      SwitchStates[i] = states[i];
+      SwitchStates[i] = (int)states[i];
     }
   }
 }
@@ -119,7 +119,7 @@ void getRole(){
   Serial.println(masterNode);
 
   if(autoBroker){
-    if(!response["IN_DOCKER"]) mqttBroker = fixJSONString(response["brokerIP"]);
+    if(JSON.stringify(response["IN_DOCKER"]) == "No") mqttBroker = fixJSONString(response["brokerIP"]);
     else mqttBroker = connectorIP;
     mqttPort = response["brokerPort"];
     mqttUSR = fixJSONString(response["brokerUser"]);
