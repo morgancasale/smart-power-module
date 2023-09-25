@@ -377,6 +377,15 @@ class ServiceBase(object):
             sleep(5)
 
     def getMetaHAIDs(self, deviceID):
+        """
+            Returns a list of dictionaries containing the metadata IDs 
+            and the corresponding entity IDs of the specified device.
+            The list will be of the following form:
+            >>> [{
+            >>>     "metaID": "metadata_id",
+            >>>     "entityID": "entity_id"
+            >>> }, ...]
+        """
         if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
             try:
                 conn = sq.connect(self.HADB_path)
