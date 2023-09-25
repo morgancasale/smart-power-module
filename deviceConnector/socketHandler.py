@@ -319,12 +319,14 @@ class SocketHandler():
             if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
                 SocketHandler.regSocket_toHA(self, system, baseTopic, deviceID, socketData["masterNode"])
 
-                """HAID = SocketHandler.getHAID(HAIP, HAPort, HAToken, deviceID)
+                self.MQTTService.retrieveHAID(deviceID)
+                time.sleep(5)
+                HAID = self.MQTTService.HAID
                 deviceData["HAID"] = HAID
                 
                 response = requests.put(url, headers=headers, data=json.dumps(socketData))
                 if(response.status_code != 200):
-                    raise HTTPError(response.status_code, str(response.text))"""
+                    raise HTTPError(response.status_code, str(response.text))
             
             return socketData
         except HTTPError as e:
