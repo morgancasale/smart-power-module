@@ -29,9 +29,5 @@ recorder:
   db_url : sqlite:////DB/HADB.db
   include:
     entity_globs:
-      - sensor.voltage*
-      - sensor.current*
-      - sensor.power*
-      - sensor.energy*
-      - switch.left_plug*
-      - switch.center_plug*
+      - sensor.smart_socket*
+      - switch.smart_socket*

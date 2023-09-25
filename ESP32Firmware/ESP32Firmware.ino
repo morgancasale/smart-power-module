@@ -32,7 +32,7 @@ void onRecMeshMsgBridge(uint32_t from, String &data) {
 
   unsigned long now = millis();
   if(now - prevTime > 10000){
-    sendData2MQTT();
+    sendMasterData2MQTT();
     prevTime = now;
   }
 }
@@ -76,8 +76,8 @@ void sendData2Mesh(){
   sendMeshMsg(JSON.stringify(payload));
 }
 
-void sendData2MQTT(){
-  float temp = random(23, 24)+random(0,100)/100;
+void sendMasterData2MQTT(){
+  float temp = random(230, 240)/10+random(0,100)/100;
 
   JSONVar payload;
   payload["deviceID"] = deviceID;
@@ -169,7 +169,7 @@ void loop2(void* pvParameters){
 
           /*unsigned long now = millis();
           if(now-prevTime>10000){
-            sendData2MQTT();
+            sendMasterData2MQTT();
             prevTime = now;
           }*/
         }
