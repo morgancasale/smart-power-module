@@ -105,7 +105,7 @@ class MQTTServer(Thread):
 
         self.Client.loop_start()
 
-        if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
+        if(self.configs["subPub"]["sub"] and self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
             self.HAID = None
             self.Subscribe("homeassistant/HAID", self.retrieveHAID)
         self.events["stopEvent"].wait()

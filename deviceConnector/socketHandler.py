@@ -412,7 +412,7 @@ class SocketHandler():
                     if(params["autoBroker"]):
                         broker = self.getMQTTBroker()
                         out["brokerIP"] = broker["IPAddress"]
-                        if(out["brokerIP"] == "127.0.0.1"):
+                        if(not IN_DOCKER and out["brokerIP"] == "127.0.0.1"):
                             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                             s.settimeout(0)
                             s.connect(('10.254.254.254', 1))
@@ -420,6 +420,7 @@ class SocketHandler():
                         out["brokerPort"] = broker["port"]
                         out["brokerUser"] = broker["MQTTUser"]
                         out["brokerPassword"] = broker["MQTTPassword"]
+                        out["IN_DOCKER"] = IN_DOCKER
 
                     if(params["autoTopics"]):
                         topics = SocketHandler.getSocketTopics(catalogAddress, catalogPort)
