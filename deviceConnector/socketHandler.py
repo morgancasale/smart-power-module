@@ -1,6 +1,7 @@
 import time
 import json
 import requests
+import socket
 
 import os
 import sys
@@ -318,12 +319,12 @@ class SocketHandler():
             if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
                 SocketHandler.regSocket_toHA(self, system, baseTopic, deviceID, socketData["masterNode"])
 
-                HAID = SocketHandler.getHAID(HAIP, HAPort, HAToken, deviceID)
+                """HAID = SocketHandler.getHAID(HAIP, HAPort, HAToken, deviceID)
                 deviceData["HAID"] = HAID
                 
                 response = requests.put(url, headers=headers, data=json.dumps(socketData))
                 if(response.status_code != 200):
-                    raise HTTPError(response.status_code, str(response.text))
+                    raise HTTPError(response.status_code, str(response.text))"""
             
             return socketData
         except HTTPError as e:
@@ -409,6 +410,11 @@ class SocketHandler():
                     if(params["autoBroker"]):
                         broker = self.getMQTTBroker()
                         out["brokerIP"] = broker["IPAddress"]
+                        if(out["brokerIP"] == "127.0.0.1"):
+                            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                            s.settimeout(0)
+                            s.connect(('10.254.254.254', 1))
+                            out["brokerIP"] = s.getsockname()[0]
                         out["brokerPort"] = broker["port"]
                         out["brokerUser"] = broker["MQTTUser"]
                         out["brokerPassword"] = broker["MQTTPassword"]
@@ -566,7 +572,7 @@ class SocketHandler():
                 sensor.update(devicePayload)
                 sensor["unique_id"] = sensor["unique_id"] + "_" + sensor["device_class"]
                 discTopic = baseTopic + "sensor/" + system + "/" + deviceID + "_" + sensor["device_class"] + "/config" # homeassistant/sensor/smartSocket/
-                print(self.MQTTService.Client.publish(discTopic, json.dumps(sensor), retain=True))
+                print(self.MQTTService.Publish(discTopic, json.dumps(sensor), retain=True))
                 time.sleep(0.1)
                 
 
@@ -576,7 +582,7 @@ class SocketHandler():
                 switch.update(devicePayload)
                 switch["unique_id"] = switch["unique_id"] + "_" + str(i)
                 discTopic = baseTopic + "switch/" + system + "/" + deviceID + "_" + str(i) + "/config"
-                print(self.MQTTService.Client.publish(discTopic, json.dumps(switch), retain=True))
+                print(self.MQTTService.Publish(discTopic, json.dumps(switch), retain=True))
                 i+=1
                 
         except HTTPError as e:

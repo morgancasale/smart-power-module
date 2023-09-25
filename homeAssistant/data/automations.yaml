@@ -15,24 +15,13 @@
   alias: getHAID
   trigger:
     - platform: mqtt
-      topic: socket_settings/getHAID
+      topic: homeassistant/getHAID
+  variables:
+    HAID: >-
+      {% from 'getHAID.jinja' import getHAID %}
+      {{ getHAID(trigger.payload) }}
   action:
     - service: mqtt.publish
-      data:
-        topic: socket_settings/HAID
-        payload: >
-          {% set devices = states | map(attribute="entity_id") | map("device_id") | unique | reject("eq",None) | list %}
-          {%- set ns = namespace(devices = []) %}
-          {%- for device in devices %}
-          {%- set ids = (device_attr(device, "identifiers") | list)[0] | list -%}
-          {%- if "DNDUxMj" in ids %}
-              {%- set entities = device_entities(device) | list %}
-              {%- if entities %}
-              {%- set ns.devices = ns.devices + 
-              [ {
-                  "name": device_attr(device, "name"), "entities" : entities, "identifiers" : ids
-                  } ] %}
-              {%- endif %}
-          {%- endif %}
-          {%- endfor %}
-          {{ ns.devices }}
+      data_template:
+        topic: "homeassistant/HAID"
+        payload: "{{ HAID }}"
