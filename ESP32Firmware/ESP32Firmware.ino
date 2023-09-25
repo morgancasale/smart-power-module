@@ -31,7 +31,7 @@ void onRecMeshMsgBridge(uint32_t from, String &data) {
   }
 
   unsigned long now = millis();
-  if(now-prevTime>10000){
+  if(now - prevTime > 10000){
     sendData2MQTT();
     prevTime = now;
   }
@@ -119,7 +119,8 @@ void getRole(){
   Serial.println(masterNode);
 
   if(autoBroker){
-    mqttBroker = fixJSONString(response["brokerIP"]);
+    if(!response["IN_DOCKER"]) mqttBroker = fixJSONString(response["brokerIP"]);
+    else mqttBroker = connectorIP;
     mqttPort = response["brokerPort"];
     mqttUSR = fixJSONString(response["brokerUser"]);
     mqttPWD = fixJSONString(response["brokerPassword"]);
