@@ -93,11 +93,12 @@ class MQTTServer(Thread):
         payload = mqttMsg.payload.decode()
         text = payload.replace("\'", "\"")
         response = json.loads(text)
-
-        if(not "_" in response[0]["entities"][0]): # If the device is the first one then it has no "HAID"
-            self.HAID = 0                          # So if return 0 then no "HAID" is needed
-        else:
-            self.HAID = response[0]["entities"][0].split("_")[1]
+        
+        if(len(response) > 0):
+            if(not "_" in response[0]["entities"][0]): # If the device is the first one then it has no "HAID"
+                self.HAID = 0                          # So if return 0 then no "HAID" is needed
+            else:
+                self.HAID = response[0]["entities"][0].split("_")[1]
 
     def openMQTTServer(self):
         self.Client.username_pw_set(username=self.username, password=self.password)
