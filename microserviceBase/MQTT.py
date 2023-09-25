@@ -78,11 +78,7 @@ class MQTTServer(Thread):
             self.Client = MQTT.Client(self.clientID, True)
 
             self.Client.on_connect = self.OnConnect
-            self.Client.on_message = self.OnMessageReceived
-
-            if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
-                self.HAID = None
-                self.Client.message_callback_add("homessistant/HAID", self.requestHAID)
+            #self.Client.on_message = self.OnMessageReceived
 
         except HTTPError as e:
             self.events["stopEvent"].set()
@@ -93,9 +89,9 @@ class MQTTServer(Thread):
                 "An error occurred while enabling MQTT server: \u0085\u0009" + str(e)
             )
         
-    def retrieveHAID(self, topic, payload):
-        print("Received HAID from topic: %s" % topic)
-        text = payload.text.replace("\'", "\"")
+    def retrieveHAID(self, a, b, mqttMsg):
+        payload = mqttMsg.payload.decode()
+        text = payload.replace("\'", "\"")
         response = json.loads(text)
 
         if(not "_" in response[0]["entities"][0]): # If the device is the first one then it has no "HAID"
@@ -108,6 +104,10 @@ class MQTTServer(Thread):
         self.Client.connect(self.broker, self.brokerPort)
 
         self.Client.loop_start()
+
+        if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
+            self.HAID = None
+            self.Subscribe("homeassistant/HAID", self.retrieveHAID)
         self.events["stopEvent"].wait()
         self.stop()
 
@@ -158,7 +158,7 @@ class MQTTServer(Thread):
             "Publisher is not active for this service")
 
 
-    def Subscribe(self, topics):
+    def Subscribe(self, topics, callback = None):
         while(not self.connected):
             time.sleep(5)
         if(not isinstance(topics, list)):
@@ -170,11 +170,16 @@ class MQTTServer(Thread):
             for topic in topics:
                 self.checkTopic(topic,"sub")
                 if (len(topics) ==1):
-                        MQTTTopics = (topic, 2)
-                        self.topics = topic
+                    MQTTTopics = (topic, 2)
+                    self.topics = topic
                 else:
-                        MQTTTopics.append((topic, 2))
-                        self.topics.append(topic)
+                    MQTTTopics.append((topic, 2))
+                    self.topics.append(topic)
+                
+                if(callback is None):
+                    self.Client.message_callback_add(topic, self.OnMessageReceived)
+                else:
+                    self.Client.message_callback_add(topic, callback)
             print("subscribing '%d' at topic '%s'" % (2,   MQTTTopics ))
             self.Client.subscribe(MQTTTopics)
             self.isSub = True
@@ -208,16 +213,9 @@ class MQTTServer(Thread):
         """
 
         try:
-            topic = "homessistant/getHAID"
-            self.Publish(topic, deviceID)
+            topic = "homeassistant/getHAID"
+            self.Publish(topic, deviceID, retain=False)
 
-            text = response.text.replace("\'", "\"")
-            response = json.loads(text)
-
-            if(not "_" in response[0]["entities"][0]): # If the device is the first one then it has no "HAID"
-                return 0                               # So if return 0 then no "HAID" is needed
-            else:
-                return response[0]["entities"][0].split("_")[1]
         except HTTPError as e:
             message = """
                 An error occurred while 
