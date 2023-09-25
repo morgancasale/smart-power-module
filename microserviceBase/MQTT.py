@@ -88,27 +88,12 @@ class MQTTServer(Thread):
             raise self.serverErrorHandler.InternalServerError(
                 "An error occurred while enabling MQTT server: \u0085\u0009" + str(e)
             )
-        
-    def retrieveHAID(self, a, b, mqttMsg):
-        payload = mqttMsg.payload.decode()
-        text = payload.replace("\'", "\"")
-        response = json.loads(text)
-        
-        if(len(response) > 0):
-            if(not "_" in response[0]["entities"][0]): # If the device is the first one then it has no "HAID"
-                self.HAID = 0                          # So if return 0 then no "HAID" is needed
-            else:
-                self.HAID = response[0]["entities"][0].split("_")[1]
 
     def openMQTTServer(self):
         self.Client.username_pw_set(username=self.username, password=self.password)
         self.Client.connect(self.broker, self.brokerPort)
 
         self.Client.loop_start()
-
-        if(self.configs["subPub"]["sub"] and self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
-            self.HAID = None
-            self.Subscribe("homeassistant/HAID", self.retrieveHAID)
         self.events["stopEvent"].wait()
         self.stop()
 
@@ -203,32 +188,6 @@ class MQTTServer(Thread):
         topic = "socket_settings/notifier"
         msg = json.dumps(msg)
         self.Publish(topic, msg, talk = talk)
-
-    def requestHAID(self, deviceID):
-        """
-        Get the number that HomeAssistant assigns to a specific device
-        for its entities (e.g. sensor.voltage_1, sensor.voltage_2, etc.)
-        If the device is the first one to be registered, the function will return 0
-        but no number will be appended to the entities (e.g. sensor.voltage, sensor.current, etc.)
-
-        """
-
-        try:
-            topic = "homeassistant/getHAID"
-            self.Publish(topic, deviceID, retain=False)
-
-        except HTTPError as e:
-            message = """
-                An error occurred while 
-                getting devices info from Home Assistant: \u0085\u0009
-            """ + e._message
-            raise HTTPError(status=e.status, message = message)
-        except Exception as e:
-            message = """
-                An error occurred while 
-                getting devices info from Home Assistant: \u0085\u0009
-            """ + str(e)
-            raise Server_Error_Handler.InternalServerError(message=message)
     
     def updateConfigFile(self, dict):
         try:
