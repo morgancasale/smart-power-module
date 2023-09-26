@@ -7,6 +7,9 @@ import {
 //import { unsafeHTML } from 'https://cdn.skypack.dev/lit@2.4.0/directives/unsafe-html.js';
 import "https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js";
 
+import "https://unpkg.com/mdns-resolver@1.1.0/dist/index.js";
+const mdnsResolver = require("mdns-resolver");
+
 import "./socket-settings.js";
 import "./house-settings.js";
 //import "./configs.js";
@@ -33,7 +36,8 @@ class MainPage extends LitElement {
         this.baseState = window.location.pathname + window.location.search;
     }
 
-    catalogAddress = "127.0.0.1";
+    mDNS = "smarsockets.local"
+    catalogAddress = mdnsResolver.resolve4(mDNS);
     catalogPort = 8099;
 
     onHashChange(){
