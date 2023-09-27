@@ -197,7 +197,7 @@ class MQTTServer(Thread):
             
 
             with open(self.configs_file, 'w') as file:
-                 json.dump(self.generalConfigs, file, indent=4)
+                json.dump(self.generalConfigs, file, indent=4)
             # with open(self.configs_file, "w") as file:
             #     json.dump(configs, file, indent=4)
         except Exception as e:

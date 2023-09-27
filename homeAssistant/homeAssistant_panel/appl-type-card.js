@@ -66,6 +66,9 @@ class ApplianceTypeCard extends LitElement {
     }
 
     async getAppliances(){
+        var hassStates = this.hass.states;
+        this.catalogAddress = hassStates["sensor.local_ip"]["state"];
+        
         var url = "http://" + this.catalogAddress + ":" + String(this.catalogPort) + "/getInfo?";
         var params = {
             table : "AppliancesInfo",

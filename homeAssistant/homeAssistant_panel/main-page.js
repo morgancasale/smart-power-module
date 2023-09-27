@@ -7,12 +7,8 @@ import {
 //import { unsafeHTML } from 'https://cdn.skypack.dev/lit@2.4.0/directives/unsafe-html.js';
 import "https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js";
 
-import "https://unpkg.com/mdns-resolver@1.1.0/dist/index.js";
-const mdnsResolver = require("mdns-resolver");
-
 import "./socket-settings.js";
 import "./house-settings.js";
-//import "./configs.js";
 
 class MainPage extends LitElement {
     static get properties() {
@@ -36,8 +32,6 @@ class MainPage extends LitElement {
         this.baseState = window.location.pathname + window.location.search;
     }
 
-    mDNS = "smarsockets.local"
-    catalogAddress = mdnsResolver.resolve4(mDNS);
     catalogPort = 8099;
 
     onHashChange(){
@@ -139,7 +133,7 @@ class MainPage extends LitElement {
 
     setMobileTheme() {
         //var window = document.querySelectorAll("home-assistant")[0].shadowRoot.querySelectorAll("home-assistant-main")[0].shadowRoot.querySelectorAll("app-drawer-layout")[0].shadowRoot.querySelector("#contentContainer");
-        var content = this.parentElement.parentElement.parentElement.shadowRoot.querySelector("#contentContainer")
+        var content = this.parentElement.parentElement.parentElement;
         var width = parseFloat(getComputedStyle(content).getPropertyValue('width'));
 
         var cont = this.shadowRoot.querySelector("#container");
@@ -323,6 +317,9 @@ class MainPage extends LitElement {
     }
 
     fetchSocketSettings(){
+        var hassStates = this.hass.states;
+        this.catalogAddress = hassStates["sensor.local_ip"]["state"];
+
         var url = "http://" + this.catalogAddress + ":" + String(this.catalogPort) + "/getInfo?";
         var params = {
             table : "DeviceSettings",

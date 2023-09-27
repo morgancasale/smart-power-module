@@ -277,6 +277,9 @@ class SchedulerCard extends LitElement {
   }
 
   delRequest(sched){
+    var hassStates = this.hass.states;
+    this.catalogAddress = hassStates["sensor.local_ip"]["state"];
+    
     var url = "http://" + this.catalogAddress + ":" + String(this.catalogPort) + "/delDevSchedule";
     var request = {
       method: "DELETE", // *GET, POST, PUT, DELETE, etc.
