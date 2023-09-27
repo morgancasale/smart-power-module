@@ -35,7 +35,8 @@ class ServicesTracker():
                 params = [
                     {"table" : "Services", "timer" : watchDogTimer},
                     {"table" : "Devices", "timer" : watchDogTimer}, 
-                    {"table" : "DeviceResource_conn", "timer" : watchDogTimer}
+                    {"table" : "DeviceResource_conn", "timer" : watchDogTimer},
+                    {"table" : "DeviceSettings", "timer" : watchDogTimer}
                 ]
 
                 headers = {"Content-Type" : "application/json"}
@@ -43,7 +44,7 @@ class ServicesTracker():
                 if(response.status_code != 200):
                     raise HTTPError(response.status_code, response.text)
                 
-                print(Fore.LIGHTGREEN_EX + "Online status Tracker:\n\t%s"%response.text + Fore.RESET)
+                print(Fore.LIGHTGREEN_EX + "Online status Tracker:\n\t" + response.text + Fore.RESET)
 
                 time.sleep(watchDogTimer)
         except Exception as e:

@@ -5,8 +5,7 @@ IN_DOCKER = os.environ.get("IN_DOCKER", False)
 if not IN_DOCKER:
     PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
     sys.path.append(PROJECT_ROOT)
-
-from threading import Thread
+    
 from colorama import Fore
 
 from microserviceBase.serviceBase import *
