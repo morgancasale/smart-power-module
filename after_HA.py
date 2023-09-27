@@ -35,5 +35,6 @@ try:
 
     # Open the web browser to the Home Assistant page where to configure the localIP integration
     url = "http://127.0.0.1:8123/_my_redirect/config_flow_start?domain=local_ip"
+    webbrowser.open(url)
 except Exception as e:
     print(str(e))
