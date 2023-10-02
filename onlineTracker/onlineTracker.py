@@ -35,8 +35,7 @@ class ServicesTracker():
                 params = [
                     {"table" : "Services", "timer" : watchDogTimer},
                     {"table" : "Devices", "timer" : watchDogTimer}, 
-                    {"table" : "DeviceResource_conn", "timer" : watchDogTimer},
-                    {"table" : "DeviceSettings", "timer" : watchDogTimer}
+                    {"table" : "DeviceResource_conn", "timer" : watchDogTimer}
                 ]
 
                 headers = {"Content-Type" : "application/json"}

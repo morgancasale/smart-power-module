@@ -226,15 +226,7 @@ class MainPage extends LitElement {
         return data.split("<p>")[1].split("</p>")[0];
     }
 
-    save_socket_settings(){
-        this.socketData = this.shadowRoot.getElementById("socket-settings").save();
-        this.socketData.deviceID = this.extDeviceData.deviceID;
-
-        var cond = (this.socketData.deviceName != this.extDeviceData.deviceName) | (this.socketData.deviceName == null);
-        this.socketData.deviceName = (cond) ? this.socketData.deviceName : this.extDeviceData.deviceName;
-
-        this.extDeviceData.deviceName = this.socketData.deviceName;
-
+    saveDeviceSettings(){
         var url = "http://" + this.catalogAddress + ":" + String(this.catalogPort) + "/setDeviceSettings";
         var request = {
             method: "PUT", // *GET, POST, PUT, DELETE, etc.
@@ -265,6 +257,58 @@ class MainPage extends LitElement {
                 throw new Error(msg);
             });
         }
+    }
+
+    saveDevicesInfo(){
+        var devicesInfo = [];
+        this.socketData.map((socket) => 
+            devicesInfo.push({deviceID : socket["deviceID"], online : socket["Online"]})
+        );
+
+        var url = "http://" + this.catalogAddress + ":" + String(this.catalogPort) + "/setDevice";
+        var request = {
+            method: "PUT", // *GET, POST, PUT, DELETE, etc.
+            mode: "cors", // no-cors, *cors, same-origin
+            cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+            credentials: "same-origin", // include, *same-origin, omit
+            headers: {
+                "Content-Type": "application/json",
+                // 'Content-Type': 'application/x-www-form-urlencoded',
+            }, // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+            body: JSON.stringify([devicesInfo])
+        };
+        
+        if(!this.errState){
+            fetch(url, request)
+            .then((response) => {
+                this.SavedState((this.response=response).ok);
+                return response.text();
+            })
+            .then((txt) => {
+                if(!this.response.ok){
+                    throw new Error(this.getBodyResult(txt));
+                }
+            })
+            .catch(error => {
+                var msg = "An error occured while saving Devices Info: \n\t" + error.message;
+                this.sendNotification(msg);
+                throw new Error(msg);
+            });
+        }
+    }
+
+    save_socket_settings(){
+        this.socketData = this.shadowRoot.getElementById("socket-settings").save();
+        this.socketData.deviceID = this.extDeviceData.deviceID;
+
+        var cond = (this.socketData.deviceName != this.extDeviceData.deviceName) | (this.socketData.deviceName == null);
+        this.socketData.deviceName = (cond) ? this.socketData.deviceName : this.extDeviceData.deviceName;
+
+        this.extDeviceData.deviceName = this.socketData.deviceName;
+
+        this.saveDeviceSettings();
+
+        this.saveDevicesInfo();
     }
 
     save_house_settings(){
@@ -320,10 +364,8 @@ class MainPage extends LitElement {
         var hassStates = this.hass.states;
         this.catalogAddress = hassStates["sensor.local_ip"]["state"];
 
-        var url = "http://" + this.catalogAddress + ":" + String(this.catalogPort) + "/getInfo?";
+        var url = "http://" + this.catalogAddress + ":" + String(this.catalogPort) + "/getDeviceSettings?";
         var params = {
-            table : "DeviceSettings",
-            keyName : "deviceID",
             keyValue : "*"
         };
         params = new URLSearchParams(params);

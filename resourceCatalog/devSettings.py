@@ -15,12 +15,12 @@ from cherrypy import HTTPError
 
 from microserviceBase.Error_Handler import *
 class DeviceSettings:
+    settingsKeys = [
+        "deviceID", "deviceName", "enabledSockets", "HPMode", "MPControl", "maxPower", "MPMode", "faultControl",
+        "parControl", "parThreshold", "parMode", "applianceType", "FBControl", "FBMode",
+        "scheduling", "Online"
+    ]
     def __init__(self, DBPath, settingsData, newSettings = True):
-        self.settingsKeys = [
-            "deviceID", "deviceName", "enabledSockets", "HPMode", "MPControl", "maxPower", "MPMode", "faultControl",
-            "parControl", "parThreshold", "parMode", "applianceType", "FBControl", "FBMode",
-            "scheduling", "Online"
-        ]
         self.DBPath = DBPath
         
         self.scheduling = []
@@ -249,3 +249,43 @@ class DeviceSettings:
             raise Server_Error_Handler.InternalServerError(
                 "An error occurred while retrieving device settings for device with ID \"" + deviceID + "\" from the DB:\u0085\u0009" + str(e)
             )
+        
+    def getDeviceSettings(DBPath, data):
+        try:
+            keyValue = data["keyValue"]
+            if(not all(isinstance(keyV, str) for keyV in keyValue)):
+                raise Client_Error_Handler.BadRequest(message="Key values must be string")
+            
+            if(not isinstance(keyValue, list)) : keyValue = [keyValue]
+
+            query = "SELECT dev.deviceName, dev.Online"
+            for key in DeviceSettings.settingsKeys:
+                if(key != "deviceName" and key != "Online" and key != "scheduling"):
+                    query += ", sett." + key
+
+            query += " FROM Devices as dev"
+
+            if(keyValue[0] == "*"):                
+                query += " CROSS JOIN DeviceSettings AS sett ON sett.deviceID = dev.deviceID;"
+            else:
+                query += " INNER JOIN DeviceSettings AS sett ON sett.deviceID = dev.deviceID WHERE sett.deviceID = \"" + keyValue[0] + "\""
+
+            devSettings = DBQuery_to_dict(DBPath, query)
+
+            if(len(devSettings) == 1):
+                devSettings = devSettings[0]
+            
+            reconstructedData = []
+            for sel in devSettings:
+                reconstructedData.append(DeviceSettings.DB_to_dict(DBPath, sel))
+
+            return json.dumps(reconstructedData)
+        except HTTPError as e:
+            raise HTTPError(status=e.status, message="An error occurred while retrieving device settings for device with ID \"" + keyValue[0] + "\" from the DB:\u0085\u0009" + str(e._message))
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(
+                "An error occurred while retrieving device settings for device with ID \"" + keyValue[0] + "\" from the DB:\u0085\u0009" + str(e)
+            )
+                
+
+        

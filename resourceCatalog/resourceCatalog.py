@@ -92,6 +92,10 @@ class resourceCatalog:
                     for entry in params:
                         return self.extractByKey(entry)
                     
+                case "getDeviceSettings":
+                    for entry in params:
+                        return DeviceSettings.getDeviceSettings(self.DBPath, entry)
+                    
                 case "checkPresence":
                     for entry in params:
                         return self.checkPresence(entry)
