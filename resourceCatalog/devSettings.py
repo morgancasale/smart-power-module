@@ -16,9 +16,9 @@ from cherrypy import HTTPError
 from microserviceBase.Error_Handler import *
 class DeviceSettings:
     settingsKeys = [
-        "deviceID", "deviceName", "enabledSockets", "HPMode", "MPControl", "maxPower", "MPMode", "faultControl",
+        "deviceID", "enabledSockets", "HPMode", "MPControl", "maxPower", "MPMode", "faultControl",
         "parControl", "parThreshold", "parMode", "applianceType", "FBControl", "FBMode",
-        "scheduling", "Online"
+        "scheduling"
     ]
     def __init__(self, DBPath, settingsData, newSettings = True):
         self.DBPath = DBPath
@@ -45,12 +45,11 @@ class DeviceSettings:
     def checkSaveValues(self, settingsData):
         for key in settingsData.keys():
             match key:
-                case ("deviceID" | "deviceName"):
+                case ("deviceID" ):
                     if(not isinstance(settingsData[key], str)):
                         raise Client_Error_Handler.BadRequest(message="Device settings' \"" + key + "\" value must be string")
                     match key:
                         case "deviceID": self.deviceID = settingsData["deviceID"]
-                        case "deviceName": self.deviceName = settingsData["deviceName"]
 
                 case "enabledSockets":
                     if(not isinstance(settingsData[key], list) or len(settingsData[key]) != 3):
@@ -61,7 +60,7 @@ class DeviceSettings:
                     self.enabledSockets = settingsData["enabledSockets"]
                         
                     
-                case ("HPMode" | "MPControl" | "faultControl" | "parControl" | "FBControl" | "Online"):
+                case ("HPMode" | "MPControl" | "faultControl" | "parControl" | "FBControl"):
                     if(isinstance(settingsData[key], int)):
                         settingsData[key] = bool(settingsData[key])
                     if(not isinstance(settingsData[key], bool)):
@@ -72,7 +71,6 @@ class DeviceSettings:
                         case "faultControl": self.faultControl = settingsData["faultControl"]
                         case "parControl": self.parControl = settingsData["parControl"]
                         case "FBControl": self.FBControl = settingsData["FBControl"]
-                        case "Online": self.Online = settingsData["Online"]
                     
                 case ("maxPower" | "parThreshold"):
                     if(not isinstance(settingsData[key], (int, float)) or settingsData[key] < 0):
@@ -124,7 +122,7 @@ class DeviceSettings:
             
         return result
 
-    def updateNameinHA(self): #TODO Test this 
+    """def updateNameinHA(self): #TODO Test this 
         try:
             query = "SELECT * FROM DeviceSettings WHERE deviceID = \"" + self.deviceID + "\""
             devSettings = DBQuery_to_dict(self.DBPath, query)[0]
@@ -151,9 +149,7 @@ class DeviceSettings:
                 "An error occurred while updating device name for device with ID \"" + 
                 self.deviceID + "\" in HA:\u0085\u0009" + str(e)
             )
-
-
-        
+    """        
     
     def save2DB(self, DBPath):
         try:
@@ -258,11 +254,7 @@ class DeviceSettings:
             
             if(not isinstance(keyValue, list)) : keyValue = [keyValue]
 
-            query = "SELECT dev.deviceName, dev.Online"
-            for key in DeviceSettings.settingsKeys:
-                if(key != "deviceName" and key != "Online" and key != "scheduling"):
-                    query += ", sett." + key
-
+            query = "SELECT dev.deviceName, dev.Online, sett.*"
             query += " FROM Devices as dev"
 
             if(keyValue[0] == "*"):                
@@ -273,13 +265,12 @@ class DeviceSettings:
             devSettings = DBQuery_to_dict(DBPath, query)
 
             if(len(devSettings) == 1):
-                devSettings = devSettings[0]
+                devSettings = [devSettings[0]]
             
-            reconstructedData = []
             for sel in devSettings:
-                reconstructedData.append(DeviceSettings.DB_to_dict(DBPath, sel))
+                sel["scheduling"] = DeviceSchedule.DB_to_dict(DBPath, sel["deviceID"])
 
-            return json.dumps(reconstructedData)
+            return json.dumps(devSettings)
         except HTTPError as e:
             raise HTTPError(status=e.status, message="An error occurred while retrieving device settings for device with ID \"" + keyValue[0] + "\" from the DB:\u0085\u0009" + str(e._message))
         except Exception as e:

@@ -227,6 +227,15 @@ class MainPage extends LitElement {
     }
 
     saveDeviceSettings(){
+        var devicesSettings = [];
+        this.socketData.map((socket) =>
+            {
+                socket.delete("Online");
+                socket.delete("deviceName");
+                devicesSettings.push(socket);
+            }
+        );
+        
         var url = "http://" + this.catalogAddress + ":" + String(this.catalogPort) + "/setDeviceSettings";
         var request = {
             method: "PUT", // *GET, POST, PUT, DELETE, etc.
@@ -237,7 +246,7 @@ class MainPage extends LitElement {
                 "Content-Type": "application/json",
                 // 'Content-Type': 'application/x-www-form-urlencoded',
             }, // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-            body: JSON.stringify([this.socketData])
+            body: JSON.stringify(devicesSettings)
         };
         
         if(!this.errState){
@@ -262,7 +271,7 @@ class MainPage extends LitElement {
     saveDevicesInfo(){
         var devicesInfo = [];
         this.socketData.map((socket) => 
-            devicesInfo.push({deviceID : socket["deviceID"], online : socket["Online"]})
+            devicesInfo.push({deviceID : socket["deviceID"], deviceName : socket["deviceName"]})
         );
 
         var url = "http://" + this.catalogAddress + ":" + String(this.catalogPort) + "/setDevice";
