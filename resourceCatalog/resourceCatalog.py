@@ -70,7 +70,7 @@ class resourceCatalog:
             raise Server_Error_Handler.InternalServerError(message="The DB file does not exist")
         self.DBPath = DBPath
 
-        configFile_loc = "serviceConfig.json"
+        configFile_loc = "resourceCatalog.json"
         if(not IN_DOCKER): configFile_loc = "resourceCatalog/" + configFile_loc
 
         self.server = ServiceBase(
