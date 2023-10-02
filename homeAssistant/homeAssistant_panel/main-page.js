@@ -228,13 +228,11 @@ class MainPage extends LitElement {
 
     saveDeviceSettings(){
         var devicesSettings = [];
-        this.socketData.map((socket) =>
-            {
-                socket.delete("Online");
-                socket.delete("deviceName");
-                devicesSettings.push(socket);
-            }
-        );
+        this.socketData.map((socket) =>{
+            delete socket.Online;
+            delete socket.deviceName;
+            devicesSettings.push(socket);
+        });
         
         var url = "http://" + this.catalogAddress + ":" + String(this.catalogPort) + "/setDeviceSettings";
         var request = {
