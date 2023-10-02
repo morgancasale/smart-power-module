@@ -275,8 +275,7 @@ def updateOnlineStatus(DBPath, params):
             raise Client_Error_Handler.NotFound(message="The table \"" + table + "\" does not exist")
         
         now = time.time()
-        query = "UPDATE " + table + " SET Online = 0 WHERE lastUpdate < " + str(now - timer) + " AND Online = 1"
-        #query += "UPDATE " + table + " SET lastUpdate = " + str(now) + ";"
+        query = "UPDATE " + table + " SET Online = 0 WHERE Online = 1 AND lastUpdate < " + str(now - timer)
 
         conn = sq.connect(DBPath)
         cursor = conn.cursor()
