@@ -290,7 +290,7 @@ class blackoutAndFaulty():
 
     #if there is a blackout, all the devices are disconnected and they're put offline-->we din't check anymore
     def controlAndDisconnect(self):
-        HADB_loc = "testDB.db" #TODO : Da aggiornare poi con home assistant
+        HADB_loc = "HADB.db" #TODO : Da aggiornare poi con home assistant
         if(not IN_DOCKER):
             HADB_loc = "maxPowerControl/" + HADB_loc
         else:

@@ -16,7 +16,7 @@ test.py
 
 /Data_DB
 
-/maxPowerControl/testDB.db-*
+/maxPowerControl/HADB.db-*
 
 /homeAssistant/data/.vscode-server
 /homeAssistant/data/.ash_history

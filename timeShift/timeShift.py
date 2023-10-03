@@ -26,7 +26,7 @@ class TimeShift():
             self.client = ServiceBase(config_file)
             self.client.start()
 
-            HADB_loc = "testDB.db" #TODO : Da aggiornare poi con home assistant
+            HADB_loc = "HADB.db" #TODO : Da aggiornare poi con home assistant
             if(not IN_DOCKER):
                 HADB_loc = "maxPowerControl/" + HADB_loc
             else:
