@@ -137,7 +137,6 @@ class ServiceBase(object):
                     b = sorted(self.generalConfigs[key].keys())
                     diff = list(set(a)-set(b))
                     if(len(list(set(b).intersection(diff))) > 0):
-                        print("pesce")
                         raise self.clientErrorHandler.BadRequest(message = message)
                 
     def validate_HA_Params(self):

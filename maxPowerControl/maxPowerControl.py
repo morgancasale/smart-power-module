@@ -24,10 +24,8 @@ class maxPowerControl():
             self.client.start()
 
             HADB_loc = "HADB.db"
-            if(not IN_DOCKER):
-                HADB_loc = "maxPowerControl/" + HADB_loc
-            else:
-                HADB_loc = "homeAssistant/HADB"+ HADB_loc #da aggiornare poi con home assistant
+            HADB_loc = "homeAssistant/HADB/"+ HADB_loc #da aggiornare poi con home assistant
+
             self.HADBConn = sqlite3.connect(HADB_loc)
             self.HADBCur = self.HADBConn.cursor()  
 
