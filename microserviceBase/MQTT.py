@@ -4,13 +4,14 @@ import time
 import paho.mqtt.client as MQTT
 import requests
 import os
+import dns.resolver
 
 from threading import Thread, Event, current_thread
 
 IN_DOCKER = os.environ.get("IN_DOCKER", False)
 
 class MQTTServer(Thread):
-    def __init__(self, threadID, threadName, events, configs,generalConfigs,configs_file, init_func=None, Notifier=None):
+    def __init__(self, threadID, threadName, events, configs, generalConfigs, configs_file, init_func=None, Notifier=None):
         Thread.__init__(self)
         self.threadID = threadID
         self.name = threadName
@@ -54,6 +55,9 @@ class MQTTServer(Thread):
                     
                     if(not IN_DOCKER):
                         self.broker = broker_AddPort["IPAddress"]
+                    
+                        if(self.generalConfigs["REGISTRATION"]["catalog_mDNS"] != None):
+                            self.broker = self.resolvemDNS(self.generalConfigs["REGISTRATION"]["catalog_mDNS"])
                     else:
                         self.broker = "172.20.0.10"
                     self.brokerPort = broker_AddPort["port"]
@@ -188,6 +192,30 @@ class MQTTServer(Thread):
         topic = "socket_settings/notifier"
         msg = json.dumps(msg)
         self.Publish(topic, msg, talk = talk)
+
+    def resolvemDNS(self, mDNS):
+        try:
+            if(os.name != "nt"):
+                resolver = dns.resolver.Resolver()
+                resolver.nameservers = ["224.0.0.251"]
+                resolver.port = 5353
+                sol = resolver.resolve(mDNS, "A")
+                return str(sol[0].to_text())
+            else:
+                PORT = 50000
+                MAGIC = "smartSocket" #to make sure we don't confuse or get confused by other programs
+                from socket import socket, AF_INET, SOCK_DGRAM
+
+                s = socket(AF_INET, SOCK_DGRAM) #create UDP socket
+                s.bind(('', PORT))
+                data, addr = s.recvfrom(1024) #wait for a packet
+                if data.startswith(MAGIC.encode()):
+                    IP = data[len(MAGIC):].decode()
+                    print ("got service announcement from %s", IP)
+
+                return IP
+        except Exception as e:
+            raise self.serverErrorHandler.InternalServerError(message="An error occurred while resolving mDNS: \u0085\u0009" + str(e))
     
     def updateConfigFile(self, dict):
         try:

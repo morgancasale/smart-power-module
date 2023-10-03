@@ -19,22 +19,27 @@ class DeviceSchedule:
         self.repeat = 0
 
 
-        if(newSchedule) : self.checkKeys(schedulingData)
+        if(newSchedule) : 
+            self.checkKeys(schedulingData)
+            self.scheduleID = self.generateID()
         self.checkSaveValues(schedulingData)
+        
 
     def checkKeys(self, schedulingData):
-        if(not all(key in self.schedulingKeys for key in schedulingData.keys())):
+        a = set(schedulingData.keys())
+        b = set(self.schedulingKeys)
+        if(not b.issubset(a)):
             raise Client_Error_Handler.BadRequest(message="Missing one or more keys")
         
     def checkSaveValues(self, schedulingData):
         for key in schedulingData.keys():
             match key:
-                case ("deviceID" | "mode"):
+                case ("deviceID" | "scheduleID" | "mode"):
                     if(not isinstance(schedulingData[key], str)):
                         raise Client_Error_Handler.BadRequest(message="Scheduling's \"" + key + "\" value must be string")
                     match key:
                         case "deviceID": self.deviceID = schedulingData["deviceID"]
-                        case "socketID": self.socketID = schedulingData["socketID"]
+                        case "scheduleID": self.socketID = schedulingData["scheduleID"]
                         case "mode":
                             if(not schedulingData["mode"] in ["ON", "OFF"]):
                                 raise Client_Error_Handler.BadRequest(message="Scheduling's \"" + key + "\" value must be \"ON\" or \"OFF\"")
@@ -87,13 +92,29 @@ class DeviceSchedule:
         try:
             for key in self.schedulingKeys:
                 if(getattr(self, key)!=None) : result[key] = getattr(self, key)
+            
+            result["scheduleID"] = self.scheduleID
                 
             return result
         except Exception as e:
             raise Server_Error_Handler.InternalServerError(
                 message="An error occured while converting device settings to dictionary:\u0085\u0009" + str(e)
             )
-    
+        
+    def generateID(self, DBPath):
+        try:
+            existence = True
+            while(existence):
+                newID = "SCH" + randomB64String(4)
+
+                existence = check_presence_inDB(DBPath, "DeviceScheduling", "scheduleID", newID)
+        except HTTPError as e:
+            raise HTTPError(status=e.status, message=e._message)
+        except Exception as e:
+            raise HTTPError(status=500, message=str(e))
+        
+        return newID
+        
     def save2DB(self, DBPath):
         try: 
             if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
