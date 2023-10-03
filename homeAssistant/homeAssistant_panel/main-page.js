@@ -227,13 +227,9 @@ class MainPage extends LitElement {
     }
 
     saveDeviceSettings(){
-        var devicesSettings = [];
-        this.socketData.map((socket) =>{
-            delete socket.Online;
-            delete socket.deviceName;
-            devicesSettings.push(socket);
-        });
-        
+        var deviceSettings = this.socketData;
+        delete deviceSettings.Online;
+    
         var url = "http://" + this.catalogAddress + ":" + String(this.catalogPort) + "/setDeviceSettings";
         var request = {
             method: "PUT", // *GET, POST, PUT, DELETE, etc.
@@ -244,7 +240,7 @@ class MainPage extends LitElement {
                 "Content-Type": "application/json",
                 // 'Content-Type': 'application/x-www-form-urlencoded',
             }, // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-            body: JSON.stringify(devicesSettings)
+            body: JSON.stringify(deviceSettings)
         };
         
         if(!this.errState){
@@ -267,10 +263,7 @@ class MainPage extends LitElement {
     }
 
     saveDevicesInfo(){
-        var devicesInfo = [];
-        this.socketData.map((socket) => 
-            devicesInfo.push({deviceID : socket["deviceID"], deviceName : socket["deviceName"]})
-        );
+        var deviceInfo = {deviceID : this.socketData["deviceID"], deviceName : this.socketData["deviceName"]};
 
         var url = "http://" + this.catalogAddress + ":" + String(this.catalogPort) + "/setDevice";
         var request = {
@@ -282,7 +275,7 @@ class MainPage extends LitElement {
                 "Content-Type": "application/json",
                 // 'Content-Type': 'application/x-www-form-urlencoded',
             }, // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-            body: JSON.stringify([devicesInfo])
+            body: JSON.stringify([deviceInfo])
         };
         
         if(!this.errState){
@@ -312,7 +305,7 @@ class MainPage extends LitElement {
         this.socketData.deviceName = (cond) ? this.socketData.deviceName : this.extDeviceData.deviceName;
 
         this.extDeviceData.deviceName = this.socketData.deviceName;
-
+        
         this.saveDeviceSettings();
 
         this.saveDevicesInfo();

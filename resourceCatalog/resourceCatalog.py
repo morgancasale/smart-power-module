@@ -203,7 +203,7 @@ class resourceCatalog:
                     entries = []
 
                     for deviceData in params:
-                        entry = Device(deviceData, newDevice = True)
+                        entry = Device(deviceData)
                         entries.append(entry)
                         entry.set2DB(self.DBPath)
                     

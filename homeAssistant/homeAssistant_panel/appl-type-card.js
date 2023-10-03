@@ -16,7 +16,8 @@ class ApplianceTypeCard extends LitElement {
             panel: { type: Object },
             socket_num: { type : String },
             HPMode: { type: Boolean },
-            appliances: { type: Array }
+            appliances: { type: Array },
+            appl_type: { type: String }
         };
     }
 
@@ -26,6 +27,7 @@ class ApplianceTypeCard extends LitElement {
     constructor(){
         super();
         this.appliances = ["None", "Oven", "Microwave", "Fridge", "Washing Machine", "Dryer"];
+        
     }
 
     sendEvent(event_name, event_msg){
@@ -55,6 +57,7 @@ class ApplianceTypeCard extends LitElement {
     setData(data){
         this.data = data;
         this.shadowRoot.getElementById("type_sel").value = data;
+        this.shadowRoot.getElementById("type_sel").label = data;
         if(this.HPMode){
             this.SetApplType();
         }
@@ -104,6 +107,11 @@ class ApplianceTypeCard extends LitElement {
                 </div>
             </ha-card>
         `;
+    }
+
+    firstUpdated(){
+        super.firstUpdated();
+        this.setData(this.appl_type);
     }
 
     static style = [

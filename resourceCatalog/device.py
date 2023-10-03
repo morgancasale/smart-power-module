@@ -16,6 +16,7 @@ from microserviceBase.Error_Handler import *
 
 class Device:
     def __init__(self, deviceData, newDevice = False):
+        self.newDevice = newDevice
         self.deviceKeys = ["deviceID", "deviceName", "endPoints", "Resources"]
 
         self.endPoints = []
@@ -26,16 +27,20 @@ class Device:
         if(newDevice) : self.checkKeys(deviceData)
         self.checkSaveValues(deviceData)
 
+
         if(newDevice): 
             self.Online = True
             self.lastUpdate = time.time()
+        else:
+            self.Online = None
         
 
     def checkKeys(self, deviceData):
-        a = set(deviceData.keys())
-        b = set(self.deviceKeys)
-        if(not b.issubset(a)): # Check if all keys of deviceKeys are present in deviceData
-            raise Client_Error_Handler.BadRequest(message="Missing one or more keys")
+        if(self.newDevice):
+            a = set(deviceData.keys())
+            b = set(self.deviceKeys)
+            if(not b.issubset(a)): # Check if all keys of deviceKeys are present in deviceData
+                raise Client_Error_Handler.BadRequest(message="Missing one or more keys")
 
     def checkSaveValues(self, deviceData):
         for key in deviceData.keys():
@@ -65,8 +70,9 @@ class Device:
                     raise Client_Error_Handler.BadRequest(message="Unexpected key \"" + key + "\"")
 
     def to_dict(self):
-        return {"deviceID": self.deviceID, "deviceName": self.deviceName, "lastUpdate": self.lastUpdate, 
-                "Online": self.Online}
+        result = {"deviceID": self.deviceID, "deviceName": self.deviceName, "lastUpdate": self.lastUpdate}
+        if(self.Online != None): result["Online"] = self.Online
+        return result
 
     def save2DB(self, DBPath):
         EP_Dev_conn = []
@@ -89,7 +95,6 @@ class Device:
                 Res_Dev_conn.append(resource.resourceID)
 
             # Save the device to the DB
-            self.Online = self.Ping()
 
             # Save the connection between the device and the user
             # save_entry2DB(DBPath, "UserDevice_conn", {"userID": self.userID, "deviceID": self.deviceID})
@@ -127,7 +132,6 @@ class Device:
             if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
                 raise Client_Error_Handler.NotFound(message="The device with ID \"" + self.deviceID + "\" does not exist in the database")
 
-            self.Online = True
             self.lastUpdate = time.time()
 
             for endPoint in self.endPoints:
@@ -152,11 +156,11 @@ class Device:
                     raise Server_Error_Handler.InternalServerError(message=message)
                 resourceIDs.append(resource.resourceID)
 
-            if(len(endPointIDs)>0):
+            if(len(endPointIDs)>0 and self.Online != None):
                 data = {"table" : "DeviceEndP_conn", "refID" : "deviceID", "connID" : "endPointID", "refValue" : self.deviceID, "connValues" : endPointIDs}
                 updateConnTable(DBPath, data)
                 
-            if(len(resourceIDs)>0):
+            if(len(resourceIDs)>0 and self.Online != None):
                 data = {"table" : "DeviceResource_conn", "refID" : "deviceID", "connID" : "resourceID", "refValue" : self.deviceID, "connValues" : resourceIDs}
                 updateConnTable(DBPath, data, self.Online)
             

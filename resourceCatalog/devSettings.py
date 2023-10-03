@@ -30,7 +30,9 @@ class DeviceSettings:
         
 
     def checkKeys(self, settingsData):
-        if(not all(key in self.settingsKeys for key in settingsData.keys())): # Check if all keys of settingsKeys are present in deviceData
+        a = set(settingsData.keys())
+        b = set(self.settingsKeys)
+        if(not b.issubset(a)): # Check if all keys of settingsKeys are present in deviceData
             raise Client_Error_Handler.BadRequest("Missing one or more keys")
 
     def checkAppl(self, applType): #TODO check if appliance exists in DB
@@ -45,11 +47,12 @@ class DeviceSettings:
     def checkSaveValues(self, settingsData):
         for key in settingsData.keys():
             match key:
-                case ("deviceID" ):
+                case ("deviceID" | "deviceName"):
                     if(not isinstance(settingsData[key], str)):
                         raise Client_Error_Handler.BadRequest(message="Device settings' \"" + key + "\" value must be string")
                     match key:
                         case "deviceID": self.deviceID = settingsData["deviceID"]
+                        case "deviceName" : self.deviceName = settingsData["deviceName"]
 
                 case "enabledSockets":
                     if(not isinstance(settingsData[key], list) or len(settingsData[key]) != 3):
@@ -173,8 +176,9 @@ class DeviceSettings:
             if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
                 raise Client_Error_Handler.NotFound(message="Device not found in DB")
             
-            for sched in self.scheduling:
-                sched.save2DB(DBPath)
+            if(self.scheduling is not None):
+                for sched in self.scheduling:
+                    sched.save2DB(DBPath)
 
             update_entry_inDB(DBPath, "DeviceSettings", "deviceID", self.to_dict())
             

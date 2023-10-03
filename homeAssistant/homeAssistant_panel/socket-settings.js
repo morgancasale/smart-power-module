@@ -134,6 +134,9 @@ class SocketSettings extends LitElement {
     save(){
         try{
             var deviceName = this.shadowRoot.getElementById("dev_input_field").value;
+            if(deviceName == ""){
+                var deviceName = this.shadowRoot.getElementById("dev_input_field").label; 
+            }
             this.outData.deviceName = (deviceName !="") ? deviceName : this.outData.deviceName;
             
             var sched_data = this.getSavedData("sched");
@@ -262,7 +265,7 @@ class SocketSettings extends LitElement {
 
                         <div class="socket_stgs" id="socket_stgs2" status="hidden">
                             <scheduling-card id="sched2" .hass=${this.hass} .socketID=${1} .HPMode=${false}></scheduling-card>
-                            <appl-type-card id="appl-type-card" class="appl-type-card" .socket_num=${"2"} .HPMode=${this.data.HPMode}></appl-type-card>
+                            <appl-type-card id="appl-type-card" class="appl-type-card" .hass=${this.hass} .socket_num=${"2"} .HPMode=${this.data.HPMode} .appl_type=${this.extData.applianceType}></appl-type-card>
                             <faulty-behaviour-card id="fault_beh" class="fault_beh" ></faulty-behaviour-card>
                         </div>
                     </div>
