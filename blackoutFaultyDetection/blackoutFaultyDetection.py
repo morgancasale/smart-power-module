@@ -263,7 +263,7 @@ class blackoutAndFaulty():
         self.housesdev ='HouseDev_conn' #Device per house
         self.houses = 'Houses' #house ID
 
-        houses = self.getHouseList()
+        houses = self.getHouseList() 
 
         for house in houses:
             blackout_cont = 0
