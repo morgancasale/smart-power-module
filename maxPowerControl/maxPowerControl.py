@@ -201,7 +201,7 @@ class maxPowerControl():
             
     """Checks for blackouts. If the power recorded exceeds the allowed limit value, then you must turn off a device."""    
     def controlPower(self,houseID):
-        if self.computeTotalPower(houseID)>self.getPowerLimitHouse(houseID):
+        if self.computeTotalPower(houseID) > self.getPowerLimitHouse(houseID):
             self.myMQTTfunction(houseID)
 
     """Finds the device with the last updated highest power consumption in the house and turns it off"""

@@ -8,12 +8,12 @@ if not IN_DOCKER:
     PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
     sys.path.append(PROJECT_ROOT)
 
-import sqlite3
 import json
 import pandas as pd
 import numpy as np
 import paho.mqtt.client as mqtt
 import requests
+from calendar import timegm
 
 from microserviceBase.serviceBase import *
 
@@ -25,14 +25,6 @@ class TimeShift():
                 config_file = "timeShift/" + config_file
             self.client = ServiceBase(config_file)
             self.client.start()
-
-            HADB_loc = "HADB.db" #TODO : Da aggiornare poi con home assistant
-            if(not IN_DOCKER):
-                HADB_loc = "maxPowerControl/" + HADB_loc
-            else:
-                HADB_loc = "HomeAssistant/" + HADB_loc
-            self.DBConn = sqlite3.connect(HADB_loc)
-            self.DBCurs = self.DBConn.cursor()  
 
             while(True):
                 self.manageServiceforall()
@@ -46,51 +38,51 @@ class TimeShift():
             raise Exception(message)
 
 
-    def getHouseDevList(self):
+    def getCatalogInfo(self, table, keyName, keyValue, verbose=False):
         try:
             catalogAddress = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
             catalogPort = self.client.generalConfigs["REGISTRATION"]["catalogPort"]
             url = "%s:%s/getInfo" % (catalogAddress, str(catalogPort))
-            params = {"table": "HouseDev_conn", "keyName": "houseID", "keyValue": "*"}
+            params = {"table": table, "keyName": keyName, "keyValue": keyValue, "verbose": verbose}
 
             response = requests.get(url, params=params)
             if response.status_code != 200:
                 raise HTTPError(response.status_code, str(response.text))
             result = json.loads(response.text)
 
-            house_dev_list = []
-            for row in result:
-                house_dev_list.append((row["houseID"], row["deviceID"]))
-            return house_dev_list
+            return result
         except HTTPError as e:
             message = "An error occurred while retriving info from catalog " + e._message
             raise HTTPError(status=e.status, message=message)
         except Exception as e:
             message = "An error occurred while retriving info from catalog " + str(e)
             raise Server_Error_Handler.InternalServerError(message=message)
+        
+    def getHouseList(self):
+        result = self.getCatalogInfo("Houses", "houseID", "*")
+
+        house_list = [row["houseID"] for row in result]
+        if not type(house_list) is list:
+            house_list = [house_list]
+        return house_list
     
     def getTimeInfo(self,houseID):       
         try:
-            catalogAddress = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
-            catalogPort = self.client.generalConfigs["REGISTRATION"]["catalogPort"]
-            url = "%s:%s/getInfo" % (catalogAddress, str(catalogPort))
-            params = {"table": "DeviceScheduling", "keyName": "deviceID", "keyValue": "*"}          
-            response = requests.get(url, params=params)
-            if response.status_code != 200:
-                raise HTTPError(response.status_code, str(response.text))
-            schedules = json.loads(response.text)
+            schedules = self.getCatalogInfo("DeviceScheduling", "deviceID", "*")
             
             combined_results = []
             #houses_devs_list = self.getHouseDevList()
-            for schedule in schedules:
-                deviceID = schedule[0]["deviceID"]
-                socketID = schedule[0]["socketID"]
-                mode = schedule[0]["mode"]
-                startTime = schedule[0]["startSchedule"]
-                enableEnd = schedule[0]["enableEndSchedule"]
-                endTime = schedule[0]["endSchedule"]
-                repeat = schedule[0]["repeat"]
-                combined_results.append((houseID, deviceID, socketID, mode,startTime,enableEnd,endTime,repeat))
+            for devSchedules in schedules:
+                for schedule in devSchedules:
+                    scheduleID = schedule["scheduleID"]
+                    deviceID = schedule["deviceID"]
+                    socketID = schedule["socketID"]
+                    mode = schedule["mode"]
+                    startTime = schedule["startSchedule"]
+                    enableEnd = schedule["enableEndSchedule"]
+                    endTime = schedule["endSchedule"]
+                    repeat = schedule["repeat"]
+                    combined_results.append((houseID, scheduleID, deviceID, socketID, mode,startTime,enableEnd,endTime,repeat))
    
             return combined_results
          
@@ -128,14 +120,14 @@ class TimeShift():
             self.conn.commit()
             '''
     
-    def update_remove_info(self, repeat, deviceID):
+    def update_remove_info(self, repeat, scheduleID):
         repeat -= 1
         if repeat > 0:
             try:
                 catalogAddress = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
                 catalogPort = self.client.generalConfigs["REGISTRATION"]["catalogPort"]
                 url = "%s:%s/setDeviceSettings" % (catalogAddress, str(catalogPort))
-                data = {"deviceID": deviceID, "repeat": repeat}
+                data = {"scheduleID": scheduleID, "repeat": repeat}
                 requests.put(url, json=data)
             except HTTPError as e:
                 message = "An error occurred while updating info in catalog " + e._message
@@ -148,10 +140,10 @@ class TimeShift():
             try:
                 catalogAddress = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
                 catalogPort = self.client.generalConfigs["REGISTRATION"]["catalogPort"]
-                url = "%s:%s/getInfo" % (catalogAddress, str(catalogPort))
-                params = {"table": "DeviceScheduling", "keyName": "deviceID", "keyValue": deviceID}      
+                url = "%s:%s/delDevSchedule" % (catalogAddress, str(catalogPort))
+                params = {"table": "DeviceScheduling", "keyName": "scheduleID", "keyValue": scheduleID}      
                 
-                #requests.delete(url, params=params)
+                requests.delete(url, params=params)
             except HTTPError as e:
                 message = "An error occurred while retriving info from catalog " + e._message
                 raise HTTPError(status=e.status, message=message)
@@ -163,12 +155,14 @@ class TimeShift():
     def manageService(self, houseID):
         current_time = time.time()
         comb_res = self.getTimeInfo(houseID)
-        deviceSchedule = pd.DataFrame(comb_res, columns=['deviceID', 'socketID', 'mode', 'startTime', 'enableEnd', 'endTime', 'repeat'])
+        deviceSchedule = pd.DataFrame(comb_res, columns=['houseID', 'scheduleID', 'deviceID', 'socketID', 'mode', 'startTime', 'enableEnd', 'endTime', 'repeat'])
 
         for index, row in deviceSchedule.iterrows():
-            start_time = row['startTime']
+            start_time = timegm(time.strptime(row['startTime'], "%d/%m/%Y %H:%M"))
+
             end_time = row['endTime'] if row['enableEnd'] else None
             deviceID = row['deviceID']
+            scheduleID = row['scheduleID']
             socketID = row['socketID']
             mode = row['mode']
             repeat = row['repeat']
@@ -184,27 +178,17 @@ class TimeShift():
             if current_time >= start_time:
                 self.MQTTInterface(deviceID, socketID, mode)
                 if end_time is None:
-                    self.update_remove_info(repeat, deviceID)
+                    self.update_remove_info(repeat, scheduleID)
 
             if end_time is not None and current_time >= end_time:
                 not_mode = 'OFF' if mode == 'ON' else 'ON'
                 self.MQTTInterface(deviceID, socketID, not_mode)
-                self.update_remove_info(repeat, deviceID)
+                self.update_remove_info(repeat, scheduleID)
                     
                     
     def manageServiceforall(self):
         try:
-            catalogAddress = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
-            catalogPort = self.client.generalConfigs["REGISTRATION"]["catalogPort"]
-            url = "%s:%s/getInfo" % (catalogAddress, str(catalogPort))
-            params = {"table": "Houses", "keyName": "houseID", "keyValue": "*"}
-
-            response = requests.get(url, params=params)
-            if response.status_code != 200:
-                raise HTTPError(response.status_code, str(response.text))
-            result = json.loads(response.text)
-
-            house_list = [row["houseID"] for row in result]
+            house_list = self.getHouseList()
             for houseID in house_list:
                 self.manageService(houseID)
         except HTTPError as e:
