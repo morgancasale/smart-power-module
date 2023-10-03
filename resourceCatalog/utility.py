@@ -195,6 +195,7 @@ def fixJSONString(string):
 def DBQuery_to_dict(DBPath, query):
     try:
         conn = sq.connect(DBPath)
+        conn.commit()
         result = pd.read_sql_query(query, conn)
         conn.close()
 
