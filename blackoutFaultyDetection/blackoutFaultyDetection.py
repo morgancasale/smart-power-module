@@ -19,8 +19,8 @@ class blackoutAndFaulty():
         self.v_upper_bound=253
         self.v_lower_bound=216
         #how many measures should be incorrect to consider a blackout
-        self.blackout_lim = 4 #number of devices
-        self.faultyLim = 4 #number of measurements
+        self.blackout_lim = 5
+        self.faultyLim = 0
 
         config_file = "blackoutFaultyDetection.json"
         if(not IN_DOCKER):
@@ -32,7 +32,7 @@ class blackoutAndFaulty():
         while(True):
             try:
                 self.controlAndDisconnect()
-                time.sleep(2)
+                time.sleep(4)
             except HTTPError as e:
                 message = "An error occurred running the Blackout and Fault detection service: " + e._message
                 raise Exception(message)
@@ -59,61 +59,21 @@ class blackoutAndFaulty():
         except Exception as e:
             message = "An error occurred while retriving info from catalog " + str(e)
             raise Server_Error_Handler.InternalServerError(message=message)
-        
-    def getHAID(self, moduleID):
-        try:
-            if(self.client.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
-                partial = self.client.getHAID(moduleID)
-            else:
-                partial = "_" + moduleID[1:]
-            return partial
-        except HTTPError as e:
-            raise e
-
-    def PrevValuesCheck(self, HAID):
-        # Retrieve the N largest values of the timestamp column for the given moduleID
-        powerStateID= 'sensor.voltage' + HAID
-        voltageStateID= 'sensor.power' + HAID
-        self.curHA.execute("""
-            SELECT entity_id, last_updated_ts, state FROM (
-                SELECT entity_id,last_updated_ts, state, ROW_NUMBER() 
-                OVER (ORDER BY last_updated_ts DESC) AS row_num
-                FROM {}
-                WHERE entity_id = ?
-            )
-            WHERE row_num <= 5 """.format(self.database), (powerStateID,))
-        result = self.curHA.fetchall()
-        if result is None:
-            power = [None]
-        else:
-            power = [float(row[2]) for row in result]
-
-        self.curHA.execute("""
-            SELECT entity_id, last_updated_ts, state FROM (
-                SELECT entity_id, last_updated_ts, state, ROW_NUMBER() 
-                OVER (ORDER BY last_updated_ts DESC) AS row_num
-                FROM {}
-                WHERE entity_id = ?
-            )
-            WHERE row_num <= 5 """.format(self.database), (voltageStateID,))
-        result = self.curHA.fetchall()
-        if result is None:
-            voltage = [None]
-        else:
-            voltage = [float(row[2]) for row in result]
-
-        return power, voltage
     
     def lastValueCheck(self, HAID):
-        powerStateID = 'sensor.power' + HAID
-        voltageStateID = 'sensor.voltage' + HAID
+        meta = self.client.getMetaHAIDs(HAID)
+        for item in meta:
+            if item['entityID'] == "voltage":
+                voltageID=item['metaID']
+            if item['entityID'] == 'power':
+                  powerID=item['metaID']
         
         #  retrieve the maximum value of timestamp column for each ID
         self.curHA.execute("""
-            SELECT entity_id, MAX(last_updated_ts), state
+            SELECT metadata_id, MAX(last_updated_ts), state
             FROM {}
-            WHERE entity_id
-            = ?""".format(self.database),(powerStateID,))
+            WHERE metadata_id
+            = ?""".format(self.database),(powerID,))
         result = self.curHA.fetchone()[2]
 
         if result is not None:
@@ -122,10 +82,10 @@ class blackoutAndFaulty():
             power = None
         
         self.curHA.execute("""
-            SELECT entity_id, MAX(last_updated_ts), state
+            SELECT metadata_id, MAX(last_updated_ts), state
             FROM {}
-            WHERE entity_id
-            = ?""".format(self.database),(voltageStateID,))
+            WHERE metadata_id
+            = ?""".format(self.database),(voltageID,))
         result = self.curHA.fetchone()[2]
         if result is not None:
             voltage = float(result)
@@ -161,22 +121,61 @@ class blackoutAndFaulty():
             return result
         except HTTPError as e:
             raise e
-
+    
+    def getHAID(self, moduleID):
+        try:
+            if(self.client.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
+                partial = self.client.getHAID(moduleID)
+            else:
+                partial = "_" + moduleID[1:]
+            return partial
+        except HTTPError as e:
+            raise e
+    
+    
+    def getSwitchesStates(self, ID_list):
+        stateList=[]
+        for element in ID_list:
+            self.curHA.execute("""
+                SELECT metadata_id, MAX(last_updated_ts)
+                FROM {}
+                WHERE metadata_id
+                = ?""".format(self.database),(element,))
+            result=(self.curHA.fetchone()[0])
+            if result == 'off':
+                result= 0
+            else : result=1
+            stateList.append(result)
+        finalState= sum(stateList)
+        if finalState > 0:
+            res= True
+        else:
+            res= False
+        return res
+        
     def houseInfo(self,house_ID):
         #this method retrieves the modules belonging to each home that are on+
         #and have one device cnnected to them
-        to_consider=[]
-
+        to_consider_faulty=[]
+        to_consider_bl=[]
         house_modules = self.getHouseDevList(house_ID)
         for house_module in house_modules :
+            meta = self.client.getMetaHAIDs(house_module)
+            to_retrieve = ['left_plug', 'center_plug', 'right_plug']
+            switch_metaIDs = []
+            for item in meta:
+                if item['entityID'] in to_retrieve:
+                    switch_metaIDs.append(item['metaID'])
             result = self.getDeviceInfo(house_module)
-            if (result[0]["Online"]) :
-                settings = self.getDeviceSettingsInfo(house_module)[0]
-                if(settings["HPMode"] == 1 and settings["faultControl"] == 1):
-                    to_consider.append(house_module)
-        if len(to_consider) > 0:
-            return to_consider
-        else: return None   
+            moduleState= self.getSwitchesStates(switch_metaIDs)
+            #print(house_module,moduleState)
+            if moduleState:
+                if (result[0]["Online"]) :
+                    to_consider_bl.append(house_module)
+                    settings = self.getDeviceSettingsInfo(house_module)[0]
+                    if(settings["HPMode"] == 1 and settings["faultControl"] == 1):
+                        to_consider_faulty.append(house_module)
+        return to_consider_faulty, to_consider_bl
         
     def getApplianceInfo(self, applianceType, verbose = False):
         try:
@@ -187,7 +186,9 @@ class blackoutAndFaulty():
             raise e
 
     def getRange(self, deviceID):   
+
         device_type = self.getDeviceSettingsInfo(deviceID)[0]["applianceType"]
+        #if dev type is none return none
         dev_range = self.getApplianceInfo(device_type)[0][0]
         if dev_range is not None:
             return dev_range
@@ -247,9 +248,9 @@ class blackoutAndFaulty():
 
     #if there is a blackout, all the devices are disconnected and they're put offline-->we din't check anymore
     def controlAndDisconnect(self):
-        HADB_loc = "testDB.db" #TODO : Da aggiornare poi con home assistant
+        HADB_loc = "HADB.db" #TODO : Da aggiornare poi con home assistant
         if(not IN_DOCKER):
-            HADB_loc = "maxPowerControl/" + HADB_loc
+            HADB_loc = "homeAssistant/HADB/" + HADB_loc
         else:
             HADB_loc = "HomeAssistant/" + HADB_loc
 
@@ -262,17 +263,17 @@ class blackoutAndFaulty():
         self.housesdev ='HouseDev_conn' #Device per house
         self.houses = 'Houses' #house ID
 
-        houses = self.getHouseList()
+        houses = self.getHouseList() 
 
         for house in houses:
             blackout_cont = 0
-            modules =  self.houseInfo(house)
-            if modules is not None:
-                for module in modules:
-                    HAID = self.getHAID(module)
+            modules_faulty, modules_bl =  self.houseInfo(house)
+            if modules_bl is not None:
+                for module in modules_bl:
                     faulty_cont = 0
                     value = self.getRange(module) #info[i][0] = ID
-                    last_measurement = self.lastValueCheck(HAID)#[power, voltage]
+                    #if value is ot none
+                    last_measurement = self.lastValueCheck(module)#[power, voltage]
                     if last_measurement["voltage"] != None and value != None :
                         if self.blackOutRangeCheck(last_measurement["voltage"]) :
                             blackout_cont += 1 
@@ -280,17 +281,18 @@ class blackoutAndFaulty():
                             print('Predicted blackout in house %s', house)
                             self.MQTTInterface(module, 'b')
                             break
-                        if self.faultyCheck(value, last_measurement, module):
-                            prevVoltage, prevPower = self.PrevValuesCheck(HAID)
-                            readings = list(zip(prevVoltage, prevPower))
-                            for reading in readings:
-                                r = {"voltage": reading[0], "power": reading[1]}
-                                if self.faultyCheck(value, r, module):
-                                    faulty_cont += 1   
-                                    if faulty_cont >= self.faultyLim:
-                                        print("Device with ID " + module + " is faulty!")
-                                        self.MQTTInterface( module, 'f')
-                                        break
+                        if module in modules_faulty:
+                            if self.faultyCheck(value, last_measurement, module):
+                                prevVoltage, prevPower = self.PrevValuesCheck(module)
+                                readings = list(zip(prevVoltage, prevPower))
+                                for reading in readings:
+                                    r = {"voltage": reading[0], "power": reading[1]}
+                                    if self.faultyCheck(value, r, module):
+                                        faulty_cont += 1   
+                                        if faulty_cont >= self.faultyLim:
+                                            print("Device with ID " + module + " is faulty!")
+                                            self.MQTTInterface( module, 'f')
+                                            break
         self.connHA.close()
                                     
 
