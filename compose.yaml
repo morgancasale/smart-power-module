@@ -6,7 +6,38 @@ networks:
       config:
         - subnet: 172.20.0.0/24
 
+
 services:
+
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.10
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/log:/mosquitto/log
+      - ./mosquitto/data/:/mosquitto/data
+    restart: always
+    ports:
+      - 1883:1883
+
+  homeassistant:
+    image: lscr.io/linuxserver/homeassistant
+    container_name: homeassistant
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+    volumes:
+      - ./homeAssistant/data:/config
+      - ./homeAssistant/homeAssistant_panel:/config/www/homeAssistant_panel
+      - ./homeAssistant/HADB:/DB
+    restart: unless-stopped
+
+
   resourcecatalog:
     container_name: resourceCatalog
     image: resourcecatalog

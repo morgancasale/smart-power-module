@@ -1,0 +1,33 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+panel_custom:
+  - name: main-page
+    # url_path needs to be unique for each panel_custom config
+    url_path: redirect-server-controls
+    sidebar_title: Socket Settings
+    sidebar_icon: mdi:server
+    module_url: /local/homeAssistant_panel/main-page.js
+    config:
+      # Data you want to make available to panel
+      hello: world
+
+recorder:
+  db_url : sqlite:////DB/HADB.db
+  include:
+    entity_globs:
+      - sensor.smart_socket*
+      - switch.smart_socket*

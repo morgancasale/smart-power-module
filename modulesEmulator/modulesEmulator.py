@@ -101,12 +101,12 @@ class Emulator:
                 
 if __name__ == "__main__": 
     sensor = Emulator()
-    #esp32firmware, true autobroker
+    #esp32firmware, true autoBroker
     #request. get dev conn
     #res catalogue endpoint
             
     #for i sensori
-    #esp32firmware, true autobroker
+    #esp32firmware, true autoBroker
     #reqres catalogue endpoint
-    #MAC su json, RSSI, autobroker, come parametri con ? '''
+    #MAC su json, RSSI, autoBroker, come parametri con ? '''
 

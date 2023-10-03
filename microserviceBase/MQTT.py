@@ -3,8 +3,11 @@ from .Error_Handler import *
 import time
 import paho.mqtt.client as MQTT
 import requests
+import os
 
 from threading import Thread, Event, current_thread
+
+IN_DOCKER = os.environ.get("IN_DOCKER", False)
 
 class MQTTServer(Thread):
     def __init__(self, threadID, threadName, events, configs,generalConfigs,configs_file, init_func=None, Notifier=None):
@@ -48,8 +51,11 @@ class MQTTServer(Thread):
 
 
                     broker_AddPort = response.json()[0]
-
-                    self.broker = broker_AddPort["IPAddress"]
+                    
+                    if(not IN_DOCKER):
+                        self.broker = broker_AddPort["IPAddress"]
+                    else:
+                        self.broker = "172.20.0.10"
                     self.brokerPort = broker_AddPort["port"]
                     self.username = broker_AddPort["MQTTUser"]
                     self.password = broker_AddPort["MQTTPassword"]
@@ -72,7 +78,7 @@ class MQTTServer(Thread):
             self.Client = MQTT.Client(self.clientID, True)
 
             self.Client.on_connect = self.OnConnect
-            self.Client.on_message = self.OnMessageReceived
+            #self.Client.on_message = self.OnMessageReceived
 
         except HTTPError as e:
             self.events["stopEvent"].set()
@@ -138,7 +144,7 @@ class MQTTServer(Thread):
             "Publisher is not active for this service")
 
 
-    def Subscribe(self, topics):
+    def Subscribe(self, topics, callback = None):
         while(not self.connected):
             time.sleep(5)
         if(not isinstance(topics, list)):
@@ -150,11 +156,16 @@ class MQTTServer(Thread):
             for topic in topics:
                 self.checkTopic(topic,"sub")
                 if (len(topics) ==1):
-                        MQTTTopics = (topic, 2)
-                        self.topics = topic
+                    MQTTTopics = (topic, 2)
+                    self.topics = topic
                 else:
-                        MQTTTopics.append((topic, 2))
-                        self.topics.append(topic)
+                    MQTTTopics.append((topic, 2))
+                    self.topics.append(topic)
+                
+                if(callback is None):
+                    self.Client.message_callback_add(topic, self.OnMessageReceived)
+                else:
+                    self.Client.message_callback_add(topic, callback)
             print("subscribing '%d' at topic '%s'" % (2,   MQTTTopics ))
             self.Client.subscribe(MQTTTopics)
             self.isSub = True
@@ -173,8 +184,11 @@ class MQTTServer(Thread):
         self.Client.loop_stop()
         self.Client.disconnect()
 
-
-
+    def notifyHA(self, msg, talk=False):
+        topic = "socket_settings/notifier"
+        msg = json.dumps(msg)
+        self.Publish(topic, msg, talk = talk)
+    
     def updateConfigFile(self, dict):
         try:
 
@@ -293,12 +307,8 @@ class MQTTServer(Thread):
         else:
             raise self.clientErrorHandler.BadRequest("Error subscriber not activated")
 
-
-
-
-
     def checkParams(self):
-        if (not self.configParams == sorted(self.configs.keys())):
+        if (not sorted(self.configParams) == sorted(self.configs.keys())):
             raise self.clientErrorHandler.BadRequest(
                 "Missing parameters in config file")
 

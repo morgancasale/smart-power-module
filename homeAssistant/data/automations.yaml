@@ -1,0 +1,27 @@
+- id: SS_notifier
+  alias: SS_notifier
+  
+  trigger:
+    - platform: mqtt
+      topic: socket_settings/notifier
+    
+  action:
+    service: persistent_notification.create
+    data:
+      title: "{{ trigger.payload_json.title }}"
+      message: "{{ trigger.payload_json.message }}"
+
+- id: getHAID
+  alias: getHAID
+  trigger:
+    - platform: mqtt
+      topic: homeassistant/getHAID
+  variables:
+    HAID: >-
+      {% from 'getHAID.jinja' import getHAID %}
+      {{ getHAID(trigger.payload) }}
+  action:
+    - service: mqtt.publish
+      data_template:
+        topic: "homeassistant/HAID"
+        payload: "{{ HAID }}"

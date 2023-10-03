@@ -1,20 +1,20 @@
 {
     "CONFIG": {
         "activatedMethod": {
-            "MQTT": true,
+            "MQTT": false,
             "REST": false
         },
-
         "HomeAssistant": {
-            "enabled": false,
+            "enabled": true,
             "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU",
             "autoHA": false,
-            "address": "http://192.168.2.163",
+            "HA_mDNS": "smartsocket.local",
+            "address": "http://192.168.2.144",
             "port": 8123,
             "baseTopic": "homeassistant",
             "system": "smartSocket"
         }
-    }, 
+    },
     "REST": {
         "endPointID": null,
         "endPointName": null,
@@ -29,10 +29,10 @@
         }
     },
     "MQTT": {
-        "endPointID": "asdfghjk",
-        "endPointName": "zsdfghjkl",
-        "autoBroker": false,
-        "brokerAddress": "broker.emqx.io",
+        "endPointID": null,
+        "endPointName": null,
+        "autoBroker": true,
+        "brokerAddress": "broker.hivemq.com",
         "brokerPort": 1883,
         "username": "",
         "password": "",
@@ -40,22 +40,25 @@
             "sub": true,
             "pub": true
         },
-        "clientID": "1234567890",
+        "clientID": "deviceConnector",
         "MQTTTopics": {
             "sub": [
-                "/smartSocket/data"
+                "smartSocket/data",
+                "pizzapazza/1"
             ],
             "pub": [
-                "/smartSocket/data"
+                "smartSocket/control",
+                "homeassistant/#"
             ]
         },
         "QOS": 0
     },
     "REGISTRATION": {
-        "enabled": false,
-        "serviceID": "SODE2NT",
+        "enabled": true,
+        "serviceID": "SONLINETRACKER",
         "serviceName": "serviceTracker",
-        "catalogAddress": "http://192.168.2.145",
+        "catalog_mDNS": "smartsocket.local",
+        "catalogAddress": "http://192.168.2.144",
         "catalogPort": 8099,
         "T_Registration": 1
     }

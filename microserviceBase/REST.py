@@ -8,6 +8,8 @@ from threading import Thread, Event, current_thread
 
 from .Error_Handler import *
 
+IN_DOCKER = os.environ.get("IN_DOCKER", False)
+
 class RESTServer(Thread):
     global allowedMethods
 
@@ -54,7 +56,7 @@ class RESTServer(Thread):
 
             if(add_funcs != None): self.add_funcs = add_funcs
             if(init_func != None): init_func(self)
-            if(MQTTService != None): self.MQTTService = MQTTService        
+            if(MQTTService != None): self.MQTTService = MQTTService 
             
         except HTTPError as e:
             events["stopEvent"].set()
@@ -172,13 +174,18 @@ class RESTServer(Thread):
                         case "IPAddress":
                             self.IPAddress = self.configs[key]
 
-                            if(self.IPAddress == "127.0.0.1" or self.IPAddress == "localhost"):
-                                localIP = socket.gethostbyname(socket.gethostname())
+                            if(not IN_DOCKER and self.IPAddress == "127.0.0.1" or self.IPAddress == "localhost"):
+                                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                                s.settimeout(0)
+                                s.connect(('10.254.254.254', 1))
+                                localIP = s.getsockname()[0]
+                                #localIP = socket.gethostbyname(socket.gethostname())
                                 self.IPAddress = localIP
-
-                            DOCKER_IP = os.environ.get("DOCKER_IP", None)
-                            if(DOCKER_IP != None):
-                                self.IPAddress = DOCKER_IP
+                            
+                            if(IN_DOCKER):
+                                DOCKER_IP = os.environ.get("DOCKER_IP", None)
+                                if(DOCKER_IP != None):
+                                    self.IPAddress = DOCKER_IP
                 case "port":
                     if(not isinstance(self.configs[key], int)):
                         raise self.clientErrorHandler.BadRequest(message=key + " parameter must be a integer")

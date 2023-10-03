@@ -15,13 +15,14 @@ from cherrypy import HTTPError
 
 from microserviceBase.Error_Handler import *
 class DeviceSettings:
-    def __init__(self, settingsData, newSettings = True):
+    def __init__(self, DBPath, settingsData, newSettings = True):
         self.settingsKeys = [
             "deviceID", "deviceName", "enabledSockets", "HPMode", "MPControl", "maxPower", "MPMode", "faultControl",
             "parControl", "parThreshold", "parMode", "applianceType", "FBControl", "FBMode",
             "scheduling", "Online"
         ]
-
+        self.DBPath = DBPath
+        
         self.scheduling = []
 
         if(newSettings) : self.checkKeys(settingsData)
@@ -35,7 +36,7 @@ class DeviceSettings:
     def checkAppl(self, applType): #TODO check if appliance exists in DB
         try:
             if(applType == "None"): return True
-            return check_presence_inDB(DBPath, "AppliancesInfo", "ApplianceType", applType)
+            return check_presence_inDB(self.DBPath, "AppliancesInfo", "ApplianceType", applType)
         except HTTPError as e:
             raise HTTPError(
                 status=e.status, message=e._message
@@ -126,11 +127,11 @@ class DeviceSettings:
     def updateNameinHA(self): #TODO Test this 
         try:
             query = "SELECT * FROM DeviceSettings WHERE deviceID = \"" + self.deviceID + "\""
-            devSettings = DBQuery_to_dict(DBPath, query)[0]
+            devSettings = DBQuery_to_dict(self.DBPath, query)[0]
 
             if(devSettings["deviceName"] != self.deviceName):
                 query = "SELECT * FROM EndPoints WHERE endPointName = \"deviceConnector\""
-                deviceConnector = DBQuery_to_dict(DBPath, query)[0]
+                deviceConnector = DBQuery_to_dict(self.DBPath, query)[0]
 
                 url = "http://%s:%s/updateDeviceName" % (deviceConnector["IPAddress"], deviceConnector["port"])
                 headers = {"Content-Type": "application/json"}

@@ -22,7 +22,7 @@ class StandByPowerDetection():
 
             while(True):
                 self.controlAndDisconnect() 
-                time.sleep(60)
+                time.sleep(2)
         except HTTPError as e:
             message = "An error occurred while running the service: \u0085\u0009" + e._message
             raise Exception(message)
@@ -44,7 +44,7 @@ class StandByPowerDetection():
                 FROM {}
                 WHERE entity_id = ?
             )
-            WHERE row_num <= 60 """.format(self.database), (powerStateID,)) #60
+            WHERE row_num <= 5 """.format(self.database), (powerStateID,))
         results = self.HACur.fetchall()
         
         #for result in results:
@@ -72,6 +72,20 @@ class StandByPowerDetection():
         else:
             return None   
     
+        
+    '''
+    def moduleInfo(self):
+        #this method retrieves the status of the module, if the module is off or offline(?)
+        #there is no need to check for standBy power
+        self.CatalogC#er.execute("""SELECT *
+                        FROM {}""".format(self.modules_and_switches))
+        result = self.CatalogCu#r.fetchall()
+        if result is not None:
+            return (result)
+        else:
+            return None
+    '''
+
     def getCatalogInfo(self, table, keyName, keyValue, verbose=False):
         try:
             catalogAddress = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
@@ -210,7 +224,7 @@ class StandByPowerDetection():
                         for prevValues in prevRows:
                             if (1<=int(prevValues[1])<=value):
                                 standByPowercont+=1   
-                            if standByPowercont>=60:
+                            if standByPowercont>=5:
                                 self.MQTTInterface(info[0][0])
                                 
 

@@ -148,7 +148,10 @@ class DeviceSchedule:
             )
     
     def DB_to_dict(DBPath, data):
-        query = "SELECT * FROM DeviceScheduling WHERE deviceID = '" + data["deviceID"] + "'"
+        ID = None
+        if(type(data) == dict) : ID = data["deviceID"]
+        elif(type(data) == str) : ID = data
+        query = "SELECT * FROM DeviceScheduling WHERE deviceID = '" + ID + "'"
         try:
             data = DBQuery_to_dict(DBPath, query)
 
