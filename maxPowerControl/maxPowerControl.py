@@ -166,11 +166,6 @@ class maxPowerControl():
         str_msg = json.dumps(msg, indent=2)
         self.client.MQTT.Publish(topic, str_msg, talk=False)
         print("House %s power consumption exceeded limit, device %s was turned off" % (houseID,deviceID))
-        msg = {
-            "title" : ("House %s power consumption exceeded limit", houseID),
-            "message" : ("Device %s was turned off", deviceID)
-        }
-        self.client.MQTT.notifyHA(msg, talk = True)
 
     def controlPowerforall(self):
         try:

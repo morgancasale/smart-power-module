@@ -8,19 +8,39 @@ import os
 import time
 import sys
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-sys.path.append(PROJECT_ROOT)
-from microserviceBase.serviceBase import *
+IN_DOCKER = os.environ.get("IN_DOCKER", False)
+if not IN_DOCKER:
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    sys.path.append(PROJECT_ROOT)
 
+from microserviceBase.serviceBase import *
 
 class Emulator:
     def __init__(self):
-        self.client= ServiceBase("C:/Users/mirip/Desktop/progetto_IOT/smart-power-module/dataGenerationAndElimination/dataGen.json")
-        self.appClient=Appliances()
+        self.threads = [] 
+        self.running=0
+        try:
+            config_file = "emulatorConfig.json"
+            if(not IN_DOCKER):
+                config_file = "dataGenerationAndElimination/" + config_file
+        
+            self.client= ServiceBase("C:/Users/mirip/Desktop/progetto_IOT/smart-power-module/dataGenerationAndElimination/dataGen.json")
+            self.appClient=Appliances()
+            i=0
+            while(i<=60): 
+                self.deviceReg()
+                self.publishApp('normal')
+                self.joinThreads()  # Start the threads
+                i+=1
+        except HTTPError as e:
+            message = "An error occurred while running the service: \u0085\u0009" + e._message
+            raise Exception(message)
+        except Exception as e:
+            message = "An error occurred while running the service: \u0085\u0009" + str(e)
+            raise Exception(message)
 
     #modes: standbypower, faulty, blackout,maxpower, contatore, normal
     def messageGenerator(self,mode,dev):
-        msg=None
         if mode == 'standbypower':
             msg=self.appClient.standByPowerEmulator(dev)
         else:
@@ -43,10 +63,9 @@ class Emulator:
         response = requests.get(url, params=params)
         response = response.json()[0]
         endpoint = response
-        ip_address = endpoint.get('IPAddress')
         port = endpoint.get('port')
 
-        url_dc= "http://" + str(ip_address)+ ":" + str(port) + "/getRole"
+        url_dc=  str(catalog_address)+ ":" + str(port) + "/getRole"
         for entry in data_reg["entries"]:
             mac = entry["MAC"]
             auto_broker = entry["autoBroker"]
@@ -66,40 +85,24 @@ class Emulator:
     #contatore: potenza supera quella massima supportata dal contatore
     #normal : funziona senza problemi
     #standbypower
-    '''def publishApp(self,mode):
-        threads = []
-        topic="/smartSocket/data"
-        self.client.start()
-        for i in range(11):
-            
-            msg=self.messageGenerator(mode, i)
-            thread = threading.Thread(target=self.client.MQTT.Publish, args=(topic,msg))
-            threads.append(thread)
-            thread.start()
-        for thread in threads:
-            thread.join()'''
     def publishApp(self, mode):
-        topic = "/smartSocket/data"
         self.client.start()
-
-        # Create and start threads outside the loop
         for i in range(11):
-            msg = self.messageGenerator(mode, i)
-            thread = threading.Thread(target=self.client.MQTT.Publish, args=(topic, msg))
+            thread = threading.Thread(target=self.deviceSim, args=(mode, i))
             self.threads.append(thread)
-            thread.start()
-
-    def joinThreads(self):
-        # Join the threads after publishing data
-        for thread in self.threads:
-            thread.join()
-                
-if __name__ == "__main__": 
-    sensor=Emulator()
-    sensor.deviceReg()
-    i=0
-    while i < 3:
-        sensor.publishApp('normal')
+            
+    def deviceSim(self, mode, i):
+        topic = "/smartSocket/data"
+        msg=self.messageGenerator(mode, i)
+        self.client.MQTT.Publish(topic,msg)
         time.sleep(2)
-        sensor.joinThreads()  # Join the threads after publishing
-        i += 1
+    
+    def joinThreads(self):
+        for thread in self.threads:
+            if not self.running:#not thread.is_alive():  # Start only if the thread is not already running
+                thread.start()
+        self.running=1        
+
+    
+if __name__ == "__main__":
+    Emulator()

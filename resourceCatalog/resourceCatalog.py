@@ -24,46 +24,6 @@ from service import *
 from microserviceBase.serviceBase import *
 from cherrypy import HTTPError
 
-def reconstructJson(DBPath, table, selectedData, requestEntry, verbose = False):
-    reconstructedData = []
-    try:
-        for sel in selectedData:
-            match table:
-                case "Houses":
-                    reconstructedData.append(House.DB_to_dict(DBPath, sel, verbose=verbose))
-                case "HouseSettings":
-                    reconstructedData.append(HouseSettings.DB_to_dict(DBPath, sel))
-                case "Services":
-                    reconstructedData.append(Service.DB_to_dict(DBPath, sel, verbose=verbose))
-                case "Users":
-                    reconstructedData.append(User.DB_to_dict(DBPath, sel, verbose=verbose))
-                case "Devices":
-                    reconstructedData.append(Device.DB_to_dict(DBPath, sel, verbose=verbose))
-                case "Sockets":
-                    reconstructedData.append(Socket.DB_to_dict(DBPath, sel))
-                case "Resources":
-                    reconstructedData.append(Resource.DB_to_dict(DBPath, sel, requestEntry))
-                case "EndPoints":
-                    reconstructedData.append(EndPoint.DB_to_dict(DBPath, sel))
-                case "DeviceSettings":
-                    reconstructedData.append(DeviceSettings.DB_to_dict(DBPath, sel))
-                case "DeviceScheduling":
-                    reconstructedData.append(DeviceSchedule.DB_to_dict(DBPath, sel))
-                case "AppliancesInfo":
-                    reconstructedData.append(Appliance.DB_to_dict(DBPath, sel))
-                case _:
-                    if("_conn" in table):
-                        reconstructedData.append(sel)
-                    else:
-                        raise Server_Error_Handler.NotImplemented(message="Unexpected invalid table")
-                
-        return reconstructedData
-    except HTTPError as e:
-        raise HTTPError(status=e.status, message = "An error occurred while reconstructing data:\u0085\u0009" + e._message)
-    except Exception as e:
-        raise Server_Error_Handler.InternalServerError(message="An error occurred while reconstructing data:\u0085\u0009" + str(e))
-    
-
 class resourceCatalog:
     def __init__(self, DBPath):
         if(not os.path.isfile(DBPath)):
@@ -74,14 +34,13 @@ class resourceCatalog:
         if(not IN_DOCKER): configFile_loc = "resourceCatalog/" + configFile_loc
 
         self.server = ServiceBase(
-            configFile_loc, isCatalog=True,
+            configFile_loc,
             GET=self.handleGetRequest, POST=self.handlePostRequest, 
             PUT=self.handlePutRequest, PATCH=self.handlePatchRequest,
             DELETE=self.handleDeleteRequest
         )
         self.server.start()
-
-        if(os.name == "nt") : self.server.advertise_catalog()      
+        
     
     def handleGetRequest(self, *uri, **params):
         cmd = uri[1]
@@ -243,7 +202,7 @@ class resourceCatalog:
                 
                 case "setDeviceSettings":
                     for DeviceSettingsData in params:
-                        entry = DeviceSettings(self.DBPath, DeviceSettingsData, newSettings = True)
+                        entry = DeviceSettings(DeviceSettingsData, newSettings = True)
                         entry.set2DB(self.DBPath)
                     return "Device settings update was successful"
                 
@@ -409,6 +368,44 @@ class resourceCatalog:
         except Exception as e:
             raise Server_Error_Handler.InternalServerError(message="An error occurred while handling the DELETE request:\u0085\u0009" + str(e))   
 
+    def reconstructJson(self, table, selectedData, requestEntry, verbose = False):
+        reconstructedData = []
+        try:
+            for sel in selectedData:
+                match table:
+                    case "Houses":
+                        reconstructedData.append(House.DB_to_dict(self.DBPath, sel, verbose=verbose))
+                    case "HouseSettings":
+                        reconstructedData.append(HouseSettings.DB_to_dict(self.DBPath, sel))
+                    case "Services":
+                        reconstructedData.append(Service.DB_to_dict(self.DBPath, sel, verbose=verbose))
+                    case "Users":
+                        reconstructedData.append(User.DB_to_dict(self.DBPath, sel, verbose=verbose))
+                    case "Devices":
+                        reconstructedData.append(Device.DB_to_dict(self.DBPath, sel, verbose=verbose))
+                    case "Sockets":
+                        reconstructedData.append(Socket.DB_to_dict(self.DBPath, sel))
+                    case "Resources":
+                        reconstructedData.append(Resource.DB_to_dict(self.DBPath, sel, requestEntry))
+                    case "EndPoints":
+                        reconstructedData.append(EndPoint.DB_to_dict(self.DBPath, sel))
+                    case "DeviceSettings":
+                        reconstructedData.append(DeviceSettings.DB_to_dict(self.DBPath, sel))
+                    case "DeviceScheduling":
+                        reconstructedData.append(DeviceSchedule.DB_to_dict(self.DBPath, sel))
+                    case "AppliancesInfo":
+                        reconstructedData.append(Appliance.DB_to_dict(self.DBPath, sel))
+                    case _:
+                        if("_conn" in table):
+                            reconstructedData.append(sel)
+                        else:
+                            raise Server_Error_Handler.NotImplemented(message="Unexpected invalid table")
+                    
+            return reconstructedData
+        except HTTPError as e:
+            raise HTTPError(status=e.status, message = "An error occurred while reconstructing data:\u0085\u0009" + e._message)
+        except Exception as e:
+            raise Server_Error_Handler.InternalServerError(message="An error occurred while reconstructing data:\u0085\u0009" + str(e))
     
     def checkPresence(self, entry): # check if an entry is present in the DB
         try:
@@ -462,8 +459,7 @@ class resourceCatalog:
                 message += "\" with key " + keyName + " and values " + "[\"" + "\", \"".join(keyValue) + "\"]"
                 raise Client_Error_Handler.NotFound(message=message)"""
             else:
-                DBPath = self.DBPath
-                reconstructedData = reconstructJson(DBPath, table, selectedData, entry, verbose)
+                reconstructedData = resourceCatalog.reconstructJson(table, selectedData, entry, verbose)
             
             return json.dumps(reconstructedData)
         except HTTPError as e:

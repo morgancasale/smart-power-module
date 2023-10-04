@@ -28,7 +28,6 @@ def notify(self, topic, payload):
     else:
         raise Client_Error_Handler.BadRequest("Topic not valid")
 
-
 class DeviceConnector():
     def __init__(self):
         self.baseTopic = "homeassistant/"
@@ -60,7 +59,6 @@ class DeviceConnector():
 
         self.service.MQTT.Subscribe("smartSocket/data")
         self.service.MQTT.Subscribe("homeassistant/switch/smartSocket/+/control/#")
-
 
     def setOnlineStatus(self, deviceID, status):
         try:
