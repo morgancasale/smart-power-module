@@ -1,4 +1,4 @@
-#PUBLISHER
+#PUBLISHER 127.0.0.1 192.168.2.145
 from app import *
 import json
 import time
@@ -8,19 +8,39 @@ import os
 import time
 import sys
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-sys.path.append(PROJECT_ROOT)
-from microserviceBase.serviceBase import *
+IN_DOCKER = os.environ.get("IN_DOCKER", False)
+if not IN_DOCKER:
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    sys.path.append(PROJECT_ROOT)
 
+from microserviceBase.serviceBase import *
 
 class Emulator:
     def __init__(self):
-        self.client= ServiceBase("C:/Users/mirip/Desktop/progetto_IOT/smart-power-module/dataGenerationAndElimination/res_catalog_serviceConfig.json")
-        self.appClient=Appliances()
+        self.threads = [] 
+        self.running=0
+        try:
+            config_file = "emulatorConfig.json"
+            if(not IN_DOCKER):
+                config_file = "dataGenerationAndElimination/" + config_file
+        
+            self.client= ServiceBase("C:/Users/mirip/Desktop/progetto_IOT/smart-power-module/dataGenerationAndElimination/dataGen.json")
+            self.appClient=Appliances()
+            i=0
+            while(i<=60): 
+                self.deviceReg()
+                self.publishApp('normal')
+                self.joinThreads()  # Start the threads
+                i+=1
+        except HTTPError as e:
+            message = "An error occurred while running the service: \u0085\u0009" + e._message
+            raise Exception(message)
+        except Exception as e:
+            message = "An error occurred while running the service: \u0085\u0009" + str(e)
+            raise Exception(message)
 
     #modes: standbypower, faulty, blackout,maxpower, contatore, normal
     def messageGenerator(self,mode,dev):
-        msg=None
         if mode == 'standbypower':
             msg=self.appClient.standByPowerEmulator(dev)
         else:
@@ -28,12 +48,13 @@ class Emulator:
         return msg
 
     def deviceReg(self):
-        json_data = json.load(open('dataGenerationAndElimination/res_catalog_serviceConfig.json'))
+
+        json_data = json.load(open('dataGenerationAndElimination/dataGen.json'))
         data_reg=data =json.load(open('dataGenerationAndElimination/registration.json'))
-        catalog_address = json_data['REST']['IPAddress']
-        catalog_port = json_data['REST']['port']
+        catalog_address = json_data["REGISTRATION"]["catalogAddress"]
+        catalog_port = json_data["REGISTRATION"]["catalogPort"]
         
-        url="http://%s:%s/getInfo"%(catalog_address, str(catalog_port))
+        url="%s:%s/getInfo"%(catalog_address, str(catalog_port))
         params={
         "table" : "EndPoints",
         "keyName" : "endPointName",
@@ -42,14 +63,13 @@ class Emulator:
         response = requests.get(url, params=params)
         response = response.json()[0]
         endpoint = response
-        ip_address = endpoint.get('IPAddress')
         port = endpoint.get('port')
 
-        url_dc= "http://" + str(ip_address)+ ":" + str(port) + "/getRole"
-        for entry in data_reg['entries']:
-            mac = entry['MAC']
-            auto_broker = entry['autoBroker']
-            auto_topics = entry['autoTopics']
+        url_dc=  str(catalog_address)+ ":" + str(port) + "/getRole"
+        for entry in data_reg["entries"]:
+            mac = entry["MAC"]
+            auto_broker = entry["autoBroker"]
+            auto_topics = entry["autoTopics"]
             params_dc={
                         "MAC": mac,
                         "autoBroker": auto_broker,
@@ -65,33 +85,24 @@ class Emulator:
     #contatore: potenza supera quella massima supportata dal contatore
     #normal : funziona senza problemi
     #standbypower
-    def publishApp(self,mode):
-        threads = []
-        topic="/smartSocket/data"
+    def publishApp(self, mode):
         self.client.start()
         for i in range(11):
+            thread = threading.Thread(target=self.deviceSim, args=(mode, i))
+            self.threads.append(thread)
             
-            msg=self.messageGenerator(mode, i)
-            thread = threading.Thread(target=self.client.MQTT.Publish, args=(topic,msg))
-            threads.append(thread)
-            thread.start()
-        for thread in threads:
-            thread.join()
-                
-if __name__ == "__main__": 
-    sensor=Emulator()
-    sensor.deviceReg()
-    i=0
-    while (i<3):
-        sensor.publishApp('normal')
+    def deviceSim(self, mode, i):
+        topic = "/smartSocket/data"
+        msg=self.messageGenerator(mode, i)
+        self.client.MQTT.Publish(topic,msg)
         time.sleep(2)
-        i+=1
-    #esp32firmware, true autobroker
-    #request. get dev conn
-    #res catalogue endpoint
-            
-    #for i sensori
-    #esp32firmware, true autobroker
-    #reqres catalogue endpoint
-    #MAC su json, RSSI, autobroker, come parametri con ? '''
+    
+    def joinThreads(self):
+        for thread in self.threads:
+            if not self.running:#not thread.is_alive():  # Start only if the thread is not already running
+                thread.start()
+        self.running=1        
 
+    
+if __name__ == "__main__":
+    Emulator()
