@@ -7,7 +7,8 @@ images = [
     "blackoutFaultyDetection",
     "maxPowerControl",
     "moduleConsumptionControl",
-    "standByPowerDetection"
+    "standByPowerDetection",
+    "timeShift"
 ]
 
 for image in images:

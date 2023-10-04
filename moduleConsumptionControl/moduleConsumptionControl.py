@@ -14,6 +14,7 @@ import sqlite3
 class ModuleConsumptionControl():
 
     def __init__(self):
+        self.moduleLim=1
         try:
             config_file = "moduleConsumptionControl.json"
             if(not IN_DOCKER):
@@ -81,33 +82,23 @@ class ModuleConsumptionControl():
         return results
 
     def lastValueCheck(self, HAID):
-        powerStateID = 'sensor.power' + HAID
+        meta = self.client.getMetaHAIDs(HAID)
+        for item in meta:
+            if item['entityID'] == 'power':
+                  powerID=item['metaID']
 
         #  retrieve the maximum value of timestamp column for each ID
         self.curHA.execute("""
             SELECT entity_id, MAX(last_updated_ts), state
             FROM {}
             WHERE entity_id
-            = ?""".format(self.database),(powerStateID,))
+            = ?""".format(self.database),(powerID,))
         result = self.curHA.fetchone()[2]
 
         if result is not None:
             return float(result)
         else:
             return None 
-    
-    ''' 
-    def moduleInfo(self):
-        #this method retrieves the status of the module, if the module is off
-        #there is no need to check for standBy power
-        self.CatCu#r.execute("""SELECT *
-                        FROM {}""".format(self.modules_and_switches))
-        result = self.CatCu#r.fetchall()
-        if result is not None:
-            return (result)
-        else:
-            return None        
-    '''
               
     def getHouseDevList(self, houseID="*"):
         try:
@@ -136,20 +127,54 @@ class ModuleConsumptionControl():
         except HTTPError as e:
             raise e
 
+    def getSwitchesStates(self, ID_list):
+        stateList=[]
+        for element in ID_list:
+            self.curHA.execute("""
+                SELECT metadata_id, MAX(last_updated_ts)
+                FROM {}
+                WHERE metadata_id
+                = ?""".format(self.database),(element,))
+            result=(self.curHA.fetchone()[0])
+            if result == 'off':
+                result= 0
+            else : result=1
+            stateList.append(result)
+        finalState= sum(stateList)
+        if finalState > 0:
+            res= True
+        else:
+            res= False
+        return res
+    
     def houseInfo(self,house_ID):
         #this method retrieves the modules belonging to each home that are on+
         #and have one device cnnected to them
         to_consider=[]
         house_modules = self.getHouseDevList(house_ID)
         for house_module in house_modules :
+            meta = self.client.getMetaHAIDs(house_module)
+            to_retrieve = ['left_plug', 'center_plug', 'right_plug']
+            switch_metaIDs = []
+            for item in meta:
+                if item['entityID'] in to_retrieve:
+                    switch_metaIDs.append(item['metaID'])
             result = self.getDeviceInfo(house_module)
-            if (result[0]["Online"]) :
-                settings = self.getDeviceSettingsInfo(house_module)[0]
-                if(settings["HPMode"] == 1 and settings["MPControl"] == 1):
-                    to_consider.append(house_module)
-        if len(to_consider) > 0:
-            return to_consider
-        else: return None   
+            moduleState= self.getSwitchesStates(switch_metaIDs)
+            if moduleState:
+                if (result[0]["Online"]) :
+                    settings = self.getDeviceSettingsInfo(house_module)[0]
+                    if(settings["HPMode"] == 1 and settings["MPControl"] == 1):
+                        to_consider.append(house_module)
+            return to_consider  
+        
+    def getApplianceInfo(self, applianceType, verbose = False):
+        try:
+            result = self.getCatalogInfo("AppliancesInfo", "applianceType", applianceType, verbose=verbose)
+
+            return result
+        except HTTPError as e:
+            raise e 
         
     def getRange(self, ID):
         maxPower = self.getDeviceSettingsInfo(ID)[0]["maxPower"]
@@ -178,22 +203,17 @@ class ModuleConsumptionControl():
         return house_list
     
     def controlAndNotify(self):
-        HADB_loc = "HADB.db" #TODO : Da aggiornare poi con home assistant
-        if(not IN_DOCKER):
-            HADB_loc = "maxPowerControl/" + HADB_loc
-        else:
-            HADB_loc = "HomeAssistant/" + HADB_loc
+        HADB_loc = "HADB.db"
+        HADB_loc = "homeAssistant/HADB/" + HADB_loc
 
         self.connHA = sqlite3.connect(HADB_loc)
-        self.curHA= self.connHA.cursor()
-
-        self.database= 'states'
-        self.onlineDev='Devices'  # online
-        self.onlinedev2 = 'DeviceResource_conn' #check Online for lastUpdate
-        self.ranges='AppliancesInfo'  #ranges
-        self.devices_settings= 'DeviceSettings' #deviceID,enabledSockets,parControl 
-        self.housesdev='HouseDev_conn' #Device per house
-        self.houses= 'Houses' #house ID
+        self.curHA = self.connHA.cursor()
+        self.database = 'states'
+        self.onlineDev ='Devices'  # online
+        self.ranges ='AppliancesInfo'  #ranges
+        self.devices_settings = 'DeviceSettings' #deviceID,enabledSockets,parControl 
+        self.housesdev ='HouseDev_conn' #Device per house
+        self.houses = 'Houses' #house ID
 
         houses = self.getHouseList()
         for house in houses:

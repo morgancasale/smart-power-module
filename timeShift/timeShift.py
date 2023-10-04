@@ -118,7 +118,7 @@ class TimeShift():
             query="DELETE FROM DeviceScheduling WHERE deviceID = ?"
             self.curs.execute(query, (deviceID,))
             self.conn.commit()
-            '''
+    '''
     
     def update_remove_info(self, repeat, scheduleID):
         repeat -= 1
