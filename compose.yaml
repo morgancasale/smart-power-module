@@ -118,3 +118,12 @@ services:
       - ./maxPowerControl:/HomeAssistant
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog
+
+  timeshift:
+    container_name: timeShift
+    image: timeshift
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.9
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
