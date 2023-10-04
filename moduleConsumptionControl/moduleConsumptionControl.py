@@ -14,7 +14,6 @@ import sqlite3
 class ModuleConsumptionControl():
 
     def __init__(self):
-        self.moduleLim=1
         try:
             config_file = "moduleConsumptionControl.json"
             if(not IN_DOCKER):
@@ -53,39 +52,11 @@ class ModuleConsumptionControl():
             message = "An error occurred while retriving info from catalog " + str(e)
             raise Server_Error_Handler.InternalServerError(message=message)
 
-    def getHAID(self, moduleID):
-        try:
-            if(self.client.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
-                partial = self.client.getHAID(moduleID)
-            else:
-                partial = "_" + moduleID[1:]
-            return partial
-        except HTTPError as e:
-            raise e
-
-    def prevValuesCheck(self, moduleID):
-        # Retrieve the N largest values of the timestamp column for the given moduleID
-        partial=moduleID[1:]
-        powerStateID= 'sensor.power_' + partial
-        self.curHA.execute("""
-            SELECT entity_id, state FROM (
-                SELECT entity_id, state, ROW_NUMBER() 
-                OVER (ORDER BY last_updated_ts DESC) AS row_num
-                FROM {}
-                WHERE entity_id = ?
-            )
-            WHERE row_num <= 5 """.format(self.database), (powerStateID,))
-        results = self.curHA.fetchall()
-        
-        #for result in results:
-        #    print(f"ID: {result[0]}, timestamp: {result[1]}")
-        return results
-
-    def lastValueCheck(self, HAID):
-        meta = self.client.getMetaHAIDs(HAID)
+    def lastValueCheck(self, ID):
+        meta = self.client.getMetaHAIDs(ID)
         for item in meta:
             if item['entityID'] == 'power':
-                  powerID=item['metaID']
+                    powerID=item['metaID']
 
         #  retrieve the maximum value of timestamp column for each ID
         self.curHA.execute("""
@@ -99,7 +70,7 @@ class ModuleConsumptionControl():
             return float(result)
         else:
             return None 
-              
+            
     def getHouseDevList(self, houseID="*"):
         try:
             result = self.getCatalogInfo("HouseDev_conn", "houseID", houseID)
@@ -223,9 +194,8 @@ class ModuleConsumptionControl():
             modules = self.houseInfo(house)
             if(modules is not None):
                 for module in modules:
-                    HAID = self.getHAID(module)
                     value = self.getRange(module) #info[i][0] = ID
-                    last_measurement = self.lastValueCheck(HAID)#[id, time,power]
+                    last_measurement = self.lastValueCheck(module)#[id, time,power]
                     if  last_measurement != None:
                         if int(last_measurement)> value:
                             self.MQTTInterface(module)
