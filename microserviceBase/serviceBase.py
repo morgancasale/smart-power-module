@@ -377,13 +377,13 @@ class ServiceBase(object):
 
     def getMetaHAIDs(self, deviceID):
         """
-            Returns a list of dictionaries containing the metadata IDs 
-            and the corresponding entity IDs of the specified device.
-            The list will be of the following form:
-            >>> [{
-            >>>     "metaID": "metadata_id",
-            >>>     "entityID": "entity_id"
-            >>> }, ...]
+            Returns a dictionary containing the metadata IDs 
+            for the entity IDs of the specified device.
+            The dictionary will be of the following form:
+            >>> {
+            >>>     "entityID": "metaID",
+            >>>     ...
+            >>> }
         """
         if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
             try:
@@ -394,12 +394,12 @@ class ServiceBase(object):
                 selectedData = pd.read_sql_query(query, conn).to_dict(orient="records")
                 conn.close()
 
-                result = []
+                result = {}
                 for data in selectedData:
-                    result.append({
-                        "metaID": data["metadata_id"],
-                        "entityID": data["entity_id"].split(deviceID+"_")[1]
-                    })
+                    metaID = data["metadata_id"]
+                    entityID = data["entity_id"].split(deviceID+"_")[1]
+
+                    result[entityID] = metaID
                 
                 return result
             except Exception as e:
