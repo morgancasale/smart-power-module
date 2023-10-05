@@ -66,7 +66,7 @@ class blackoutAndFaulty():
             if item['entityID'] == "voltage":
                 voltageID=item['metaID']
             if item['entityID'] == 'power':
-                  powerID=item['metaID']
+                    powerID=item['metaID']
         
         #  retrieve the maximum value of timestamp column for each ID
         self.curHA.execute("""
@@ -121,17 +121,6 @@ class blackoutAndFaulty():
             return result
         except HTTPError as e:
             raise e
-    
-    def getHAID(self, moduleID):
-        try:
-            if(self.client.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
-                partial = self.client.getHAID(moduleID)
-            else:
-                partial = "_" + moduleID[1:]
-            return partial
-        except HTTPError as e:
-            raise e
-    
     
     def getSwitchesStates(self, ID_list):
         stateList=[]
@@ -227,15 +216,18 @@ class blackoutAndFaulty():
             "deviceID" : ID, 
             "states" : [0,0,0]
             }
+            notifyMsg=("The appliance connected to %s seems to not be working properly" % ID)
         else:   
             msg= {
             "deviceID" : '*', 
             "states" : [0,0,0]
             }
+            notifyMsg=(" Alert: Blackout Detected ")
         
         str_msg = json.dumps(msg, indent=2)
 
         self.client.MQTT.Publish(topic, str_msg, talk=False)
+        self.client.notifyHA(notifyMsg)
         self.client.MQTT.stop() 
         
     def getHouseList(self):
