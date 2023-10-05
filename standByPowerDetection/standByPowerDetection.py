@@ -32,10 +32,10 @@ class StandByPowerDetection():
         except Exception as e:
             message = "An error occurred while running the service: \u0085\u0009" + str(e)
             raise Exception(message)
-    
-    def prevValuesCheck(self, HAID):
+
+    def prevValuesCheck(self, ID):
         # Retrieve the 10 largest values of the timestamp column for the given moduleID
-        meta = self.client.getMetaHAIDs(HAID)
+        meta = self.client.getMetaHAIDs(ID)
         for item in meta:
             if item['entityID'] == 'power':
                     powerID=item['metaID']
@@ -54,8 +54,8 @@ class StandByPowerDetection():
         #     print(f"ID: {result[0]}, timestamp: {result[1]}")
         return results
 
-    def lastValueCheck(self, HAID):
-        meta = self.client.getMetaHAIDs(HAID)
+    def lastValueCheck(self, ID):
+        meta = self.client.getMetaHAIDs(ID)
         for item in meta:
             if item['entityID'] == 'power':
                     powerID=item['metaID']
@@ -149,9 +149,13 @@ class StandByPowerDetection():
                         to_consider.append(house_module)
             return to_consider 
         
-    def getRange(self, deviceID):
-        device_type = self.getDeviceSettingsInfo(deviceID)[0]["applianceType"]
-        result = self.getApplianceInfo(device_type)[0][0]["standByPowerMax"]
+    def getRange(self, ID):
+        settings = self.getDeviceSettingsInfo(ID)[0]
+        if settings["parMode"] == "Manual" :
+            result=settings["parThreshold"]
+        else:
+            device_type = self.getDeviceSettingsInfo(ID)[0]["applianceType"]
+            result = self.getApplianceInfo(device_type)[0][0]["standByPowerMax"]
         if result is not None:
             dev_range = result
             return dev_range
@@ -169,9 +173,9 @@ class StandByPowerDetection():
             "deviceID" : ID, 
             "states" : [0,0,0]
             }
-    
         str_msg = json.dumps(msg, indent=2)
-
+        notifyMsg=("The consumption of the appliance connected to %s is parasitic" % ID)
+        self.client.notifyHA(notifyMsg)
         self.client.MQTT.Publish(topic, str_msg)
         self.client.MQTT.stop() 
 
