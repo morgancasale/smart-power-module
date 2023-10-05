@@ -23,7 +23,7 @@ class ModuleConsumptionControl():
             self.client.start()
 
             while(True): 
-                self.controlAndNotify()
+                self.control()
                 time.sleep(2)
         except HTTPError as e:
             message = "An error occurred while running the service: \u0085\u0009" + e._message
@@ -161,6 +161,8 @@ class ModuleConsumptionControl():
             "deviceID" : ID, 
             "states" : [0,0,0]
             }
+        notifyMsg=("The consumption of the appliance connected to %s has exceeded the selected threshold" % ID)
+        self.client.notifyHA(notifyMsg)
         str_msg = json.dumps(msg, indent=2)
         self.client.MQTT.Publish(topic, str_msg)
         self.client.MQTT.stop()           
@@ -173,7 +175,14 @@ class ModuleConsumptionControl():
             house_list = [house_list]
         return house_list
     
-    def controlAndNotify(self):
+    def notifyOrTurnOff(self, ID):
+        settings = self.getDeviceSettingsInfo(ID)[0]
+        if settings["MPMOde"] == "Notify" :
+            notifyMsg=("The consumption of the appliance connected to %s has exceeded the selected threshold" % ID)
+            self.client.notifyHA(notifyMsg)
+        else: self.MQTTInterface(ID)
+    
+    def control(self):
         HADB_loc = "HADB.db" #TODO : Da aggiornare poi con home assistant
         if(not IN_DOCKER):
             HADB_loc = "homeAssistant/HADB/" + HADB_loc
@@ -198,7 +207,7 @@ class ModuleConsumptionControl():
                     last_measurement = self.lastValueCheck(module)#[id, time,power]
                     if  last_measurement != None:
                         if int(last_measurement)> value:
-                            self.MQTTInterface(module)
+                            self.notifyOrTurnOff(module)
         self.connHA.close()
                                 
 
