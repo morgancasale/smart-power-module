@@ -20,7 +20,6 @@ class StandByPowerDetection():
                 config_file = "standByPowerDetection/" + config_file
             self.client = ServiceBase(config_file)
 
-            self.client = ServiceBase(config_file)
             self.client.start()
         
             while(True):
@@ -36,9 +35,7 @@ class StandByPowerDetection():
     def prevValuesCheck(self, ID):
         # Retrieve the 10 largest values of the timestamp column for the given moduleID
         meta = self.client.getMetaHAIDs(ID)
-        for item in meta:
-            if item['entityID'] == 'power':
-                    powerID=item['metaID']
+        powerID=meta["power"]
         self.curHA.execute("""
             SELECT entity_id, state FROM (
                 SELECT entity_id, state, ROW_NUMBER() 
@@ -56,17 +53,15 @@ class StandByPowerDetection():
 
     def lastValueCheck(self, ID):
         meta = self.client.getMetaHAIDs(ID)
-        for item in meta:
-            if item['entityID'] == 'power':
-                    powerID=item['metaID']
+        powerID=meta["power"]
         #return [(ID, max_timestamp, power)]
         #  retrieve the maximum value of timestamp column for each ID
-        self.HACur.execute("""
+        self.curHA.execute("""
             SELECT entity_id, MAX(last_updated_ts), state
             FROM {}
             WHERE entity_id
             = ?""".format(self.database),(powerID,))
-        results = self.HACur.fetchone()
+        results = self.curHA.fetchone()
         if results is not None:
             return (results)
         else:
@@ -135,11 +130,8 @@ class StandByPowerDetection():
         house_modules = self.getHouseDevList(house_ID)
         for house_module in house_modules :
             meta = self.client.getMetaHAIDs(house_module)
-            to_retrieve = ['left_plug', 'center_plug', 'right_plug']
             switch_metaIDs = []
-            for item in meta:
-                if item['entityID'] in to_retrieve:
-                    switch_metaIDs.append(item['metaID'])
+            switch_metaIDs.extend([meta["left_plug"], meta["right_plug"], meta["center_plug"]])
             result = self.getDeviceInfo(house_module)
             moduleState= self.getSwitchesStates(switch_metaIDs)
             if moduleState:
@@ -220,7 +212,7 @@ class StandByPowerDetection():
         self.onlineDev ='Devices'  # online
         self.ranges ='AppliancesInfo'  #ranges
         self.devices_settings = 'DeviceSettings' #deviceID,enabledSockets,parControl 
-        self.housesdev ='HouseDev_conn' #Device per house
+        self.housesdev ='HouseDev_conn' #Device per houselast
         self.houses = 'Houses' #house ID
 
         house_list = self.getHouseList()
@@ -231,8 +223,8 @@ class StandByPowerDetection():
                 break
             for info in modules:
                 standByPowercont=0 
-                value = self.getRange(info[0]["deviceID"]) #info[i][0] = ID
-                last_measurement = self.lastValueCheck(info[0]["deviceID"])#[id, time,power]
+                value = self.getRange(info) #info[i][0] = ID
+                last_measurement = self.lastValueCheck(info)#[id, time,power]
                 if last_measurement[2] != None and value != None :
                     if ((1 <= int(last_measurement[2]) <= int(value)) and last_measurement != 0):
                         prevRows= self.prevValuesCheck(info[0][0])
