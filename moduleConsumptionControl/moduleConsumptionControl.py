@@ -54,9 +54,7 @@ class ModuleConsumptionControl():
 
     def lastValueCheck(self, ID):
         meta = self.client.getMetaHAIDs(ID)
-        for item in meta:
-            if item['entityID'] == 'power':
-                    powerID=item['metaID']
+        powerID=meta["voltage"]
 
         #  retrieve the maximum value of timestamp column for each ID
         self.curHA.execute("""
@@ -125,11 +123,8 @@ class ModuleConsumptionControl():
         house_modules = self.getHouseDevList(house_ID)
         for house_module in house_modules :
             meta = self.client.getMetaHAIDs(house_module)
-            to_retrieve = ['left_plug', 'center_plug', 'right_plug']
             switch_metaIDs = []
-            for item in meta:
-                if item['entityID'] in to_retrieve:
-                    switch_metaIDs.append(item['metaID'])
+            switch_metaIDs.extend([meta["left_plug"], meta["right_plug"], meta["center_plug"]])
             result = self.getDeviceInfo(house_module)
             moduleState= self.getSwitchesStates(switch_metaIDs)
             if moduleState:
@@ -161,9 +156,9 @@ class ModuleConsumptionControl():
             "deviceID" : ID, 
             "states" : [0,0,0]
             }
+        str_msg = json.dumps(msg, indent=2)
         notifyMsg=("The consumption of the appliance connected to %s has exceeded the selected threshold" % ID)
         self.client.notifyHA(notifyMsg)
-        str_msg = json.dumps(msg, indent=2)
         self.client.MQTT.Publish(topic, str_msg)
         self.client.MQTT.stop()           
             
