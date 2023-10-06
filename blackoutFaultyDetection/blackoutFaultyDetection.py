@@ -62,11 +62,8 @@ class blackoutAndFaulty():
     
     def lastValueCheck(self, HAID):
         meta = self.client.getMetaHAIDs(HAID)
-        for item in meta:
-            if item['entityID'] == "voltage":
-                voltageID=item['metaID']
-            if item['entityID'] == 'power':
-                    powerID=item['metaID']
+        voltageID=meta["voltage"]
+        powerID=meta["power"]
         
         #  retrieve the maximum value of timestamp column for each ID
         self.curHA.execute("""
@@ -94,6 +91,37 @@ class blackoutAndFaulty():
 
         return {"power": power, "voltage": voltage} 
         #[ID, power, time], [id, voltage, time]
+        
+    def prevValuesCheck(self, ID):
+    # Retrieve the 10 largest values of the timestamp column for the given moduleID
+        meta = self.client.getMetaHAIDs(ID)
+        powerID=meta["power"]
+        self.curHA.execute("""
+            SELECT entity_id, state FROM (
+                SELECT entity_id, state, ROW_NUMBER() 
+                OVER (ORDER BY last_updated_ts DESC) AS row_num
+                FROM {}
+                WHERE entity_id = ?
+            )
+            WHERE row_num <= 2 """.format(self.database), (powerID,))
+        results_power = self.curHA.fetchall()
+        
+        voltageID=meta["voltage"]
+        self.curHA.execute("""
+            SELECT entity_id, state FROM (
+                SELECT entity_id, state, ROW_NUMBER() 
+                OVER (ORDER BY last_updated_ts DESC) AS row_num
+                FROM {}
+                WHERE entity_id = ?
+            )
+            WHERE row_num <= 2 """.format(self.database), (voltageID,))
+        results_voltage = self.curHA.fetchall()
+        
+        
+        #for result in results:
+        #     print(f"ID: {result[0]}, timestamp: {result[1]}")
+        return results_voltage, results_power
+
     
     def getHouseDevList(self, houseID="*"):
         try:
@@ -150,14 +178,10 @@ class blackoutAndFaulty():
         house_modules = self.getHouseDevList(house_ID)
         for house_module in house_modules :
             meta = self.client.getMetaHAIDs(house_module)
-            to_retrieve = ['left_plug', 'center_plug', 'right_plug']
             switch_metaIDs = []
-            for item in meta:
-                if item['entityID'] in to_retrieve:
-                    switch_metaIDs.append(item['metaID'])
+            switch_metaIDs.extend([meta["left_plug"], meta["right_plug"], meta["center_plug"]])
             result = self.getDeviceInfo(house_module)
             moduleState= self.getSwitchesStates(switch_metaIDs)
-            #print(house_module,moduleState)
             if moduleState:
                 if (result[0]["Online"]) :
                     to_consider_bl.append(house_module)
