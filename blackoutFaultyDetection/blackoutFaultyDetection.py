@@ -186,7 +186,7 @@ class blackoutAndFaulty():
                 if (result[0]["Online"]) :
                     to_consider_bl.append(house_module)
                     settings = self.getDeviceSettingsInfo(house_module)[0]
-                    if(settings["HPMode"] == 1 and settings["faultControl"] == 1):
+                    if(settings["HPMode"] == 1 and settings["FBControl"] == 1):
                         to_consider_faulty.append(house_module)
         return to_consider_faulty, to_consider_bl
         
@@ -235,24 +235,36 @@ class blackoutAndFaulty():
     def MQTTInterface(self, ID, case):
         self.client.start()
         topic = "/smartSocket/control"
-        if case == 'f':
+        settings = self.getDeviceSettingsInfo(ID)
+        if case == 'f' and settings["FBMode"]=="Notify" :
             msg= {
             "deviceID" : ID, 
             "states" : [0,0,0]
             }
             notifyMsg=("The appliance connected to %s seems to not be working properly" % ID)
-        else:   
+            self.client.notifyHA(notifyMsg)
+        elif case == 'f' and settings["FBMode"]=="Turn OFF":   
+            msg= {
+            "deviceID" : ID, 
+            "states" : [0,0,0]
+            }
+            notifyMsg=("The appliance connected to %s seems to not be working properly" % ID)
+            str_msg = json.dumps(msg, indent=2)
+            self.client.MQTT.Publish(topic, str_msg, talk=False)
+            self.client.notifyHA(notifyMsg)
+            self.client.MQTT.stop() 
+        else:
             msg= {
             "deviceID" : '*', 
             "states" : [0,0,0]
             }
             notifyMsg=(" Alert: Blackout Detected ")
         
-        str_msg = json.dumps(msg, indent=2)
+            str_msg = json.dumps(msg, indent=2)
 
-        self.client.MQTT.Publish(topic, str_msg, talk=False)
-        self.client.notifyHA(notifyMsg)
-        self.client.MQTT.stop() 
+            self.client.MQTT.Publish(topic, str_msg, talk=False)
+            self.client.notifyHA(notifyMsg)
+            self.client.MQTT.stop() 
         
     def getHouseList(self):
         result = self.getCatalogInfo("Houses", "houseID", "*")
