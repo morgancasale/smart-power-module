@@ -397,7 +397,7 @@ class ServiceBase(object):
 
                 result = {}
                 for data in selectedData:
-                    selDevID = "d" + data["entity_id"].split("_")[0].split("d")[1]
+                    selDevID = "d" + data["entity_id"].split("d")[1].split("_")[0]
                     if(selDevID == deviceID):
                         metaID = data["metadata_id"]
                         entityID = data["entity_id"].split(deviceID+"_")[1]
