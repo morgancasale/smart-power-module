@@ -19,8 +19,8 @@ class blackoutAndFaulty():
         self.v_upper_bound=253
         self.v_lower_bound=216
         #how many measures should be incorrect to consider a blackout
-        self.blackout_lim = 5
-        self.faultyLim = 0
+        self.blackout_lim = 5 #dispositivi
+        self.faultyLim = 4 #misure
 
         config_file = "blackoutFaultyDetection.json"
         if(not IN_DOCKER):
@@ -73,7 +73,7 @@ class blackoutAndFaulty():
             = ?""".format(self.database),(powerID,))
         result = self.curHA.fetchone()[2]
 
-        if result is not None:
+        if result !='unavailable':
             power = float(result)
         else:
             power = None
@@ -84,7 +84,7 @@ class blackoutAndFaulty():
             WHERE metadata_id
             = ?""".format(self.database),(voltageID,))
         result = self.curHA.fetchone()[2]
-        if result is not None:
+        if result !='unavailable':
             voltage = float(result)
         else:
             voltage = None
@@ -97,22 +97,22 @@ class blackoutAndFaulty():
         meta = self.client.getMetaHAIDs(ID)
         powerID=meta["power"]
         self.curHA.execute("""
-            SELECT entity_id, state FROM (
-                SELECT entity_id, state, ROW_NUMBER() 
+            SELECT state FROM (
+                SELECT state, ROW_NUMBER() 
                 OVER (ORDER BY last_updated_ts DESC) AS row_num
                 FROM {}
-                WHERE entity_id = ?
+                WHERE metadata_id = ?
             )
             WHERE row_num <= 2 """.format(self.database), (powerID,))
         results_power = self.curHA.fetchall()
         
         voltageID=meta["voltage"]
         self.curHA.execute("""
-            SELECT entity_id, state FROM (
-                SELECT entity_id, state, ROW_NUMBER() 
+            SELECT  state FROM (
+                SELECT  state, ROW_NUMBER() 
                 OVER (ORDER BY last_updated_ts DESC) AS row_num
                 FROM {}
-                WHERE entity_id = ?
+                WHERE metadata_id = ?
             )
             WHERE row_num <= 2 """.format(self.database), (voltageID,))
         results_voltage = self.curHA.fetchall()
@@ -213,20 +213,22 @@ class blackoutAndFaulty():
             return False
         else: return True
 
-    def faultyCheck(self, appl_info, last_meas, ID):
-        faulty_control = self.getDeviceSettingsInfo(ID)[0]["faultControl"]
-
-        if not faulty_control: #if faulty control is disabled
-            return False
-        else:
+    def faultyCheck(self, appl_info, last_meas, ID, single_or_mult):
+        if single_or_mult=='s':
             funct_min = appl_info["functioningRangeMin"]
             funct_max = appl_info["functioningRangeMax"]
-            
+        
             is_not_faulty = int(last_meas["power"]) >= 0
             is_not_faulty &= (funct_min < int(last_meas["power"]) < funct_max)
             is_not_faulty &= (self.v_lower_bound < int(last_meas["voltage"]) < self.v_upper_bound)
-           
-            return not is_not_faulty
+        else: 
+            funct_min = appl_info["functioningRangeMin"]
+            funct_max = appl_info["functioningRangeMax"]
+            is_not_faulty = int(last_meas["power"][0]) >= 0
+            is_not_faulty &= (funct_min < int(last_meas["power"][0]) < funct_max)
+            is_not_faulty &= (self.v_lower_bound < int(last_meas["voltage"][0]) < self.v_upper_bound)
+            
+        return not is_not_faulty
     
     def retrieveSocket(self,ID):
         switches = self.getDeviceSettingsInfo(ID)[0]["enabledSockets"]
@@ -235,14 +237,14 @@ class blackoutAndFaulty():
     def MQTTInterface(self, ID, case):
         self.client.start()
         topic = "/smartSocket/control"
-        settings = self.getDeviceSettingsInfo(ID)
+        settings = self.getDeviceSettingsInfo(ID)[0]
         if case == 'f' and settings["FBMode"]=="Notify" :
             msg= {
             "deviceID" : ID, 
             "states" : [0,0,0]
             }
             notifyMsg=("The appliance connected to %s seems to not be working properly" % ID)
-            self.client.notifyHA(notifyMsg)
+            self.client.MQTT.notifyHA(notifyMsg)
         elif case == 'f' and settings["FBMode"]=="Turn OFF":   
             msg= {
             "deviceID" : ID, 
@@ -251,7 +253,7 @@ class blackoutAndFaulty():
             notifyMsg=("The appliance connected to %s seems to not be working properly" % ID)
             str_msg = json.dumps(msg, indent=2)
             self.client.MQTT.Publish(topic, str_msg, talk=False)
-            self.client.notifyHA(notifyMsg)
+            self.client.MQTT.notifyHA(notifyMsg)
             self.client.MQTT.stop() 
         else:
             msg= {
@@ -263,7 +265,7 @@ class blackoutAndFaulty():
             str_msg = json.dumps(msg, indent=2)
 
             self.client.MQTT.Publish(topic, str_msg, talk=False)
-            self.client.notifyHA(notifyMsg)
+            self.client.MQTT.notifyHA(notifyMsg)
             self.client.MQTT.stop() 
         
     def getHouseList(self):
@@ -310,12 +312,12 @@ class blackoutAndFaulty():
                             self.MQTTInterface(module, 'b')
                             break
                         if module in modules_faulty:
-                            if self.faultyCheck(value, last_measurement, module):
-                                prevVoltage, prevPower = self.PrevValuesCheck(module)
+                            if self.faultyCheck(value, last_measurement, module,'s'):
+                                prevVoltage, prevPower = self.prevValuesCheck(module)
                                 readings = list(zip(prevVoltage, prevPower))
                                 for reading in readings:
                                     r = {"voltage": reading[0], "power": reading[1]}
-                                    if self.faultyCheck(value, r, module):
+                                    if self.faultyCheck(value, r, module,'m'):
                                         faulty_cont += 1   
                                         if faulty_cont >= self.faultyLim:
                                             print("Device with ID " + module + " is faulty!")
