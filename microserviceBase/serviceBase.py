@@ -392,14 +392,17 @@ class ServiceBase(object):
                 deviceID = deviceID.lower()
                 query = "SELECT * FROM states_meta WHERE entity_id LIKE '%"+deviceID+"%'"
                 selectedData = pd.read_sql_query(query, conn).to_dict(orient="records")
+                
                 conn.close()
 
                 result = {}
                 for data in selectedData:
-                    metaID = data["metadata_id"]
-                    entityID = data["entity_id"].split(deviceID+"_")[1]
+                    selDevID = "d" + data["entity_id"].split("_")[0].split("d")[1]
+                    if(selDevID == deviceID):
+                        metaID = data["metadata_id"]
+                        entityID = data["entity_id"].split(deviceID+"_")[1]
 
-                    result[entityID] = metaID
+                        result[entityID] = metaID
                 
                 return result
             except Exception as e:
