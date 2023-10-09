@@ -14,7 +14,6 @@ import sqlite3
 class ModuleConsumptionControl():
 
     def __init__(self):
-        self.moduleLim=1
         try:
             config_file = "moduleConsumptionControl.json"
             if(not IN_DOCKER):
@@ -24,7 +23,7 @@ class ModuleConsumptionControl():
             self.client.start()
 
             while(True): 
-                self.controlAndNotify()
+                self.control()
                 time.sleep(2)
         except HTTPError as e:
             message = "An error occurred while running the service: \u0085\u0009" + e._message
@@ -53,39 +52,9 @@ class ModuleConsumptionControl():
             message = "An error occurred while retriving info from catalog " + str(e)
             raise Server_Error_Handler.InternalServerError(message=message)
 
-    def getHAID(self, moduleID):
-        try:
-            if(self.client.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
-                partial = self.client.getHAID(moduleID)
-            else:
-                partial = "_" + moduleID[1:]
-            return partial
-        except HTTPError as e:
-            raise e
-
-    def prevValuesCheck(self, moduleID):
-        # Retrieve the N largest values of the timestamp column for the given moduleID
-        partial=moduleID[1:]
-        powerStateID= 'sensor.power_' + partial
-        self.curHA.execute("""
-            SELECT entity_id, state FROM (
-                SELECT entity_id, state, ROW_NUMBER() 
-                OVER (ORDER BY last_updated_ts DESC) AS row_num
-                FROM {}
-                WHERE entity_id = ?
-            )
-            WHERE row_num <= 5 """.format(self.database), (powerStateID,))
-        results = self.curHA.fetchall()
-        
-        #for result in results:
-        #    print(f"ID: {result[0]}, timestamp: {result[1]}")
-        return results
-
-    def lastValueCheck(self, HAID):
-        meta = self.client.getMetaHAIDs(HAID)
-        for item in meta:
-            if item['entityID'] == 'power':
-                  powerID=item['metaID']
+    def lastValueCheck(self, ID):
+        meta = self.client.getMetaHAIDs(ID)
+        powerID=meta["voltage"]
 
         #  retrieve the maximum value of timestamp column for each ID
         self.curHA.execute("""
@@ -99,7 +68,7 @@ class ModuleConsumptionControl():
             return float(result)
         else:
             return None 
-              
+            
     def getHouseDevList(self, houseID="*"):
         try:
             result = self.getCatalogInfo("HouseDev_conn", "houseID", houseID)
@@ -154,11 +123,8 @@ class ModuleConsumptionControl():
         house_modules = self.getHouseDevList(house_ID)
         for house_module in house_modules :
             meta = self.client.getMetaHAIDs(house_module)
-            to_retrieve = ['left_plug', 'center_plug', 'right_plug']
             switch_metaIDs = []
-            for item in meta:
-                if item['entityID'] in to_retrieve:
-                    switch_metaIDs.append(item['metaID'])
+            switch_metaIDs.extend([meta["left_plug"], meta["right_plug"], meta["center_plug"]])
             result = self.getDeviceInfo(house_module)
             moduleState= self.getSwitchesStates(switch_metaIDs)
             if moduleState:
@@ -191,6 +157,8 @@ class ModuleConsumptionControl():
             "states" : [0,0,0]
             }
         str_msg = json.dumps(msg, indent=2)
+        notifyMsg=("The consumption of the appliance connected to %s has exceeded the selected threshold" % ID)
+        self.client.notifyHA(notifyMsg)
         self.client.MQTT.Publish(topic, str_msg)
         self.client.MQTT.stop()           
             
@@ -202,9 +170,19 @@ class ModuleConsumptionControl():
             house_list = [house_list]
         return house_list
     
-    def controlAndNotify(self):
-        HADB_loc = "HADB.db"
-        HADB_loc = "homeAssistant/HADB/" + HADB_loc
+    def notifyOrTurnOff(self, ID):
+        settings = self.getDeviceSettingsInfo(ID)[0]
+        if settings["MPMOde"] == "Notify" :
+            notifyMsg=("The consumption of the appliance connected to %s has exceeded the selected threshold" % ID)
+            self.client.notifyHA(notifyMsg)
+        else: self.MQTTInterface(ID)
+    
+    def control(self):
+        HADB_loc = "HADB.db" #TODO : Da aggiornare poi con home assistant
+        if(not IN_DOCKER):
+            HADB_loc = "homeAssistant/HADB/" + HADB_loc
+        else:
+            HADB_loc = "HomeAssistant/" + HADB_loc
 
         self.connHA = sqlite3.connect(HADB_loc)
         self.curHA = self.connHA.cursor()
@@ -220,20 +198,14 @@ class ModuleConsumptionControl():
             modules = self.houseInfo(house)
             if(modules is not None):
                 for module in modules:
-                    HAID = self.getHAID(module)
                     value = self.getRange(module) #info[i][0] = ID
-                    last_measurement = self.lastValueCheck(HAID)#[id, time,power]
+                    last_measurement = self.lastValueCheck(module)#[id, time,power]
                     if  last_measurement != None:
                         if int(last_measurement)> value:
-                            self.MQTTInterface(module)
+                            self.notifyOrTurnOff(module)
         self.connHA.close()
                                 
 
 
 if __name__ == "__main__":
     control = ModuleConsumptionControl()
-
-
-
-
-
