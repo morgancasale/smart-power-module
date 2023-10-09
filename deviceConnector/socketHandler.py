@@ -274,13 +274,16 @@ class SocketHandler():
 
         return socketStgs
         
-    def regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, MAC, houseID):
+    def regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, MAC, houseID, autoMasterNode):
         try:
             headers = {
                 'content-type': "application/json",
             }
-
-            masterNode = not SocketHandler.checkPresenceOfMasterNode(catalogAddress, catalogPort)
+            
+            if(autoMasterNode):
+                masterNode = not SocketHandler.checkPresenceOfMasterNode(catalogAddress, catalogPort)
+            else:
+                masterNode = False
 
             deviceID = SocketHandler.genDeviceID(catalogAddress, catalogPort)
 
@@ -290,11 +293,11 @@ class SocketHandler():
             socketStgsData = SocketHandler.genSocketStgs(deviceID, deviceName)
             deviceData = SocketHandler.genDevice(catalogAddress, catalogPort, system, baseTopic, deviceID, deviceName, houseID)
 
-            url = "%s:%s/setDevice" % (
+            url = "%s:%s/regDevice" % (
                 catalogAddress,
                 str(catalogPort)
             )
-            response = requests.put(url, headers=headers, data=json.dumps(deviceData))
+            response = requests.post(url, headers=headers, data=json.dumps(deviceData))
             if(response.status_code != 200):
                 raise HTTPError(response.status_code, str(response.text))
             
@@ -391,6 +394,10 @@ class SocketHandler():
                 try:
                     data = {}
                     out = {}
+                    if("autoMasterNode" in params.keys()):
+                        autoMasterNode = params["autoMasterNode"] == "True"
+                    else : 
+                        autoMasterNode = True
                     if(SocketHandler.checkPresenceOfSocket(params["MAC"], catalogAddress, catalogPort)): # if the socket is already registered
                         data = SocketHandler.getSocket(params["MAC"], catalogAddress, catalogPort)[0][0]
                         data["masterNode"] = bool(data["masterNode"])
@@ -401,7 +408,7 @@ class SocketHandler():
                         system = self.generalConfigs["CONFIG"]["HomeAssistant"]["system"]
                         baseTopic = self.generalConfigs["CONFIG"]["HomeAssistant"]["baseTopic"]
                         houseID = self.generalConfigs["CONFIG"]["houseID"]
-                        data = SocketHandler.regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, params["MAC"], houseID)
+                        data = SocketHandler.regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, params["MAC"], houseID, autoMasterNode)
 
                     out["deviceID"] = data["deviceID"]
                     out["masterNode"] = data["masterNode"]

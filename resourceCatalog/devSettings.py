@@ -17,8 +17,7 @@ from microserviceBase.Error_Handler import *
 class DeviceSettings:
     settingsKeys = [
         "deviceID", "enabledSockets", "HPMode", "MPControl", "maxPower", "MPMode", "faultControl",
-        "parControl", "parThreshold", "parMode", "applianceType", "FBControl", "FBMode",
-        "scheduling"
+        "parControl", "parThreshold", "parMode", "applianceType", "FBControl", "FBMode"
     ]
     def __init__(self, DBPath, settingsData, newSettings = True):
         self.DBPath = DBPath
@@ -32,7 +31,7 @@ class DeviceSettings:
     def checkKeys(self, settingsData):
         a = set(settingsData.keys())
         b = set(self.settingsKeys)
-        if(not b.issubset(a)): # Check if all keys of settingsKeys are present in deviceData
+        if(not a.issuperset(b)): # Check if all keys of settingsKeys are present in deviceData
             raise Client_Error_Handler.BadRequest("Missing one or more keys")
 
     def checkAppl(self, applType): #TODO check if appliance exists in DB
@@ -63,7 +62,7 @@ class DeviceSettings:
                     self.enabledSockets = settingsData["enabledSockets"]
                         
                     
-                case ("HPMode" | "MPControl" | "faultControl" | "parControl" | "FBControl"):
+                case ("HPMode" | "MPControl" | "faultControl" | "parControl" | "FBControl" | "Online"):
                     if(isinstance(settingsData[key], int)):
                         settingsData[key] = bool(settingsData[key])
                     if(not isinstance(settingsData[key], bool)):
@@ -74,6 +73,7 @@ class DeviceSettings:
                         case "faultControl": self.faultControl = settingsData["faultControl"]
                         case "parControl": self.parControl = settingsData["parControl"]
                         case "FBControl": self.FBControl = settingsData["FBControl"]
+                        case "Online": self.Online = settingsData["Online"]
                     
                 case ("maxPower" | "parThreshold"):
                     if(not isinstance(settingsData[key], (int, float)) or settingsData[key] < 0):
@@ -114,6 +114,7 @@ class DeviceSettings:
 
                                     sched.update({"deviceID": self.deviceID})
                                     self.scheduling.append(DeviceSchedule(sched, newSchedule=True))
+                
 
                 case _:
                     raise Client_Error_Handler.BadRequest(message="Unexpected key \"" + key + "\"")
