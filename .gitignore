@@ -33,6 +33,7 @@ test.py
 /homeAssistant/HADB/HADB.db-*
 /homeAssistant/HADB/HADB.db.*
 /homeAssistant/data/.homeassistant
+/homeAssistant/data/custom_components
 
 /mosquitto/data
 /mosquitto/log
