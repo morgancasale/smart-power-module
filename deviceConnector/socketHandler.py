@@ -409,6 +409,8 @@ class SocketHandler():
                         baseTopic = self.generalConfigs["CONFIG"]["HomeAssistant"]["baseTopic"]
                         houseID = self.generalConfigs["CONFIG"]["houseID"]
                         data = SocketHandler.regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, params["MAC"], houseID, autoMasterNode)
+                        if(data["masterNode"]):
+                            self.regHouse_toHA(houseID, system, baseTopic)
 
                     out["deviceID"] = data["deviceID"]
                     out["masterNode"] = data["masterNode"]
@@ -525,6 +527,57 @@ class SocketHandler():
                 }
             ]
 
+            stat_sensorsPayload = [
+                {
+                    "name": "Hourly Average",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_HAvg }}"
+                },
+                {
+                    "name": "Hourly Total",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_HTot }}"
+                },
+                {
+                    "name": "Daily Average",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_DAvg }}"
+                },
+                {
+                    "name": "Daily Total",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_DTot }}"
+                },
+                {
+                    "name": "Monthly Average",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_MAvg }}"
+                },
+                {
+                    "name": "Monthly Total",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_MTot }}"
+                },
+                {
+                    "name": "Yearly Average",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_YAvg }}"
+                },
+                {
+                    "name": "Yearly Total",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_YTot }}"
+                }
+            ]
+
             sensorsGeneralPayload = {
                 "availability_topic": availableSensorTopic,
                 "state_topic": stateSensorTopic
@@ -574,6 +627,7 @@ class SocketHandler():
                 "state_off": False
             }
 
+            sensorsPayload.extend(stat_sensorsPayload)
             for sensor in sensorsPayload:
                 sensor.update(sensorsGeneralPayload)
                 sensor.update(devicePayload)
@@ -591,6 +645,8 @@ class SocketHandler():
                 discTopic = baseTopic + "switch/" + system + "/" + deviceID + "_" + str(i) + "/config"
                 print(self.MQTTService.Publish(discTopic, json.dumps(switch), retain=True))
                 i+=1
+
+                
                 
         except HTTPError as e:
             message = """
@@ -604,6 +660,102 @@ class SocketHandler():
                 registering socket to HomeAssistant: \u0085\u0009
             """ + str(e)
             raise Server_Error_Handler.InternalServerError(message=message)
+        
+    def regHouse_toHA(self, system, baseTopic):
+        try:
+            baseTopic += "/"
+            stateSensorTopic = baseTopic + "sensor/" + system + "/" + "house" + "/state"
+            availableSensorTopic = baseTopic + "sensor/" + system + "/" + "house" + "/status"
+
+            stat_sensorsPayload = [
+                {
+                    "name": "Hourly Average",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_HAvg }}"
+                },
+                {
+                    "name": "Hourly Total",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_HTot }}"
+                },
+                {
+                    "name": "Daily Average",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_DAvg }}"
+                },
+                {
+                    "name": "Daily Total",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_DTot }}"
+                },
+                {
+                    "name": "Monthly Average",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_MAvg }}"
+                },
+                {
+                    "name": "Monthly Total",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_MTot }}"
+                },
+                {
+                    "name": "Yearly Average",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_YAvg }}"
+                },
+                {
+                    "name": "Yearly Total",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_YTot }}"
+                }
+            ]
+
+            sensorsGeneralPayload = {
+                "availability_topic": availableSensorTopic,
+                "state_topic": stateSensorTopic
+            }
+
+            name = "House Statistics"
+
+            devicePayload = {
+                "unique_id": "H1",
+                "device": {
+                    "name": name,
+                    "identifiers": ["H1"],
+                }
+            }
+
+            for sensor in stat_sensorsPayload:
+                sensor.update(sensorsGeneralPayload)
+                sensor.update(devicePayload)
+                sensor["unique_id"] = sensor["unique_id"] + "_" + sensor["device_class"]
+                discTopic = baseTopic + "sensor/" + system + "/" + "house" + "_" + sensor["device_class"] + "/config" # homeassistant/sensor/smartSocket/
+                print(self.MQTTService.Publish(discTopic, json.dumps(sensor), retain=True))
+                time.sleep(0.1)
+        except HTTPError as e:
+            message = """
+                An error occurred while 
+                registering house sensor to HomeAssistant: \u0085\u0009
+            """ + e._message
+            raise HTTPError(status=e.status, message = message)
+        
+        except Exception as e:
+            message = """
+                An error occurred while
+                registering house sensor to HomeAssistant: \u0085\u0009
+            """ + str(e)
+            raise Server_Error_Handler.InternalServerError(message=message)
+
+
+
         
     def updateSocketName_onHA(self, *uri): #TODO Test this 
         try:
