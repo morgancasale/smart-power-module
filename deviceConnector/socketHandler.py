@@ -321,6 +321,10 @@ class SocketHandler():
             
             if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
                 SocketHandler.regSocket_toHA(self, system, baseTopic, deviceID, socketData["masterNode"])
+                SocketHandler.regSocketStats_toHA(self, system, baseTopic, deviceID, socketData["masterNode"])
+                
+                if(masterNode):
+                    SocketHandler.regHouse_toHA(self, system, baseTopic)
 
                 deviceData["HAID"] = None
                 
@@ -409,8 +413,7 @@ class SocketHandler():
                         baseTopic = self.generalConfigs["CONFIG"]["HomeAssistant"]["baseTopic"]
                         houseID = self.generalConfigs["CONFIG"]["houseID"]
                         data = SocketHandler.regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, params["MAC"], houseID, autoMasterNode)
-                        if(data["masterNode"]):
-                            SocketHandler.regHouse_toHA(self, system, baseTopic)
+                        
 
                     out["deviceID"] = data["deviceID"]
                     out["masterNode"] = data["masterNode"]
@@ -527,6 +530,93 @@ class SocketHandler():
                 }
             ]
 
+            sensorsGeneralPayload = {
+                "availability_topic": availableSensorTopic,
+                "state_topic": stateSensorTopic
+            }
+
+            if(deviceName == None) : name = "Smart Socket " + ("Master " if bool(masterNode) else "") + deviceID
+            else : name = deviceName + (" Master " if bool(masterNode) else "")
+
+            devicePayload = {
+                "unique_id": deviceID,
+                "device": {
+                    "name": name,
+                    "identifiers": [deviceID],
+                }
+            }
+
+            stateSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/state"
+            commandSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/control"
+            availableSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/status"
+
+            switchesPayload = [
+                {
+                    "name": "Left plug",
+                    "state_topic": stateSwitchTopic + "/0",
+                    "command_topic": commandSwitchTopic + "/0",
+                    "availability_topic": availableSwitchTopic+ "/0"
+                },
+                {
+                    "name": "Center plug",
+                    "state_topic": stateSwitchTopic + "/1",
+                    "command_topic": commandSwitchTopic +"/1",
+                    "availability_topic": availableSwitchTopic+"/1"
+                },
+                {
+                    "name": "Right plug",
+                    "state_topic": stateSwitchTopic + "/2",
+                    "command_topic": commandSwitchTopic +"/2",
+                    "availability_topic": availableSwitchTopic+"/2"
+                }
+            ]
+
+            switchesGeneralPayload = {
+                "device_class": "outlet",
+                "payload_on": True,
+                "payload_off": False,
+                "state_on": True,
+                "state_off": False
+            }
+
+            for sensor in sensorsPayload:
+                sensor.update(sensorsGeneralPayload)
+                sensor.update(devicePayload)
+                sensor["unique_id"] = sensor["unique_id"] + "_" + sensor["device_class"]
+                discTopic = baseTopic + "sensor/" + system + "/" + deviceID + "_" + sensor["device_class"] + "/config" # homeassistant/sensor/smartSocket/
+                print(self.MQTTService.Publish(discTopic, json.dumps(sensor), retain=True))
+                time.sleep(0.1)
+
+            i = 0
+            for switch in switchesPayload:
+                switch.update(switchesGeneralPayload)
+                switch.update(devicePayload)
+                switch["unique_id"] = switch["unique_id"] + "_" + str(i)
+                discTopic = baseTopic + "switch/" + system + "/" + deviceID + "_" + str(i) + "/config"
+                print(self.MQTTService.Publish(discTopic, json.dumps(switch), retain=True))
+                i+=1
+
+                
+                
+        except HTTPError as e:
+            message = """
+                An error occurred while 
+                registering socket to HomeAssistant: \u0085\u0009
+            """ + e._message
+            raise HTTPError(status=e.status, message = message)
+        except Exception as e:
+            message = """
+                An error occurred while
+                registering socket to HomeAssistant: \u0085\u0009
+            """ + str(e)
+            raise Server_Error_Handler.InternalServerError(message=message)
+        
+    def regSocketStats_toHA(self, system, baseTopic, deviceID, masterNode, deviceName=None):
+        try:
+            baseTopic += "/"
+            stateSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID + "/state"
+            availableSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID + "/status"
+
             stat_sensorsPayload = [
                 {
                     "name": "Hourly Average",
@@ -586,54 +676,15 @@ class SocketHandler():
             if(deviceName == None) : name = "Smart Socket " + ("Master " if bool(masterNode) else "") + deviceID
             else : name = deviceName + (" Master " if bool(masterNode) else "")
 
+            deviceID = u"\u200B" + deviceID + "_stats"
+
             devicePayload = {
                 "unique_id": deviceID,
                 "device": {
-                    "name": name,
+                    "name": name + " Statistics",
                     "identifiers": [deviceID],
                 }
             }
-
-            stateSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/state"
-            commandSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/control"
-            availableSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/status"
-
-            switchesPayload = [
-                {
-                    "name": "Left plug",
-                    "state_topic": stateSwitchTopic + "/0",
-                    "command_topic": commandSwitchTopic + "/0",
-                    "availability_topic": availableSwitchTopic+ "/0"
-                },
-                {
-                    "name": "Center plug",
-                    "state_topic": stateSwitchTopic + "/1",
-                    "command_topic": commandSwitchTopic +"/1",
-                    "availability_topic": availableSwitchTopic+"/1"
-                },
-                {
-                    "name": "Right plug",
-                    "state_topic": stateSwitchTopic + "/2",
-                    "command_topic": commandSwitchTopic +"/2",
-                    "availability_topic": availableSwitchTopic+"/2"
-                }
-            ]
-
-            switchesGeneralPayload = {
-                "device_class": "outlet",
-                "payload_on": True,
-                "payload_off": False,
-                "state_on": True,
-                "state_off": False
-            }
-
-            for sensor in sensorsPayload:
-                sensor.update(sensorsGeneralPayload)
-                sensor.update(devicePayload)
-                sensor["unique_id"] = sensor["unique_id"] + "_" + sensor["device_class"]
-                discTopic = baseTopic + "sensor/" + system + "/" + deviceID + "_" + sensor["device_class"] + "/config" # homeassistant/sensor/smartSocket/
-                print(self.MQTTService.Publish(discTopic, json.dumps(sensor), retain=True))
-                time.sleep(0.1)
 
             for sensor in stat_sensorsPayload:
                 sensor.update(sensorsGeneralPayload)
@@ -643,20 +694,7 @@ class SocketHandler():
                 sensor["unique_id"] = sensor["unique_id"] + "_" + device_class
                 discTopic = baseTopic + "sensor/" + system + "/" + deviceID + "_" + device_class + "/config" # homeassistant/sensor/smartSocket/
                 print(self.MQTTService.Publish(discTopic, json.dumps(sensor), retain=True))
-                time.sleep(0.1)
-
-
-
-            i = 0
-            for switch in switchesPayload:
-                switch.update(switchesGeneralPayload)
-                switch.update(devicePayload)
-                switch["unique_id"] = switch["unique_id"] + "_" + str(i)
-                discTopic = baseTopic + "switch/" + system + "/" + deviceID + "_" + str(i) + "/config"
-                print(self.MQTTService.Publish(discTopic, json.dumps(switch), retain=True))
-                i+=1
-
-                
+                time.sleep(0.1)                
                 
         except HTTPError as e:
             message = """
