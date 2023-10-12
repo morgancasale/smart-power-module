@@ -1,394 +1,339 @@
 import os
 import time
 import sys
+IN_DOCKER = os.environ.get("IN_DOCKER", False)
+if not IN_DOCKER:
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    sys.path.append(PROJECT_ROOT)
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-sys.path.append(PROJECT_ROOT)
 import sqlite3
-
+import json
+import pandas as pd
+import requests
 
 from microserviceBase.serviceBase import *
 
 class DataAnalysis():
 
-    def __init__(self):
-
-        self.conn1 = sqlite3.connect("Data_Analysis/HADB.db")
-        self.curs1 = self.conn1.cursor()
-        self.client = ServiceBase("Data_Analysis/data_analysis.json")
-        self.cost = 118.35 
-        self.client.start()
-
-        while(True): 
-            self.process_data()
-            time.sleep(5*60)
-
-    
-    def process_df(self,df):
-        df['attribute'] = df['entity'].apply(lambda x: x[:-2] if x.endswith('_2') else x)
-        df['device_id'] = df['entity'].apply(lambda x: x.split('.')[-1].split('_')[-1] if x.endswith('_2') else '1')
-        df['device_id'] = df['device_id'].apply(lambda x: f"D{x}")
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
-        df['state'] = df['state'].astype(float)
-        new_columns=['device_id','attribute','state','timestamp']
-        df = df.reindex(columns=new_columns)
-        df=df.replace('', 0, regex=True) #nel caso in cui ci fossero caselle vuote
-        pivot_df = df.pivot(index=['device_id','timestamp'], columns='attribute', values='state').reset_index()
-        return pivot_df
-    
-    def process_df_house(self,df,format_sensor,houseID,format_statistic):
-        result_df = df.groupby(['timestamp', 'attribute'])['state'].sum().reset_index()
-        result_df['attribute'] = 'sensor.' + result_df['attribute'] + f'_{format_sensor}_{houseID}'
-        result_df['state'] = result_df['state'].astype(int)
-        result_df = result_df.rename(columns={'attribute': 'entity_id'})
-        if not result_df.empty:
-            for i in range(len(result_df)):
-
-                topic1='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(format_statistic,houseID)
-                msg1='{"energy": %f}' % (result_df['state'].iloc[i])
-                self.client.MQTT.Publish(topic1, msg1)
-
-                topic2='/homeassistant/sensor/smartSocket/data_analysis/%s_cost/%s/state' %(format_statistic,houseID)
-                msg2='{"energy": %f}' % (result_df['state'].iloc[i]*self.cost)
-                self.client.MQTT.Publish(topic2, msg2)
-
-            #self.client.MQTT.stop()
-            return result_df
-        else:
-            return None
-    
-    def findmax(self,df,period,metric,houseID,format_statistic):
-        if df is not None:
-            df['timestamp'] = pd.to_datetime(df['timestamp'])
-            df[metric] = df['timestamp'].dt.to_period(period)
-            max_state_df = df.groupby([metric, 'entity_id'])[['state']].max().reset_index()
-            result_df = df.merge(max_state_df, on=[metric, 'entity_id', 'state'], how='inner', suffixes=('', '_max'))
-            result_df['entity_id'] = result_df['entity_id'] + '_max'
-            result_df = result_df.drop(columns=[metric])
-            result_df['state'] = result_df['state'].astype(int)
-            if not result_df.empty:
-                for i in range(len(result_df)):
-
-                    topic1='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(format_statistic,houseID)
-                    msg1='{"energy": %f}' % (result_df['state'].iloc[i])
-                    self.client.MQTT.Publish(topic1, msg1)
-
-                    topic2='/homeassistant/sensor/smartSocket/data_analysis/%s_cost/%s/state' %(format_statistic,houseID)
-                    msg2='{"energy": %f}' % (result_df['state'].iloc[i]*self.cost)
-                    self.client.MQTT.Publish(topic2, msg2)
-
-                #self.client.MQTT.stop()
-                return result_df
+    def __init__(self): 
+        try:
+            config_file = "data_analysis.json"
+            if(not IN_DOCKER):
+                config_file = "DataAnalysis/" + config_file
+            self.client = ServiceBase(config_file)
+            self.client.start()
+            self.cost = 118.35
+            
+            HADB_loc = "HADB.db"
+            if(not IN_DOCKER):
+                HADB_loc="homeAssistant/HADB/"+ HADB_loc
             else:
-                return None
+                HADB_loc = "homeAssistant/HADB"+ HADB_loc #da aggiornare poi con home assistant
+            self.HADBConn = sqlite3.connect(HADB_loc)
+            self.HADBCur = self.HADBConn.cursor()       
+            
+            while(True): 
+                self.processdata()
+                time.sleep(5*60)
+
+        except HTTPError as e:
+            message = "An error occurred while running the service: \u0085\u0009" + e._message
+            raise HTTPError(status=e.status, message=message)
+        except Exception as e:
+            message = "An error occurred while running the service: \u0085\u0009" + str(e)
+            raise Server_Error_Handler.InternalServerError(message=message)
     
-    def getalldata(self):
-        query="SELECT entity_id, state, strftime('%Y-%m-%d %H:%M:%S', datetime(last_updated_ts, 'unixepoch')) as timestamp\
-                        FROM states2\
-                        WHERE entity_id LIKE 'sensor.energy%'"
-        self.curs1.execute(query)
-        rows = self.curs1.fetchall()
-        matrix = np.array(rows)
-        df = pd.DataFrame(matrix, columns=['entity','state', 'timestamp'])
-        condition = df['entity'].str.match(r'^sensor\.energy(_[0-9]+)?$')
-        df = df[condition]
-        result=self.process_df(df)
-        return result
+    """Retrieves information about devices registered in the catalog and selects only those "online" """
+    def getDevicesInfo(self):
+        try:    
+            catalogAddress = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
+            catalogPort = self.client.generalConfigs["REGISTRATION"]["catalogPort"]
+            url = "%s:%s/getInfo" % (catalogAddress, str(catalogPort))
+            params = {"table": "Devices", "keyName": "deviceID", "keyValue": "*"}
 
+            response = requests.get(url, params=params)
+            if response.status_code != 200:
+                raise HTTPError(response.status_code, str(response.text))
+            result = json.loads(response.text)
+            dev_online = [device for device in result if device["Online"]]
+            return dev_online
+        except HTTPError as e:
+            message = "An error occurred while retriving info from catalog " + e._message
+            raise HTTPError(status=e.status, message=message)
+        except Exception as e:
+            message = "An error occurred while retriving info from catalog " + str(e)
+            raise Server_Error_Handler.InternalServerError(message=message)
+    
+    """Retrieves the "online" devices associated with a particular house"""
+    def getHouseDevList(self,houseID):
+        try:
+            catalogAddress = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
+            catalogPort = self.client.generalConfigs["REGISTRATION"]["catalogPort"]
+            url = "%s:%s/getInfo" % (catalogAddress, str(catalogPort))
+            params = {"table": "HouseDev_conn", "keyName": "houseID", "keyValue": houseID}
 
-    '''
-        This function calculates the average or the total energy consumption for each device in a given time period (hourly, daily, monthly, yearly).
-        The result is published on the MQTT broker.
-        It takes as input:
-            - df: the dataframe containing the data to be processed
-            - time_format: the format of the timestamp
-            - avg: a boolean value that indicates whether the average or the total energy consumption has to be calculated
-            - statistic_format: the format of the statistic (hourly_avg, hourly_tot, daily_avg, daily_tot, monthly_avg, monthly_tot, yearly_avg, yearly_tot)
-    '''
-    def compute_data(self, df, time_format, avg, statistic_format):
+            response = requests.get(url, params=params)
+            if response.status_code != 200:
+                raise HTTPError(response.status_code, str(response.text))
+            result = json.loads(response.text)
+
+            dev_online_list = set(device['deviceID'] for device in self.getDevicesInfo())
+            house_onlinedev = [device for device in result if device['deviceID'] in dev_online_list]
+            house_onlinedev_list = []
+            for row in house_onlinedev:
+                house_onlinedev_list.append((row["houseID"], row["deviceID"])) 
+            return house_onlinedev_list
+        
+        except HTTPError as e:
+            message = "An error occurred while retriving info from catalog " + e._message
+            raise HTTPError(status=e.status, message=message)
+        except Exception as e:
+            message = "An error occurred while retriving info from catalog " + str(e)
+            raise Server_Error_Handler.InternalServerError(message=message)
+
+    """For each online device belonging to a specific home, it finds the associated metadata_ids.
+    If the considered device is switched on, then it retrieves the metadata_id of the energy measurement 
+    (basic,hourly,daily,... according to the 'attribute') for that device."""
+    def selectMetaHAIDs(self,houseID,attribute):
+        house_devices= self.getHouseDevList(houseID)
+        devices_list=[]
+        selectedMetaHAIDs=[] 
+        for element in house_devices:
+            devices_list.append(element[1])        
+        for dev_id in devices_list:
+            meta_data = self.client.getMetaHAIDs(dev_id)
+            metaHAID=meta_data[attribute]
+            selectedMetaHAIDs.append(metaHAID)
+        return selectedMetaHAIDs
+        
+    """Gets the device_id from the metadata_id """
+    def getDeviceID(self, metaHAID,s_measure):
+        try:
+            query = "SELECT entity_id FROM states_meta WHERE metadata_id = ?"
+            self.HADBCur.execute(query,(metaHAID,))
+            rows = self.HADBCur.fetchall()    
+            if rows:
+                entity_id = rows[0][0]
+                parts = entity_id.split(".")
+                if s_measure:
+                    deviceID = (parts[1].split("_")[-3].title())
+                else:
+                    deviceID=(parts[1].split("_")[-2].title())
+                return deviceID
+        except HTTPError as e:
+                message = "An error occurred while retriving info from catalog " + e._message
+                raise HTTPError(status=e.status, message=message)
+        except Exception as e:
+                message = "An error occurred while retriving info from catalog " + str(e)
+                raise Server_Error_Handler.InternalServerError(message=message)    
+                
+    """Calculates the statistics (average or sum of consumption) and an estimate of the cost for each device according to the input parameters."""
+    def compute_data(self, df, time_format, avg, statistic_format,sm):
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         df['formatted_timestamp'] = df['timestamp'].dt.strftime(time_format)
+        df['state'] = df['state'].astype(float)   
         if avg == True:
-
-            result = df.groupby(['device_id', 'formatted_timestamp']).mean(numeric_only=True).reset_index()    
+            result=df.groupby(['metadata_id', 'formatted_timestamp'])['state'].mean().reset_index()  
         else:
-            result = df.groupby(['device_id', 'formatted_timestamp']).sum(numeric_only=True).reset_index()    
+            result = df.groupby(['metadata_id', 'formatted_timestamp'])['state'].sum().reset_index()       
         if not result.empty:
-
             for i in range(len(result)):
-                topic1='/homeassistant/sensor/smartSocket/data_analysis/%s/%s/state' %(statistic_format,result['device_id'].iloc[i])
-                msg1='{"energy": %f}' % (result['sensor.energy'].iloc[i])
-                self.client.MQTT.Publish(topic1, msg1)
+                deviceID = self.getDeviceID(int(result['metadata_id'][i]), sm)
+                topic='/homeassistant/sensor/smartSocket/%s/state' % deviceID
 
-                topic2='/homeassistant/sensor/smartSocket/data_analysis/%s_cost/%s/state' %(statistic_format,result['device_id'].iloc[i])
-                msg2='{"energy": %f}' % (result['sensor.energy'].iloc[i]*self.cost)
-                self.client.MQTT.Publish(topic2, msg2)
-            #self.client.MQTT.stop() 
+                msg='{"energy_%s": %f}' % (statistic_format, result['state'][i])
+                self.client.MQTT.Publish(topic, msg)
             return result
         else:
             return None
-
-    def compute_hourlyavgdata(self):
-        base_df = self.getalldata()
-
-        self.compute_data(base_df,'%Y-%m-%d %H:00:00',True,'hourly_avg')
+            
+    """Calculates the statistics (average or sum of consumption) and an estimate of the cost for each house according to the input parameters."""
+    def computedata_House(self,houseID, df, time_format, avg, statistic_format):
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['formatted_timestamp'] = df['timestamp'].dt.strftime(time_format)
+        df['state'] = df['state'].astype(float)   
+        if avg == True:
+            result=df.groupby(['formatted_timestamp'])['state'].mean().reset_index()  
+        else:
+            result = df.groupby(['formatted_timestamp'])['state'].sum().reset_index()       
+        if not result.empty:
+            for i in range(len(result)):
+                topic='/homeassistant/sensor/smartSocket/house/state'
+                msg='{"energy_%s": %f}' % (statistic_format, result['state'][i])
+                self.client.MQTT.Publish(topic, msg)
+            return result
+        else:
+            return None
+            
+    """Finds the device that consumed the most within a specified period (day, month, year) and the cost associated with that consumption."""
+    def findmax(self,df,time_format,statistic_format,sm):
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['formatted_timestamp'] = df['timestamp'].dt.strftime(time_format)
+        result = df.groupby('formatted_timestamp').apply(lambda x: x.loc[x['state'].idxmax()][['metadata_id', 'state']]).reset_index()
+        result.columns = ['formatted_timestamp', 'metadata_id', 'state']     
+        if not result.empty:
+            for i in range(len(result)):
+                topic1='/homeassistant/sensor/smartSocket/%s/%s/state' %(statistic_format,self.getDeviceID(int(result['metadata_id'][i]),sm))
+                msg1='{"energy": %f}' % (result['state'][i])
+                self.client.MQTT.Publish(topic1, msg1)
+            return result
+        else:
+            return None
+            
+    '''Retrieves information from the database for the considered metadata_ids.'''   
+    def getdata(self,houseID,attribute):
+        try:
+            selectedMetaHAIDs=self.selectMetaHAIDs(houseID,attribute)
+            query = """SELECT metadata_id, state, strftime('%Y-%m-%d %H:%M:%S', datetime(last_updated_ts, 'unixepoch')) as timestamp
+                        FROM states
+                        WHERE metadata_id IN ({})
+                        """.format(','.join('?' for _ in selectedMetaHAIDs))
+            self.HADBCur.execute(query,selectedMetaHAIDs)
+            rows = self.HADBCur.fetchall()       
+            if rows!=[]:
+                df = pd.DataFrame(rows, columns=['metadata_id','state', 'timestamp'])   
+                filter=~df['state'].isin(['unknown', 'unavailable'])     
+                result=df[filter]
+                return result
+            else:
+                return None
+        except HTTPError as e:
+            message = "An error occurred while retriving info from HomeAssistant DB " + e._message
+            raise HTTPError(status=e.status, message=message)
+        except Exception as e:
+            message = "An error occurred while retriving info from HomeAssistant DB " + str(e)
+            raise Server_Error_Handler.InternalServerError(message=message)
     
-    def compute_hourlytotdata(self):
-        base_df=self.getalldata()
-        self.compute_data(base_df,'%Y-%m-%d %H:00:00',False,'hourly_tot')
         
-    
-    def get_hourlydata(self):
-        query="SELECT entity_id, state, strftime('%Y-%m-%d %H:%M:%S', datetime(last_updated_ts, 'unixepoch')) as timestamp\
-                FROM states2\
-                WHERE entity_id LIKE 'sensor.energy_tothourly%' "
-        self.curs1.execute(query)
-        rows = self.curs1.fetchall()
-        if rows!=[]:
-            hourly_df = pd.DataFrame(rows, columns=['entity','state', 'timestamp'])
-            result_df=self.process_df(hourly_df)
-            return result_df     
+    def compute_hourlyavgdata(self,houseID):
+        base_df = self.getdata(houseID,'energy')
+        if base_df is not None:
+            self.compute_data(base_df,'%Y-%m-%d %H:00:00',True,'HAvg',False)
         else:
             return None
     
-    def compute_dailyavgdata(self):
-        hourly_df=self.get_hourlydata()
-        hourly_df.rename(columns={'sensor.energy_tothourly':'sensor.energy'}, inplace=True)
+    def compute_hourlytotdata(self,houseID):
+        base_df=self.getdata(houseID,'energy')
+        if base_df is not None:
+            self.compute_data(base_df,'%Y-%m-%d %H:00:00',False,'HTot',False)
+        else:
+            return None
+    
+    def compute_dailyavgdata(self,houseID):
+        hourly_df=self.getdata(houseID,'energy_tothourly')
         if hourly_df is not None:
-            self.compute_data(hourly_df,'%Y-%m-%d 00:00:00',True,'daily_avg')
+            self.compute_data(hourly_df,'%Y-%m-%d 00:00:00',True,'DAvg',True)
         else:
             return None
     
-    def compute_dailytotdata(self):
-        hourly_df=self.get_hourlydata()
-        hourly_df.rename(columns={'sensor.energy_tothourly':'sensor.energy'}, inplace=True)
+    def compute_dailytotdata(self,houseID):
+        hourly_df=self.getdata(houseID,'energy_tothourly')
         if hourly_df is not None:
-            self.compute_data(hourly_df,'%Y-%m-%d 00:00:00',False,'daily_tot')
-        else:
-            return None
-
-    def get_dailydata(self):
-        query="SELECT entity_id, state, strftime('%Y-%m-%d %H:%M:%S', datetime(last_updated_ts, 'unixepoch')) as timestamp\
-                FROM states2\
-                WHERE entity_id LIKE 'sensor.energy_totdaily%'"
-        self.curs1.execute(query)
-        rows = self.curs1.fetchall()
-        if rows!=[]:
-            daily_df = pd.DataFrame(rows, columns=['entity','state', 'timestamp'])
-            result_df=self.process_df(daily_df)
-            return result_df     
+            self.compute_data(hourly_df,'%Y-%m-%d 00:00:00',False,'DTot',True)
         else:
             return None
     
-    def compute_monthlyavgdata(self):
-        daily_df=self.get_dailydata()
-        daily_df.rename(columns={'sensor.energy_totdaily':'sensor.energy'}, inplace=True)
+    def compute_monthlyavgdata(self,houseID):
+        daily_df=self.getdata(houseID,'energy_totdaily')
         if daily_df is not None:
-            self.compute_data(daily_df,'%Y-%m-01 00:00:00',True,'monthly_avg')
+            self.compute_data(daily_df,'%Y-%m-01 00:00:00',True,'MAvg',True)
         else:
             return None
     
-    def compute_monthlytotdata(self):
-        daily_df=self.get_dailydata()
-        daily_df.rename(columns={'sensor.energy_totdaily':'sensor.energy'}, inplace=True)
+    def compute_monthlytotdata(self,houseID):
+        daily_df=self.getdata(houseID,'energy_totdaily')
         if daily_df is not None:
-            self.compute_data(daily_df,'%Y-%m-01 00:00:00',False,'monthly_tot')
+            self.compute_data(daily_df,'%Y-%m-01 00:00:00',False,'MTot',True)
         else:
             return None
     
-    def get_monthlydata(self):
-        query="SELECT entity_id, state, strftime('%Y-%m-%d %H:%M:%S', datetime(last_updated_ts, 'unixepoch')) as timestamp\
-                        FROM states2\
-                        WHERE entity_id LIKE 'sensor.energy_totmonthly%'"
-        self.curs1.execute(query)
-        rows = self.curs1.fetchall()
-        if rows!=[]:
-            monthly_df = pd.DataFrame(rows, columns=['entity','state', 'timestamp'])
-            result_df=self.process_df(monthly_df)
-            return result_df     
-        else:
-            return None
-    
-    def compute_yearlyavgdata(self):
-        daily_df=self.get_monthlydata()
-        daily_df.rename(columns={'sensor.energy_totmonthly':'sensor.energy'}, inplace=True)
-        if daily_df is not None:
-            self.compute_data(daily_df,'%Y-01-01 00:00:00',True,'yearly_avg')
-        else:
-            return None
-    
-    def compute_yearlytotdata(self):
-        monthly_df=self.get_monthlydata()
-        monthly_df.rename(columns={'sensor.energy_totmonthly':'sensor.energy'}, inplace=True)
+    def compute_yearlyavgdata(self,houseID):
+        monthly_df=self.getdata(houseID,'energy_totmonthly')
         if monthly_df is not None:
-            self.compute_data(monthly_df,'%Y-01-01 00:00:00',False,'yearly_tot')
+            self.compute_data(monthly_df,'%Y-01-01 00:00:00',True,'YAvg',True)
         else:
             return None
     
-
-    def compute_hourlyDataHouse(self,houseID):
-        query1="SELECT entity_id, state, strftime('%Y-%m-%d %H:%M:%S', datetime(last_updated_ts, 'unixepoch')) as timestamp\
-                FROM states2\
-                WHERE entity_id LIKE 'sensor.energy_tothourly%'"
-        self.curs1.execute(query1)
-        rows1 = self.curs1.fetchall()
-        query2="SELECT houseID, deviceID\
-                FROM HouseDev_conn\
-                WHERE houseID=?"
-        self.curs2.execute(query2,(houseID,))
-        rows2 = self.curs2.fetchall()
-        combined_results = []
-        for row1 in rows1:
-            entity_id= row1[0]
-            state= row1[1]
-            timestamp=row1[2]
-            entity_id_parts = entity_id.split("_")
-            if len(entity_id_parts) >= 2:
-                if entity_id_parts[-2] == 'tothourly':
-                    deviceID = 'D'+ entity_id_parts[-1]
-                elif entity_id_parts[-1] == 'tothourly':
-                    deviceID = 'D1'
-                else:
-                    deviceID = None
-            else:
-                deviceID = None
-            for row2 in rows2:
-                if row2[1] == deviceID:
-                    combined_results.append((entity_id, state,timestamp))    
-        df = pd.DataFrame(combined_results, columns=['entity_id','state', 'timestamp'])
-        df['attribute'] = df['entity_id'].str.extract(r'sensor\.(\w+)_tothourly')
-        result=self.process_df_house(df,'hourly',houseID,'hourly_tot')
-        self.findmax(result,'D','day',houseID,'hourly_tot_max')
-
-
-    def compute_dailyDataHouse(self,houseID):
-        query1="SELECT entity_id, state, strftime('%Y-%m-%d %H:%M:%S', datetime(last_updated_ts, 'unixepoch')) as timestamp\
-                            FROM states2\
-                            WHERE entity_id LIKE 'sensor.energy_totdaily%'"
-        self.curs1.execute(query1)
-        rows1 = self.curs1.fetchall()
-        query2="SELECT houseID, deviceID\
-                            FROM HouseDev_conn\
-                            WHERE houseID=?"
-        self.curs2.execute(query2,(houseID,))
-        rows2 = self.curs2.fetchall()
-        combined_results = []
-        for row1 in rows1:
-            entity_id= row1[0]
-            state= row1[1]
-            timestamp=row1[2]
-            entity_id_parts = entity_id.split("_")
-            if len(entity_id_parts) >= 2:
-                if entity_id_parts[-2] == 'totdaily':
-                    deviceID = 'D'+ entity_id_parts[-1]
-                elif entity_id_parts[-1] == 'totdaily':
-                    deviceID = 'D1'
-                else:
-                    deviceID = None
-            else:
-                deviceID = None
-            for row2 in rows2:
-                if row2[1] == deviceID:
-                    combined_results.append((entity_id, state,timestamp))            
-
-        df = pd.DataFrame(combined_results, columns=['entity_id','state', 'timestamp'])
-        df['attribute'] = df['entity_id'].str.extract(r'sensor\.(\w+)_totdaily')
-        result=self.process_df_house(df,'daily',houseID,'daily_tot')
-        self.findmax(result,'M','month',houseID,'daily_tot_max')
-        
+    def compute_yearlytotdata(self,houseID):
+        monthly_df=self.getdata(houseID,'energy_totmonthly')
+        if monthly_df is not None:
+            self.compute_data(monthly_df,'%Y-01-01 00:00:00',False,'YTot',True)
+        else:
+            return None
     
-    def compute_monthlyDataHouse(self,houseID):
-        query1="SELECT entity_id, state, strftime('%Y-%m-%d %H:%M:%S', datetime(last_updated_ts, 'unixepoch')) as timestamp\
-                FROM states2\
-                WHERE entity_id LIKE 'sensor.energy_totmonthly%'"
-        self.curs1.execute(query1)
-        rows1 = self.curs1.fetchall()
-        query2="SELECT houseID, deviceID\
-                FROM HouseDev_conn\
-                WHERE houseID=?"
-        self.curs2.execute(query2,(houseID,))
-        rows2 = self.curs2.fetchall()
-        combined_results = []
-        for row1 in rows1:
-            entity_id= row1[0]
-            state= row1[1]
-            timestamp=row1[2]
-            entity_id_parts = entity_id.split("_")
-            if len(entity_id_parts) >= 2:
-                if entity_id_parts[-2] == 'totmonthly':
-                    deviceID = 'D'+ entity_id_parts[-1]
-                elif entity_id_parts[-1] == 'totmonthly':
-                    deviceID = 'D1'
-                else:
-                    deviceID = None
-            else:
-                deviceID = None
-            for row2 in rows2:
-                if row2[1] == deviceID:
-                    combined_results.append((entity_id, state,timestamp))  
-        
-        df = pd.DataFrame(combined_results, columns=['entity_id','state', 'timestamp'])
-        df['attribute'] = df['entity_id'].str.extract(r'sensor\.(\w+)_totmonthly')
-        result=self.process_df_house(df,'monthly',houseID,'monthly_tot')
-        self.findmax(result,'Y','year',houseID,'monthly_tot_max')
+    def compute_hourlydataHouse(self,houseID):
+        df=self.getdata(houseID,'energy')
+        if df is not None:
+            self.computedata_House(houseID,df,'%Y-%m-%d %H:00:00',True,'HAvg')
+            self.computedata_House(houseID,df,'%Y-%m-%d %H:00:00',False,'HTot')
+            self.findmax(df,'%Y-%m-%d %H:00:00','hourly_tot_max',False)
+        else:
+            return None
     
-    def compute_yearlyDataHouse(self,houseID):
-        query1="SELECT entity_id, state, strftime('%Y-%m-%d %H:%M:%S', datetime(last_updated_ts, 'unixepoch')) as timestamp\
-                FROM states2\
-                WHERE entity_id LIKE 'sensor.energy_totyearly%'"
-        self.curs1.execute(query1)
-        rows1 = self.curs1.fetchall()
-        query2="SELECT houseID, deviceID\
-                FROM HouseDev_conn\
-                WHERE houseID=?"
-        self.curs2.execute(query2,(houseID,))
-        rows2 = self.curs2.fetchall()
-        combined_results = []
-        for row1 in rows1:
-            entity_id= row1[0]
-            state= row1[1]
-            timestamp=row1[2]
-            entity_id_parts = entity_id.split("_")
-            if len(entity_id_parts) >= 2:
-                if entity_id_parts[-2] == 'totyearly':
-                    deviceID = 'D'+ entity_id_parts[-1]
-                elif entity_id_parts[-1] == 'totyearly':
-                    deviceID = 'D1'
-                else:
-                    deviceID = None
-            else:
-                deviceID = None
-            for row2 in rows2:
-                if row2[1] == deviceID:
-                    combined_results.append((entity_id, state,timestamp))  
-        
-        df = pd.DataFrame(combined_results, columns=['entity_id','state', 'timestamp'])
-        df['attribute'] = df['entity_id'].str.extract(r'sensor\.(\w+)_totyearly')
-        self.process_df_house(df,'yearly',houseID,'yearly_tot')
+    def compute_dailydataHouse(self,houseID):
+        df=self.getdata(houseID,'energy_tothourly')
+        if df is not None:
+            self.computedata_House(houseID,df,'%Y-%m-%d 00:00:00',True,'DAvg')
+            self.computedata_House(houseID,df,'%Y-%m-%d 00:00:00',False,'DTot')
+            self.findmax(df,'%Y-%m-%d 00:00:00','daily_tot_max',True)
+        else:
+            return None
     
-    def process_data(self):
-        self.compute_hourlyavgdata()
-        self.compute_hourlytotdata()
-        self.compute_dailyavgdata()
-        self.compute_dailytotdata()
-        self.compute_monthlyavgdata()
-        self.compute_monthlytotdata()
-        self.compute_yearlyavgdata()
-        self.compute_yearlytotdata()
-        query="SELECT houseID\
-                FROM Houses"
-        self.curs2.execute(query)
-        rows = self.curs2.fetchall()
-        houses_list= [item[0] for item in rows]
-        for houseID in houses_list:
-            self.compute_hourlyDataHouse(houseID)
-            self.compute_dailyDataHouse(houseID)
-            self.compute_monthlyDataHouse(houseID)
-            self.compute_yearlyDataHouse(houseID)
-        
+    def compute_monthlydataHouse(self,houseID):
+        df=self.getdata(houseID,'energy_totdaily')
+        if df is not None:
+            self.computedata_House(houseID,df,'%Y-%m-01 00:00:00',True,'MAvg')
+            self.computedata_House(houseID,df,'%Y-%m-01 00:00:00',False,'MTot')
+            self.findmax(df,'%Y-%m-01 00:00:00','monthly_tot_max',True)
+        else:
+            return None
+    
+    def compute_yearlydataHouse(self,houseID):
+        df=self.getdata(houseID,'energy_totmonthly')
+        if df is not None:
+            self.computedata_House(houseID,df,'%Y-01-01 00:00:00',True,'YAvg')
+            self.computedata_House(houseID,df,'%Y-01-01 00:00:00',False,'YTot')
+        else:
+            return None
+            
+    """Computes operation and statistics for each house"""
+    def processdata(self):
+        try:
+            catalogAddress = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
+            catalogPort = self.client.generalConfigs["REGISTRATION"]["catalogPort"]
+            url = "%s:%s/getInfo" % (catalogAddress, str(catalogPort))
+            params = {"table": "Houses", "keyName": "houseID", "keyValue": "*"}
 
+            response = requests.get(url, params=params)
+            if response.status_code != 200:
+                raise HTTPError(response.status_code, str(response.text))
+            result = json.loads(response.text)
 
-service = DataAnalysis()
+            house_list = [row["houseID"] for row in result]
+            for houseID in house_list:
+                #self.compute_instanttotaldata(houseID)
 
+                self.compute_hourlyavgdata(houseID)
+                self.compute_hourlytotdata(houseID)
+                self.compute_hourlydataHouse(houseID)
 
+                self.compute_dailyavgdata(houseID)
+                self.compute_dailytotdata(houseID)
+                self.compute_dailydataHouse(houseID)
 
+                self.compute_monthlyavgdata(houseID)
+                self.compute_monthlytotdata(houseID)
+                self.compute_monthlydataHouse(houseID)
+
+                self.compute_yearlyavgdata(houseID)
+                self.compute_yearlytotdata(houseID)
+                self.compute_yearlydataHouse(houseID)
+        except HTTPError as e:
+            message = "An error occurred while retriving info from catalog " + e._message
+            raise HTTPError(status=e.status, message=message)
+        except Exception as e:
+            message = "An error occurred while retriving info from catalog " + str(e)
+            raise Server_Error_Handler.InternalServerError(message=message)
+
+if __name__ == "__main__":
+    DA = DataAnalysis()
