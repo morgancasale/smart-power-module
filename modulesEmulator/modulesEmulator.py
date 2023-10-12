@@ -15,33 +15,37 @@ from microserviceBase.serviceBase import *
 
 class Emulator:
     def __init__(self):
+        self.threads = [] 
+        self.running = 0
+        self.devices = []
+        self.pubTopic = "smartSocket/data"
         try:
             self.configFile_loc = "modulesEmulator.json"
             if(not IN_DOCKER):
                 self.configFile_loc = "modulesEmulator/" + self.configFile_loc
             self.client = ServiceBase(self.configFile_loc)
-            self.appClient = Appliances()
-
             self.client.start()
+            self.appClient = Appliances()
+            print("Emulator started")
+            #self.deviceReg()
+            #json.dump(self.devices, open('modulesEmulator/devices.json', 'w'))
 
-            self.deviceReg()
-            i=0
-            while (i<3):
-                self.publishApp('normal')
-                time.sleep(2)
-                i+=1
+            self.devices = json.load(open('modulesEmulator/devices.json'))
+            
+            #self.publishApp('normal')
+
+            self.publishDB("modulesEmulator/HADB.db")
+
+            self.joinThreads()  # Start the threads
         except HTTPError as e:
-            message = "An error occurred while running the service: " + str(e._message)
+            message = "An error occurred while running the service: \u0085\u0009" + e._message
             raise Exception(message)
         except Exception as e:
-            message = "An error occurred while running the service: " + str(e)
+            message = "An error occurred while running the service: \u0085\u0009" + str(e)
             raise Exception(message)
-        
-
 
     #modes: standbypower, faulty, blackout,maxpower, contatore, normal
-    def messageGenerator(self,mode,dev):
-        msg=None
+    def messageGenerator(self, mode, dev):
         if mode == 'standbypower':
             msg=self.appClient.standByPowerEmulator(dev)
         else:
@@ -49,36 +53,91 @@ class Emulator:
         return msg
 
     def deviceReg(self):
-        reg_info_file = "registration.json"
-        if(not IN_DOCKER):
-            reg_info_file = "dataGenerationAndElimination/" + reg_info_file
-        data_reg = json.load(open(reg_info_file))
-
+        data_reg = json.load(open('modulesEmulator/registration.json'))
         catalog_address = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
         catalog_port = self.client.generalConfigs["REGISTRATION"]["catalogPort"]
         
-        url="http://%s:%s/getInfo"%(catalog_address, str(catalog_port))
+        url="%s:%s/getInfo"%(catalog_address, str(catalog_port))
         params={
-            "table" : "EndPoints",
-            "keyName" : "endPointName",
-            "keyValue" : "deviceConnector"
+        "table" : "EndPoints",
+        "keyName" : "endPointName",
+        "keyValue" : "deviceConnector"
         }  
         response = requests.get(url, params=params)
-        endpoint = json.loads(response.text)
-        ip_address = endpoint['IPAddress']
+        response = response.json()[0]
+        endpoint = response
         port = endpoint['port']
 
-        url_dc = "http://" + str(ip_address)+ ":" + str(port) + "/getRole"
-        for entry in data_reg['entries']:
-            mac = entry['MAC']
-            auto_broker = entry['autoBroker']
-            auto_topics = entry['autoTopics']
+        url_dc=  str(catalog_address)+ ":" + str(port) + "/getRole"
+        for entry in data_reg["entries"]:
+            mac = entry["MAC"]
+            auto_broker = entry["autoBroker"]
+            auto_topics = entry["autoTopics"]
             params_dc={
-                        "MAC": mac,
-                        "autoBroker": auto_broker,
-                        "autoTopics": auto_topics
+                "MAC": mac,
+                "autoBroker": auto_broker,
+                "autoTopics": auto_topics,
+                "autoMasterNode": False
             }  
-            requests.get(url_dc, params=params_dc)
+            response = requests.get(url_dc, params=params_dc)
+            dev = {
+                "MAC": mac,
+                "deviceID": response.json()["deviceID"]
+            }
+            self.devices.append(dev)
+            time.sleep(10)
+
+    def publishDB(self, dataDB_path):
+        try:
+            conn = sq.connect(dataDB_path)
+            prev_row = 0
+            cursor = conn.cursor()
+            query = "SELECT COUNT(*) FROM states"
+            num_rows = cursor.execute(query).fetchone()[0]
+
+            query = "SELECT * FROM states LIMIT 1"
+            start_time = pd.read_sql_query(query, conn)
+            start_time = start_time.to_dict(orient="records")
+            start_time = start_time[0]["timestamp"]
+            now = time.time()
+            diff = now - start_time
+
+            while prev_row < num_rows:
+                current_time = str(time.time()-diff)
+                query ="""
+                    SELECT *
+                    FROM states
+                    WHERE timestamp < %s
+                    LIMIT -1 OFFSET %s;
+                """ % (current_time, str(prev_row))
+                sel_rows = pd.read_sql_query(query, conn).to_dict(orient="records")
+
+                prev_row += len(sel_rows)
+
+                for sel_row in sel_rows:
+                    self.sendData(sel_row)
+        except Exception as e:
+            print(e)
+
+    def sendData(self, sel_row):
+        index = next((index for (index, d) in enumerate(self.devices) if d["MAC"] == sel_row["id"]), None)
+        deviceID = self.devices[index]["deviceID"]
+        switch_states = [-1, -1, -1]
+        if sel_row["switch1"] != None: switch_states[0] = int(sel_row["switch1"] == "on")
+        if sel_row["switch2"] != None: switch_states[1] = int(sel_row["switch2"] == "on")
+        if sel_row["switch3"] != None: switch_states[2] = int(sel_row["switch3"] == "on")
+
+        data = {
+            "deviceID": deviceID,
+            "Voltage": sel_row["voltage"],
+            "Current": sel_row["current"],
+            "Power": sel_row["power"],
+            "Energy": sel_row["energy"],
+            "SwitchStates" : switch_states
+        }
+        msg = json.dumps(data)
+        self.client.MQTT.Publish(self.pubTopic,msg)   
+
 
     #modes: faulty o blackout
     #faulty : range simulazione vengono presi da faulty_simualtion.json
@@ -88,25 +147,24 @@ class Emulator:
     #contatore: potenza supera quella massima supportata dal contatore
     #normal : funziona senza problemi
     #standbypower
-    def publishApp(self,mode):
-        threads = []
-        topic = "/smartSocket/data"
-        for i in range(11):            
-            msg=self.messageGenerator(mode, i)
-            thread = threading.Thread(target=self.client.MQTT.Publish, args=(topic,msg))
-            threads.append(thread)
-            thread.start()
-        for thread in threads:
-            thread.join()
-                
-if __name__ == "__main__": 
-    sensor = Emulator()
-    #esp32firmware, true autoBroker
-    #request. get dev conn
-    #res catalogue endpoint
+    def publishApp(self, mode):
+        self.client.start()
+        for dev in self.devices:
+            thread = threading.Thread(target=self.deviceSim, args=(mode, dev))
+            self.threads.append(thread)
             
-    #for i sensori
-    #esp32firmware, true autoBroker
-    #reqres catalogue endpoint
-    #MAC su json, RSSI, autoBroker, come parametri con ? '''
+    def deviceSim(self, mode, dev):
+        while True:
+            msg = self.messageGenerator(mode, dev)
+            self.client.MQTT.Publish(self.pubTopic,msg)
+            time.sleep(8)
+    
+    def joinThreads(self):
+        for thread in self.threads:
+            if not self.running:#not thread.is_alive():  # Start only if the thread is not already running
+                thread.start()
+        self.running=1        
 
+    
+if __name__ == "__main__":
+    Emulator() #3326399
