@@ -410,7 +410,7 @@ class SocketHandler():
                         houseID = self.generalConfigs["CONFIG"]["houseID"]
                         data = SocketHandler.regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, params["MAC"], houseID, autoMasterNode)
                         if(data["masterNode"]):
-                            self.regHouse_toHA(houseID, system, baseTopic)
+                            SocketHandler.regHouse_toHA(self, system, baseTopic)
 
                     out["deviceID"] = data["deviceID"]
                     out["masterNode"] = data["masterNode"]
@@ -627,7 +627,6 @@ class SocketHandler():
                 "state_off": False
             }
 
-            sensorsPayload.extend(stat_sensorsPayload)
             for sensor in sensorsPayload:
                 sensor.update(sensorsGeneralPayload)
                 sensor.update(devicePayload)
@@ -635,7 +634,18 @@ class SocketHandler():
                 discTopic = baseTopic + "sensor/" + system + "/" + deviceID + "_" + sensor["device_class"] + "/config" # homeassistant/sensor/smartSocket/
                 print(self.MQTTService.Publish(discTopic, json.dumps(sensor), retain=True))
                 time.sleep(0.1)
-                
+
+            for sensor in stat_sensorsPayload:
+                sensor.update(sensorsGeneralPayload)
+                sensor.update(devicePayload)
+                stat = sensor["value_template"].split("energy_")[1].split(" ")[0]
+                device_class = sensor["device_class"] + "_" + stat
+                sensor["unique_id"] = sensor["unique_id"] + "_" + device_class
+                discTopic = baseTopic + "sensor/" + system + "/" + deviceID + "_" + device_class + "/config" # homeassistant/sensor/smartSocket/
+                print(self.MQTTService.Publish(discTopic, json.dumps(sensor), retain=True))
+                time.sleep(0.1)
+
+
 
             i = 0
             for switch in switchesPayload:
@@ -736,8 +746,10 @@ class SocketHandler():
             for sensor in stat_sensorsPayload:
                 sensor.update(sensorsGeneralPayload)
                 sensor.update(devicePayload)
-                sensor["unique_id"] = sensor["unique_id"] + "_" + sensor["device_class"]
-                discTopic = baseTopic + "sensor/" + system + "/" + "house" + "_" + sensor["device_class"] + "/config" # homeassistant/sensor/smartSocket/
+                stat = sensor["value_template"].split("energy_")[1].split(" ")[0]
+                device_class = sensor["device_class"] + "_" + stat
+                sensor["unique_id"] = sensor["unique_id"] + "_" + device_class
+                discTopic = baseTopic + "sensor/" + system + "/" + "house" + "_" + device_class + "/config" # homeassistant/sensor/smartSocket/
                 print(self.MQTTService.Publish(discTopic, json.dumps(sensor), retain=True))
                 time.sleep(0.1)
         except HTTPError as e:

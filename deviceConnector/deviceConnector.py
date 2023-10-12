@@ -37,6 +37,7 @@ class DeviceConnector():
         self.handleUpdate_toHA = SocketHandler.updateSocketName_onHA # mi salvo queste funzioni 
         self.regSocket_toHA = SocketHandler.regSocket_toHA           # perchè utilizzano i metodi
         self.delSocket_fromHA = SocketHandler.delSocket_fromHA       # del servizio
+        self.regHouse_toHA = SocketHandler.regHouse_toHA
         #self.handleDelete_byHA = SocketHandler.handleDeleteSocket_byHA
 
         configFile_loc = "deviceConnector.json"
