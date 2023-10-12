@@ -17,13 +17,10 @@ scene: !include scenes.yaml
 panel_custom:
   - name: main-page
     # url_path needs to be unique for each panel_custom config
-    url_path: redirect-server-controls
+    url_path: socket-settings
     sidebar_title: Socket Settings
     sidebar_icon: mdi:server
     module_url: /local/homeAssistant_panel/main-page.js
-    config:
-      # Data you want to make available to panel
-      hello: world
 
 recorder:
   db_url : sqlite:////DB/HADB.db
@@ -31,3 +28,8 @@ recorder:
     entity_globs:
       - sensor.smart_socket*
       - switch.smart_socket*
+
+sensor:
+  - platform: time_date
+    display_options:
+      - "date_time" 
