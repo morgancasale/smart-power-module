@@ -9,7 +9,7 @@ IN_DOCKER = os.environ.get("IN_DOCKER", False)
 class Appliances():
     def __init__(self) :
         if(not IN_DOCKER):
-            folder_loc = "dataGenerationAndElimination/"
+            folder_loc = "modulesEmulator/"
         else:
             folder_loc = ""
        
@@ -30,7 +30,7 @@ class Appliances():
         energy_ws = float(power[0]) * 2
         energy_kwh = energy_ws / (3600 * 1000)
         data = ( {
-            'DeviceID': devID,
+            'deviceID': devID,
             'Voltage': voltage,
             'Current': current[0],
             'Power': power[0],
@@ -47,8 +47,7 @@ class Appliances():
     #maxpower : D11 (heater) supera maxpower
     #contatore: potenza supera quella massima supportata dal contatore
     #normal : funziona senza problemi
-    def ApplianceEmulator(self,devID,mode):
-        devID= 'D' + str(devID)
+    def ApplianceEmulator(self,dev, mode):
         jsonfile=None
         if mode=='faulty':
             jsonfile=self.faulty
@@ -59,24 +58,23 @@ class Appliances():
         elif mode=='contatore':
             jsonfile=self.contatore
         else: jsonfile=self.normal
-        min_p=jsonfile[devID]['min']
-        max_p=jsonfile[devID]['max']
-        voltage=jsonfile[devID]['voltage']
-        power=np.random.randint(min_p,max_p, 1)
-        current= power/voltage
-        digits = re.findall(r'\d+', devID)
-        ID_num = ''.join(digits)
-        energy_ws = float(power[0]) * 2
-        energy_kwh = energy_ws / (3600 * 1000)
-        data = ( {
-        'DeviceID': devID,
-        'Voltage': voltage,
-        'Current': current[0],
-        'Power': power[0],
-        'Energy': energy_kwh,
-        'switch_state' : [1,0,0]
-        } )
-        msg = str(data)
+        min_p=jsonfile[dev["MAC"]]['min']
+        max_p =jsonfile[dev["MAC"]]['max']
+        voltage = jsonfile[dev["MAC"]]['voltage']
+        power = np.random.randint(min_p,max_p, 1)
+        power = int(power[0])
+        current = power/voltage
+        energy_ws = power * 2
+        energy_kwh = energy_ws / 3600 * 1000
+        data = {
+            'deviceID': dev["deviceID"],
+            'Voltage': voltage,
+            'Current': current,
+            'Power': power,
+            'Energy': energy_kwh,
+            'SwitchStates' : [1,0,0]
+        }
+        msg = json.dumps(data)
         return msg 
 
     '''
