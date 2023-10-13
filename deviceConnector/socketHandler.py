@@ -622,48 +622,56 @@ class SocketHandler():
                     "name": "Hourly Average",
                     "unit_of_measurement": "kWh",
                     "device_class": "energy",
+                    "entity_category": "diagnostic",
                     "value_template": "{{ value_json.energy_HAvg }}"
                 },
                 {
                     "name": "Hourly Total",
                     "unit_of_measurement": "kWh",
                     "device_class": "energy",
+                    "entity_category": "diagnostic",
                     "value_template": "{{ value_json.energy_HTot }}"
                 },
                 {
                     "name": "Daily Average",
                     "unit_of_measurement": "kWh",
                     "device_class": "energy",
+                    "entity_category": "diagnostic",
                     "value_template": "{{ value_json.energy_DAvg }}"
                 },
                 {
                     "name": "Daily Total",
                     "unit_of_measurement": "kWh",
                     "device_class": "energy",
+                    "entity_category": "diagnostic",
                     "value_template": "{{ value_json.energy_DTot }}"
                 },
                 {
                     "name": "Monthly Average",
                     "unit_of_measurement": "kWh",
                     "device_class": "energy",
+                    "entity_category": "diagnostic",
                     "value_template": "{{ value_json.energy_MAvg }}"
                 },
                 {
                     "name": "Monthly Total",
                     "unit_of_measurement": "kWh",
                     "device_class": "energy",
+                    "entity_category": "diagnostic",
                     "value_template": "{{ value_json.energy_MTot }}"
                 },
                 {
                     "name": "Yearly Average",
                     "unit_of_measurement": "kWh",
                     "device_class": "energy",
+                    "entity_category": "diagnostic",
                     "value_template": "{{ value_json.energy_YAvg }}"
                 },
                 {
                     "name": "Yearly Total",
                     "unit_of_measurement": "kWh",
                     "device_class": "energy",
+                    "entity_category": "diagnostic",
                     "value_template": "{{ value_json.energy_YTot }}"
                 }
             ]
@@ -676,12 +684,10 @@ class SocketHandler():
             if(deviceName == None) : name = "Smart Socket " + ("Master " if bool(masterNode) else "") + deviceID
             else : name = deviceName + (" Master " if bool(masterNode) else "")
 
-            deviceID = deviceID + "_stats"
-
             devicePayload = {
                 "unique_id": deviceID,
                 "device": {
-                    "name": name + " Statistics",
+                    "name": name,
                     "identifiers": [deviceID],
                 }
             }
