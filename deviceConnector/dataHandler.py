@@ -14,12 +14,15 @@ from microserviceBase.Error_Handler import *
 class DataHandler():
     def regData_toHa(self, topic, payload):
         try:
-            print("Topic: %s, Payload: %s" % (topic, payload))
+            #print("Topic: %s, Payload: %s" % (topic, payload))
             self.system = self.generalConfigs["CONFIG"]["HomeAssistant"]["system"]
             self.baseTopic = self.generalConfigs["CONFIG"]["HomeAssistant"]["baseTopic"]
             self.catalogAddress = self.generalConfigs["REGISTRATION"]["catalogAddress"]
             self.catalogPort = self.generalConfigs["REGISTRATION"]["catalogPort"]
             payload = json.loads(payload)
+
+            print("Received data from device %s, forwarding to HA..." % payload["deviceID"])
+
             if (DataHandler.checkPresenceOfIDSocket(payload["deviceID"], self.catalogAddress, self.catalogPort)):
                 if (not DataHandler.setStatusDevice(payload["deviceID"], 1,self.catalogAddress, self.catalogPort)):
                     raise Server_Error_Handler.InternalServerError(
@@ -61,12 +64,12 @@ class DataHandler():
             self.Publish(availableSensorTopic, "online")
             switchAvaibilityTopic = self.baseTopic +"switch/" + self.system + "/" + payload["deviceID"] + "/status"
             for i in range(3):
-                self.Publish(switchAvaibilityTopic + "/" + str(i), enabledSockets[i])
+                self.Publish(switchAvaibilityTopic + "/" + str(i), enabledSockets[i], talk=False)
 
             switchStateTopic = self.baseTopic +"switch/" + self.system + "/" + payload["deviceID"] + "/state"
             self.Publish(stateSensorTopic, json.dumps(datafixed))
             for i in range(3):
-                self.Publish(switchStateTopic + "/" + str(i), str(bool(payload["SwitchStates"][i])))
+                self.Publish(switchStateTopic + "/" + str(i), str(bool(payload["SwitchStates"][i])), talk=False)
 
 
         except HTTPError as e:

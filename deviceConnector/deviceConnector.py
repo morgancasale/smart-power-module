@@ -16,7 +16,7 @@ from dataHandler import DataHandler
 from commandHandler import commandHandler
 
 def notify(self, topic, payload):
-    print("Topic: %s, Payload: %s" % (topic, payload))
+    #print("Topic: %s, Payload: %s" % (topic, payload))
     Topic = topic.split("/")
     config_command = ["homeassistant","switch","smartSocket","control"]
     config_data = ["smartSocket","data"]
