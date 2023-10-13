@@ -22,19 +22,18 @@ class DataAnalysis():
                 config_file = "DataAnalysis/" + config_file
             self.client = ServiceBase(config_file)
             self.client.start()
-            self.cost = 118.35
             
+            self.sample_min = 1 
+
             HADB_loc = "HADB.db"
-            if(not IN_DOCKER):
-                HADB_loc="homeAssistant/HADB/"+ HADB_loc
-            else:
-                HADB_loc = "homeAssistant/HADB"+ HADB_loc #da aggiornare poi con home assistant
+            HADB_loc="homeAssistant/HADB/"+ HADB_loc
+
             self.HADBConn = sqlite3.connect(HADB_loc)
             self.HADBCur = self.HADBConn.cursor()       
             
             while(True): 
                 self.processdata()
-                time.sleep(5*60)
+                time.sleep(self.sample_min*60)
 
         except HTTPError as e:
             message = "An error occurred while running the service: \u0085\u0009" + e._message
@@ -204,6 +203,34 @@ class DataAnalysis():
             message = "An error occurred while retriving info from HomeAssistant DB " + str(e)
             raise Server_Error_Handler.InternalServerError(message=message)
     
+    '''Computes the instantaneous energy values of a specific house'''
+    def compute_instanttotaldata(self,houseID):
+        try:
+            selectedMetaHAIDs=self.selectMetaHAIDs(houseID,'energy')
+            query = """ 
+                SELECT SUM(state) as total_state, strftime('%Y-%m-%d %H:%M:%S', datetime(last_updated_ts, 'unixepoch')) as timestamp
+                FROM states
+                WHERE metadata_id IN ({})
+                GROUP BY timestamp
+            """.format(','.join('?' for _ in selectedMetaHAIDs))
+            self.HADBCur.execute(query,selectedMetaHAIDs)
+            rows = self.HADBCur.fetchall()       
+            if rows!=[]:
+                result = pd.DataFrame(rows, columns=['total_state', 'timestamp'])  
+                for i in range(len(result)):
+                    topic='/homeassistant/sensor/smartSocket/house/state'
+                    msg='{"energy_Tot": %f}' % (result['total_state'][i])
+                    self.client.MQTT.Publish(topic, msg)
+                return result
+            else:
+                return None
+        except HTTPError as e:
+            message = "An error occurred while retriving info from HomeAssistant DB " + e._message
+            raise HTTPError(status=e.status, message=message)
+        except Exception as e:
+            message = "An error occurred while retriving info from HomeAssistant DB " + str(e)
+            raise Server_Error_Handler.InternalServerError(message=message)
+    
         
     def compute_hourlyavgdata(self,houseID):
         base_df = self.getdata(houseID,'energy')
@@ -311,7 +338,7 @@ class DataAnalysis():
 
             house_list = [row["houseID"] for row in result]
             for houseID in house_list:
-                #self.compute_instanttotaldata(houseID)
+                self.compute_instanttotaldata(houseID)
 
                 self.compute_hourlyavgdata(houseID)
                 self.compute_hourlytotdata(houseID)
