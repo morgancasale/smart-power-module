@@ -34,7 +34,7 @@ class Emulator:
             
             #self.publishApp('normal')
 
-            self.publishDB("modulesEmulator/HADB.db")
+            self.publishDB("modulesEmulator/hist_data.db")
 
             self.joinThreads()  # Start the threads
         except HTTPError as e:
@@ -90,12 +90,15 @@ class Emulator:
     def publishDB(self, dataDB_path):
         try:
             conn = sq.connect(dataDB_path)
-            prev_row = 0
+            prev_row = 10000
             cursor = conn.cursor()
             query = "SELECT COUNT(*) FROM states"
             num_rows = cursor.execute(query).fetchone()[0]
 
-            query = "SELECT * FROM states LIMIT 1"
+            query = """
+                SELECT * FROM states 
+                LIMIT 1 OFFSET %s;
+            """ % str(prev_row)
             start_time = pd.read_sql_query(query, conn)
             start_time = start_time.to_dict(orient="records")
             start_time = start_time[0]["timestamp"]

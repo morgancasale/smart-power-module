@@ -676,7 +676,7 @@ class SocketHandler():
             if(deviceName == None) : name = "Smart Socket " + ("Master " if bool(masterNode) else "") + deviceID
             else : name = deviceName + (" Master " if bool(masterNode) else "")
 
-            deviceID = u"\u200B" + deviceID + "_stats"
+            deviceID = deviceID + "_stats"
 
             devicePayload = {
                 "unique_id": deviceID,
@@ -713,9 +713,15 @@ class SocketHandler():
         try:
             baseTopic += "/"
             stateSensorTopic = baseTopic + "sensor/" + system + "/" + "house" + "/state"
-            availableSensorTopic = baseTopic + "sensor/" + system + "/" + "house" + "/status"
+            availableSensorTopic = baseTopic + "sensor/" + system + "/" + "+" + "/status"
 
             stat_sensorsPayload = [
+                {
+                    "name": "Instant Total",
+                    "unit_of_measurement": "kWh",
+                    "device_class": "energy",
+                    "value_template": "{{ value_json.energy_Tot }}"
+                },
                 {
                     "name": "Hourly Average",
                     "unit_of_measurement": "kWh",
