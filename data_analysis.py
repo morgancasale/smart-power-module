@@ -25,7 +25,7 @@ class DataAnalysis():
             
             self.sample_min = 60 
 
-            HADB_loc = "HADB3.db"
+            HADB_loc = "HADB.db"
             HADB_loc="homeAssistant/HADB/"+ HADB_loc
 
             self.HADBConn = sqlite3.connect(HADB_loc)
