@@ -1,4 +1,5 @@
 
+
 import os
 import time
 import sys
@@ -169,6 +170,22 @@ class blackoutAndFaulty():
         else:
             res= False
         return res
+    
+
+
+    def onlineTimeCheck(self, id):
+        result = self.getDeviceInfo(id)
+        last_update = result[0]["lastUpdate"]
+        current_time = time.time()
+
+        time_difference = current_time - last_update
+
+        if time_difference > 43200:  # 12 hours in seconds
+            return False
+        else:
+            return True
+
+        
         
     def houseInfo(self,house_ID):
         #this method retrieves the modules belonging to each home that are on+
@@ -181,9 +198,10 @@ class blackoutAndFaulty():
             switch_metaIDs = []
             switch_metaIDs.extend([meta["left_plug"], meta["right_plug"], meta["center_plug"]])
             result = self.getDeviceInfo(house_module)
+            update_check= self.onlineTimeCheck(house_module)
             moduleState= self.getSwitchesStates(switch_metaIDs)
             if moduleState:
-                if (result[0]["Online"]) :
+                if (result[0]["Online"] & update_check) :
                     to_consider_bl.append(house_module)
                     settings = self.getDeviceSettingsInfo(house_module)[0]
                     if(settings["HPMode"] == 1 and settings["FBControl"] == 1):
