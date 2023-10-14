@@ -8,7 +8,9 @@ images = [
     "maxPowerControl",
     "moduleConsumptionControl",
     "standByPowerDetection",
-    "timeShift"
+    "timeShift",
+    "dataAnalysis",
+    "totalInstantPower"
 ]
 
 for image in images:

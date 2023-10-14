@@ -9,7 +9,7 @@
             "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU",
             "autoHA": false,
             "HA_mDNS": "smartsocket.local",
-            "address": "http://192.168.1.139",
+            "address": "http://192.168.2.114",
             "port": 8123,
             "baseTopic": "homeassistant",
             "system": "smartSocket"
@@ -29,8 +29,8 @@
         }
     },
     "MQTT": {
-        "endPointID": "EDATAANALYSIS",
-        "endPointName": "dataAnalysis",
+        "endPointID": "ETOTINSTPOWER",
+        "endPointName": "totalInstantPower",
         "autoBroker": true,
         "brokerAddress": "broker.emqx.io",
         "brokerPort": 1883,
@@ -40,7 +40,7 @@
             "sub": false,
             "pub": true
         },
-        "clientID": "dataAnalysis",
+        "clientID": "totalInstantPower",
         "MQTTTopics": {
             "sub": [],
             "pub": [
@@ -51,10 +51,10 @@
     },
     "REGISTRATION": {
         "enabled": true,
-        "serviceID": "SDATAANALYSIS",
-        "serviceName": "dataAnalysis",
+        "serviceID": "STOTINSTPOWER",
+        "serviceName": "totalInstantPower",
         "catalog_mDNS": "smartsocket.local",
-        "catalogAddress": "http://192.168.1.139",
+        "catalogAddress": "http://192.168.2.114",
         "catalogPort": 8099,
         "T_Registration": 1
     }

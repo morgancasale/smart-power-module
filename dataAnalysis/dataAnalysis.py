@@ -17,16 +17,15 @@ class DataAnalysis():
 
     def __init__(self): 
         try:
-            config_file = "data_analysis.json"
+            config_file = "dataAnalysis.json"
             if(not IN_DOCKER):
                 config_file = "DataAnalysis/" + config_file
             self.client = ServiceBase(config_file)
             self.client.start()
             
-            self.sample_min = 1 
+            self.sample_min = 60 
 
-            HADB_loc = "HADB.db"
-            HADB_loc="homeAssistant/HADB/"+ HADB_loc
+            HADB_loc = "homeAssistant/HADB/HADB.db"
 
             self.HADBConn = sqlite3.connect(HADB_loc)
             self.HADBCur = self.HADBConn.cursor()       
@@ -201,36 +200,7 @@ class DataAnalysis():
             raise HTTPError(status=e.status, message=message)
         except Exception as e:
             message = "An error occurred while retriving info from HomeAssistant DB " + str(e)
-            raise Server_Error_Handler.InternalServerError(message=message)
-    
-    '''Computes the instantaneous energy values of a specific house'''
-    def compute_instanttotaldata(self,houseID):
-        try:
-            selectedMetaHAIDs=self.selectMetaHAIDs(houseID,'energy')
-            query = """ 
-                SELECT SUM(state) as total_state, strftime('%Y-%m-%d %H:%M:%S', datetime(last_updated_ts, 'unixepoch')) as timestamp
-                FROM states
-                WHERE metadata_id IN ({})
-                GROUP BY timestamp
-            """.format(','.join('?' for _ in selectedMetaHAIDs))
-            self.HADBCur.execute(query,selectedMetaHAIDs)
-            rows = self.HADBCur.fetchall()       
-            if rows!=[]:
-                result = pd.DataFrame(rows, columns=['total_state', 'timestamp'])  
-                for i in range(len(result)):
-                    topic='/homeassistant/sensor/smartSocket/house/state'
-                    msg='{"energy_Tot": %f}' % (result['total_state'][i])
-                    self.client.MQTT.Publish(topic, msg)
-                return result
-            else:
-                return None
-        except HTTPError as e:
-            message = "An error occurred while retriving info from HomeAssistant DB " + e._message
-            raise HTTPError(status=e.status, message=message)
-        except Exception as e:
-            message = "An error occurred while retriving info from HomeAssistant DB " + str(e)
-            raise Server_Error_Handler.InternalServerError(message=message)
-    
+            raise Server_Error_Handler.InternalServerError(message=message)   
         
     def compute_hourlyavgdata(self,houseID):
         base_df = self.getdata(houseID,'energy')
@@ -248,49 +218,49 @@ class DataAnalysis():
     
     def compute_dailyavgdata(self,houseID):
         hourly_df=self.getdata(houseID,'energy_tothourly')
-        if hourly_df is not None:
+        if hourly_df is not None and not hourly_df.empty:
             self.compute_data(hourly_df,'%Y-%m-%d 00:00:00',True,'DAvg',True)
         else:
             return None
     
     def compute_dailytotdata(self,houseID):
         hourly_df=self.getdata(houseID,'energy_tothourly')
-        if hourly_df is not None:
+        if hourly_df is not None and not hourly_df.empty:
             self.compute_data(hourly_df,'%Y-%m-%d 00:00:00',False,'DTot',True)
         else:
             return None
     
     def compute_monthlyavgdata(self,houseID):
         daily_df=self.getdata(houseID,'energy_totdaily')
-        if daily_df is not None:
+        if daily_df is not None and not daily_df.empty:
             self.compute_data(daily_df,'%Y-%m-01 00:00:00',True,'MAvg',True)
         else:
             return None
     
     def compute_monthlytotdata(self,houseID):
         daily_df=self.getdata(houseID,'energy_totdaily')
-        if daily_df is not None:
+        if daily_df is not None and not daily_df.empty:
             self.compute_data(daily_df,'%Y-%m-01 00:00:00',False,'MTot',True)
         else:
             return None
     
     def compute_yearlyavgdata(self,houseID):
         monthly_df=self.getdata(houseID,'energy_totmonthly')
-        if monthly_df is not None:
+        if monthly_df is not None and not monthly_df.empty:
             self.compute_data(monthly_df,'%Y-01-01 00:00:00',True,'YAvg',True)
         else:
             return None
     
     def compute_yearlytotdata(self,houseID):
         monthly_df=self.getdata(houseID,'energy_totmonthly')
-        if monthly_df is not None:
+        if monthly_df is not None and not monthly_df.empty:
             self.compute_data(monthly_df,'%Y-01-01 00:00:00',False,'YTot',True)
         else:
             return None
     
     def compute_hourlydataHouse(self,houseID):
         df=self.getdata(houseID,'energy')
-        if df is not None:
+        if df is not None and not df.empty:
             self.computedata_House(houseID,df,'%Y-%m-%d %H:00:00',True,'HAvg')
             self.computedata_House(houseID,df,'%Y-%m-%d %H:00:00',False,'HTot')
             self.findmax(df,'%Y-%m-%d %H:00:00','hourly_tot_max',False)
@@ -299,7 +269,7 @@ class DataAnalysis():
     
     def compute_dailydataHouse(self,houseID):
         df=self.getdata(houseID,'energy_tothourly')
-        if df is not None:
+        if df is not None and not df.empty:
             self.computedata_House(houseID,df,'%Y-%m-%d 00:00:00',True,'DAvg')
             self.computedata_House(houseID,df,'%Y-%m-%d 00:00:00',False,'DTot')
             self.findmax(df,'%Y-%m-%d 00:00:00','daily_tot_max',True)
@@ -308,7 +278,7 @@ class DataAnalysis():
     
     def compute_monthlydataHouse(self,houseID):
         df=self.getdata(houseID,'energy_totdaily')
-        if df is not None:
+        if df is not None and not df.empty:
             self.computedata_House(houseID,df,'%Y-%m-01 00:00:00',True,'MAvg')
             self.computedata_House(houseID,df,'%Y-%m-01 00:00:00',False,'MTot')
             self.findmax(df,'%Y-%m-01 00:00:00','monthly_tot_max',True)
@@ -317,7 +287,7 @@ class DataAnalysis():
     
     def compute_yearlydataHouse(self,houseID):
         df=self.getdata(houseID,'energy_totmonthly')
-        if df is not None:
+        if df is not None and not df.empty:
             self.computedata_House(houseID,df,'%Y-01-01 00:00:00',True,'YAvg')
             self.computedata_House(houseID,df,'%Y-01-01 00:00:00',False,'YTot')
         else:
@@ -338,8 +308,6 @@ class DataAnalysis():
 
             house_list = [row["houseID"] for row in result]
             for houseID in house_list:
-                self.compute_instanttotaldata(houseID)
-
                 self.compute_hourlyavgdata(houseID)
                 self.compute_hourlytotdata(houseID)
                 self.compute_hourlydataHouse(houseID)

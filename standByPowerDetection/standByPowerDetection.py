@@ -37,13 +37,13 @@ class StandByPowerDetection():
         meta = self.client.getMetaHAIDs(ID)
         powerID=meta["power"]
         self.curHA.execute("""
-            SELECT entity_id, state FROM (
-                SELECT entity_id, state, ROW_NUMBER() 
+            SELECT metadata_id, state FROM (
+                SELECT metadata_id, state, ROW_NUMBER() 
                 OVER (ORDER BY last_updated_ts DESC) AS row_num
                 FROM {}
-                WHERE entity_id = ?
+                WHERE metadata_id = ?
             )
-            WHERE row_num <= 60 """.format(self.database), (powerID,))
+            WHERE row_num <= 60 """.format(self.database), (powerID,))      #modddd 60
         results = self.curHA.fetchall()
         
         
@@ -57,12 +57,12 @@ class StandByPowerDetection():
         #return [(ID, max_timestamp, power)]
         #  retrieve the maximum value of timestamp column for each ID
         self.curHA.execute("""
-            SELECT entity_id, MAX(last_updated_ts), state
+            SELECT metadata_id, MAX(last_updated_ts), state
             FROM {}
-            WHERE entity_id
+            WHERE metadata_id
             = ?""".format(self.database),(powerID,))
         results = self.curHA.fetchone()
-        if results is not None:
+        if results !="unavailable":
             return (results)
         else:
             return None   
@@ -122,6 +122,18 @@ class StandByPowerDetection():
             return result
         except HTTPError as e:
             raise e
+        
+    def onlineTimeCheck(self, id):
+        result = self.getDeviceInfo(id)
+        last_update = result[0]["lastUpdate"]
+        current_time = time.time()
+
+        time_difference = current_time - last_update
+
+        if time_difference > 43200:  # 12 hours in seconds
+            return False
+        else:
+            return True
 
     def houseInfo(self, house_ID):
         #this method retrieves the modules belonging to each home that are on+
@@ -130,16 +142,18 @@ class StandByPowerDetection():
         house_modules = self.getHouseDevList(house_ID)
         for house_module in house_modules :
             meta = self.client.getMetaHAIDs(house_module)
-            switch_metaIDs = []
-            switch_metaIDs.extend([meta["left_plug"], meta["right_plug"], meta["center_plug"]])
-            result = self.getDeviceInfo(house_module)
-            moduleState= self.getSwitchesStates(switch_metaIDs)
-            if moduleState:
-                if (result[0]["Online"]) :
-                    settings = self.getDeviceSettingsInfo(house_module)[0]
-                    if(settings["HPMode"] == 1 and settings["parControl"] == 1):
-                        to_consider.append(house_module)
-            return to_consider 
+            if(meta != {}):
+                switch_metaIDs = []
+                switch_metaIDs.extend([meta["left_plug"], meta["right_plug"], meta["center_plug"]])
+                result = self.getDeviceInfo(house_module)
+                update_check= self.onlineTimeCheck(house_module)
+                moduleState= self.getSwitchesStates(switch_metaIDs)
+                if moduleState:
+                    if (result[0]["Online"] & update_check) :
+                        settings = self.getDeviceSettingsInfo(house_module)[0]
+                        if(settings["HPMode"] == 1 and settings["parControl"] == 1):
+                            to_consider.append(house_module)
+                return to_consider 
         
     def getRange(self, ID):
         settings = self.getDeviceSettingsInfo(ID)[0]
@@ -167,7 +181,7 @@ class StandByPowerDetection():
             }
         str_msg = json.dumps(msg, indent=2)
         notifyMsg=("The consumption of the appliance connected to %s is parasitic" % ID)
-        self.client.notifyHA(notifyMsg)
+        self.client.MQTT.notifyHA(notifyMsg)
         self.client.MQTT.Publish(topic, str_msg)
         self.client.MQTT.stop() 
 
@@ -200,14 +214,11 @@ class StandByPowerDetection():
                 res= False
             return res
 
-    def controlAndDisconnect(self):
-        HADB_loc = "HADB.db" #TODO : Da aggiornare poi con home assistant
-        if(not IN_DOCKER):
-            HADB_loc = "homeAssistant/HADB/" + HADB_loc
-        else:
-            HADB_loc = "HomeAssistant/" + HADB_loc
+    def controlAndDisconnect(self):        
+        HADB_loc = "homeAssistant/HADB/HADB.db"
         self.connHA = sqlite3.connect(HADB_loc)
         self.curHA = self.connHA.cursor()
+
         self.database = 'states'
         self.onlineDev ='Devices'  # online
         self.ranges ='AppliancesInfo'  #ranges
@@ -227,12 +238,12 @@ class StandByPowerDetection():
                 last_measurement = self.lastValueCheck(info)#[id, time,power]
                 if last_measurement[2] != None and value != None :
                     if ((1 <= int(last_measurement[2]) <= int(value)) and last_measurement != 0):
-                        prevRows= self.prevValuesCheck(info[0][0])
+                        prevRows= self.prevValuesCheck(info)
                         for prevValues in prevRows:
                             if (1<=int(prevValues[1])<=value):
                                 standByPowercont+=1   
-                            if standByPowercont>=5:
-                                self.MQTTInterface(info[0][0])
+                        if standByPowercont>=60:
+                            self.MQTTInterface(info)
                                 
 
 control = StandByPowerDetection()

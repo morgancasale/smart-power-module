@@ -81,7 +81,7 @@ class maxPowerControl():
             result= False
         return result
 
-    """Retrieves information about devices registered in the catalog and selects only those "online" """
+    """Retrieves information about devices registered in the catalog and selects only those "online" and updated in the last 12 hours """
     def getDevicesInfo(self):
         try:    
             catalogAddress = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
@@ -93,8 +93,11 @@ class maxPowerControl():
             if response.status_code != 200:
                 raise HTTPError(response.status_code, str(response.text))
             result = json.loads(response.text)
-            dev_online = [device for device in result if device["Online"]]
+            current_time=time.time()
+            dev_online = [device for device in result if device["Online"]
+                         and (current_time - device['lastUpdate']) < 12 * 3600]
             return dev_online
+        
         except HTTPError as e:
             message = "An error occurred while retriving info from catalog " + e._message
             raise HTTPError(status=e.status, message=message)
@@ -128,7 +131,7 @@ class maxPowerControl():
         except Exception as e:
             message = "An error occurred while retriving info from catalog " + str(e)
             raise Server_Error_Handler.InternalServerError(message=message)
-
+            
     """For each online device belonging to a specific home, it finds the associated metadata_ids.
     If the considered device is switched on, then it retrieves the metadata_id of the power measurement for that device."""
     def selectMetaHAIDs(self,houseID):
@@ -142,14 +145,12 @@ class maxPowerControl():
             to_retrieve = ['left_plug', 'center_plug', 'right_plug']
             switch_metaIDs = []
             for item in meta_data:
-                if item['entityID'] in to_retrieve:
-                    switch_metaIDs.append(item['metaID'])
+                if item in to_retrieve:
+                    switch_metaIDs.append(meta_data[item])
             deviceState= self.getswitchesStates(switch_metaIDs)      
             if deviceState:
-                for item in meta_data:
-                    if item['entityID']=='power':
-                        metaHAID=item['metaID']
-                        selectedMetaHAIDs.append(metaHAID)
+                metaHAID=meta_data['power']
+                selectedMetaHAIDs.append(metaHAID)
         return selectedMetaHAIDs
     
     """Returns the last power reading for each selected device in the house"""

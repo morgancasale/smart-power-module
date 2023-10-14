@@ -58,13 +58,13 @@ class ModuleConsumptionControl():
 
         #  retrieve the maximum value of timestamp column for each ID
         self.curHA.execute("""
-            SELECT entity_id, MAX(last_updated_ts), state
+            SELECT metadata_id, MAX(last_updated_ts), state
             FROM {}
-            WHERE entity_id
+            WHERE metadata_id
             = ?""".format(self.database),(powerID,))
         result = self.curHA.fetchone()[2]
 
-        if result is not None:
+        if result !='unavailable':
             return float(result)
         else:
             return None 
@@ -126,9 +126,10 @@ class ModuleConsumptionControl():
             switch_metaIDs = []
             switch_metaIDs.extend([meta["left_plug"], meta["right_plug"], meta["center_plug"]])
             result = self.getDeviceInfo(house_module)
+            update_check= self.onlineTimeCheck(house_module)
             moduleState= self.getSwitchesStates(switch_metaIDs)
             if moduleState:
-                if (result[0]["Online"]) :
+                if (result[0]["Online"] & update_check) :
                     settings = self.getDeviceSettingsInfo(house_module)[0]
                     if(settings["HPMode"] == 1 and settings["MPControl"] == 1):
                         to_consider.append(house_module)
@@ -150,17 +151,23 @@ class ModuleConsumptionControl():
             return None
             
     def MQTTInterface(self, ID):
-        self.client.start()
-        topic="/smartSocket/control"
-        msg= {
-            "deviceID" : ID, 
-            "states" : [0,0,0]
-            }
-        str_msg = json.dumps(msg, indent=2)
-        notifyMsg=("The consumption of the appliance connected to %s has exceeded the selected threshold" % ID)
-        self.client.notifyHA(notifyMsg)
-        self.client.MQTT.Publish(topic, str_msg)
-        self.client.MQTT.stop()           
+        settings = self.getDeviceSettingsInfo(ID)[0]
+        if settings["MPMode"] == "Notify" :
+            notifyMsg=("The consumption of the appliance connected to %s has exceeded the selected threshold" % ID)
+            self.client.MQTT.notifyHA(notifyMsg)
+        else: 
+            self.MQTTInterface(ID)
+            self.client.start()
+            topic="/smartSocket/control"
+            msg= {
+                "deviceID" : ID, 
+                "states" : [0,0,0]
+                }
+            str_msg = json.dumps(msg, indent=2)
+            notifyMsg=("The consumption of the appliance connected to %s has exceeded the selected threshold" % ID)
+            self.client.MQTT.notifyHA(notifyMsg)
+            self.client.MQTT.Publish(topic, str_msg)
+            self.client.MQTT.stop()           
             
     def getHouseList(self):
         result = self.getCatalogInfo("Houses", "houseID", "*")
@@ -170,19 +177,21 @@ class ModuleConsumptionControl():
             house_list = [house_list]
         return house_list
     
-    def notifyOrTurnOff(self, ID):
-        settings = self.getDeviceSettingsInfo(ID)[0]
-        if settings["MPMOde"] == "Notify" :
-            notifyMsg=("The consumption of the appliance connected to %s has exceeded the selected threshold" % ID)
-            self.client.notifyHA(notifyMsg)
-        else: self.MQTTInterface(ID)
+    def onlineTimeCheck(self, id):
+        result = self.getDeviceInfo(id)
+        last_update = result[0]["lastUpdate"]
+        current_time = time.time()
+
+        time_difference = current_time - last_update
+
+        if time_difference > 43200:  # 12 hours in seconds
+            return False
+        else:
+            return True
     
     def control(self):
-        HADB_loc = "HADB.db" #TODO : Da aggiornare poi con home assistant
-        if(not IN_DOCKER):
-            HADB_loc = "homeAssistant/HADB/" + HADB_loc
-        else:
-            HADB_loc = "HomeAssistant/" + HADB_loc
+        HADB_loc = "HADB.db"
+        HADB_loc = "homeAssistant/HADB/" + HADB_loc
 
         self.connHA = sqlite3.connect(HADB_loc)
         self.curHA = self.connHA.cursor()
@@ -202,10 +211,15 @@ class ModuleConsumptionControl():
                     last_measurement = self.lastValueCheck(module)#[id, time,power]
                     if  last_measurement != None:
                         if int(last_measurement)> value:
-                            self.notifyOrTurnOff(module)
+                            self.MQTTInterface(module)
         self.connHA.close()
                                 
 
 
 if __name__ == "__main__":
     control = ModuleConsumptionControl()
+
+
+
+
+
