@@ -50,11 +50,8 @@ class ServiceBase(object):
 
             if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"] and self.generalConfigs["CONFIG"]["HomeAssistant"]["autoHA"]):
                 self.getHAEndpoint()
-                
-            if(IN_DOCKER): 
-                self.HADB_path = "DB/HADB.db"
-            else:
-                self.HADB_path = "homeAssistant/HADB/HADB.db"   
+
+            self.HADB_path = "homeAssistant/HADB/HADB.db"   
             
             # Wait for the catalog to be ready
             cond = bool(IN_DOCKER)
