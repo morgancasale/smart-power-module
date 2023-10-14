@@ -3,11 +3,15 @@ from .Error_Handler import *
 import time
 import paho.mqtt.client as MQTT
 import requests
+import os
+import dns.resolver
 
 from threading import Thread, Event, current_thread
 
+IN_DOCKER = os.environ.get("IN_DOCKER", False)
+
 class MQTTServer(Thread):
-    def __init__(self, threadID, threadName, events, configs,generalConfigs,configs_file, init_func=None, Notifier=None):
+    def __init__(self, threadID, threadName, events, configs, generalConfigs, configs_file, init_func=None, Notifier=None):
         Thread.__init__(self)
         self.threadID = threadID
         self.name = threadName
@@ -48,8 +52,14 @@ class MQTTServer(Thread):
 
 
                     broker_AddPort = response.json()[0]
-
-                    self.broker = broker_AddPort["IPAddress"]
+                    
+                    if(not IN_DOCKER):
+                        self.broker = broker_AddPort["IPAddress"]
+                    
+                        if(self.generalConfigs["REGISTRATION"]["catalog_mDNS"] != None):
+                            self.broker = self.resolvemDNS(self.generalConfigs["REGISTRATION"]["catalog_mDNS"])
+                    else:
+                        self.broker = "172.20.0.10"
                     self.brokerPort = broker_AddPort["port"]
                     self.username = broker_AddPort["MQTTUser"]
                     self.password = broker_AddPort["MQTTPassword"]
@@ -72,7 +82,7 @@ class MQTTServer(Thread):
             self.Client = MQTT.Client(self.clientID, True)
 
             self.Client.on_connect = self.OnConnect
-            self.Client.on_message = self.OnMessageReceived
+            #self.Client.on_message = self.OnMessageReceived
 
         except HTTPError as e:
             self.events["stopEvent"].set()
@@ -118,7 +128,7 @@ class MQTTServer(Thread):
     def OnMessageReceived(self, a, b, message):
         self.subNotifier(self, message.topic, message.payload)
 
-    def Publish(self, topics, message, retain=False):
+    def Publish(self, topics, message, retain=False, talk = True):
         while(not self.connected):
             time.sleep(5)
         if(not isinstance(topics, list)):
@@ -128,17 +138,17 @@ class MQTTServer(Thread):
                 self.checkTopic(topic, "pub")
                 if(len(self.publishtopics)>1):
                     for publishtopic in  self.publishtopics:
-                        print("Publishing '%s' at topic '%s'" % (message, publishtopic))
+                        if(talk): print("Publishing '%s' at topic '%s'" % (message, publishtopic))
                         self.Client.publish(publishtopic, message, self.QOS, retain=retain)
                 else:
-                    print("Publishing '%s' at topic '%s'" % (message, topic))
+                    if(talk): print("Publishing '%s' at topic '%s'" % (message, topic))
                     self.Client.publish(topic, message, self.QOS, retain=retain)
         else:
             raise self.clientErrorHandler.BadRequest(
             "Publisher is not active for this service")
 
 
-    def Subscribe(self, topics):
+    def Subscribe(self, topics, callback = None):
         while(not self.connected):
             time.sleep(5)
         if(not isinstance(topics, list)):
@@ -150,11 +160,16 @@ class MQTTServer(Thread):
             for topic in topics:
                 self.checkTopic(topic,"sub")
                 if (len(topics) ==1):
-                        MQTTTopics = (topic, 2)
-                        self.topics = topic
+                    MQTTTopics = (topic, 2)
+                    self.topics = topic
                 else:
-                        MQTTTopics.append((topic, 2))
-                        self.topics.append(topic)
+                    MQTTTopics.append((topic, 2))
+                    self.topics.append(topic)
+                
+                if(callback is None):
+                    self.Client.message_callback_add(topic, self.OnMessageReceived)
+                else:
+                    self.Client.message_callback_add(topic, callback)
             print("subscribing '%d' at topic '%s'" % (2,   MQTTTopics ))
             self.Client.subscribe(MQTTTopics)
             self.isSub = True
@@ -173,8 +188,35 @@ class MQTTServer(Thread):
         self.Client.loop_stop()
         self.Client.disconnect()
 
+    def notifyHA(self, msg, talk=False):
+        topic = "socket_settings/notifier"
+        msg = json.dumps(msg)
+        self.Publish(topic, msg, talk = talk)
 
+    def resolvemDNS(self, mDNS):
+        try:
+            if(os.name != "nt"):
+                resolver = dns.resolver.Resolver()
+                resolver.nameservers = ["224.0.0.251"]
+                resolver.port = 5353
+                sol = resolver.resolve(mDNS, "A")
+                return str(sol[0].to_text())
+            else:
+                PORT = 50000
+                MAGIC = "smartSocket" #to make sure we don't confuse or get confused by other programs
+                from socket import socket, AF_INET, SOCK_DGRAM
 
+                s = socket(AF_INET, SOCK_DGRAM) #create UDP socket
+                s.bind(('', PORT))
+                data, addr = s.recvfrom(1024) #wait for a packet
+                if data.startswith(MAGIC.encode()):
+                    IP = data[len(MAGIC):].decode()
+                    print ("got service announcement from %s", IP)
+
+                return IP
+        except Exception as e:
+            raise self.serverErrorHandler.InternalServerError(message="An error occurred while resolving mDNS: \u0085\u0009" + str(e))
+    
     def updateConfigFile(self, dict):
         try:
 
@@ -183,7 +225,7 @@ class MQTTServer(Thread):
             
 
             with open(self.configs_file, 'w') as file:
-                 json.dump(self.generalConfigs, file, indent=4)
+                json.dump(self.generalConfigs, file, indent=4)
             # with open(self.configs_file, "w") as file:
             #     json.dump(configs, file, indent=4)
         except Exception as e:
@@ -293,12 +335,8 @@ class MQTTServer(Thread):
         else:
             raise self.clientErrorHandler.BadRequest("Error subscriber not activated")
 
-
-
-
-
     def checkParams(self):
-        if (not self.configParams == sorted(self.configs.keys())):
+        if (not sorted(self.configParams) == sorted(self.configs.keys())):
             raise self.clientErrorHandler.BadRequest(
                 "Missing parameters in config file")
 

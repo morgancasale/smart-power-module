@@ -1,6 +1,6 @@
-/ResourceCatalog/__pycache__
-/ResourceCatalog/test.py
-/ResourceCatalog/server.py
+/resourceCatalog/__pycache__
+/resourceCatalog/test.py
+/resourceCatalog/server.py
 
 /microserviceBase/__pycache__
 /microserviceBase/test.py
@@ -10,9 +10,31 @@ HomeAssistant_Connector/
 test.py
 .vscode
 
-/Device_Connector/__pycache__
+/deviceConnector/__pycache__
 
 /deviceSim
 
 /Data_DB
+
+/maxPowerControl/HADB.db-*
+
+/homeAssistant/data/.vscode-server
+/homeAssistant/data/.ash_history
+/homeAssistant/data/.cloud
+/homeAssistant/data/.storage
+/homeAssistant/data/deps
+/homeAssistant/data/lsiopy
+/homeAssistant/data/www
+/homeAssistant/data/.HA_VERSION
+/homeAssistant/data/home-assistant.log*
+/homeAssistant/data/blueprints
+/homeAssistant/data/tts
+/homeAssistant/data/testDB.db
+/homeAssistant/HADB/HADB.db-*
+/homeAssistant/HADB/HADB.db.*
+/homeAssistant/data/.homeassistant
+/homeAssistant/data/custom_components
+
+/mosquitto/data
+/mosquitto/log
 

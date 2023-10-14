@@ -6,9 +6,39 @@ networks:
       config:
         - subnet: 172.20.0.0/24
 
+
 services:
+
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.10
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/log:/mosquitto/log
+      - ./mosquitto/data/:/mosquitto/data
+    restart: always
+    ports:
+      - 1883:1883
+
+  homeassistant:
+    image: lscr.io/linuxserver/homeassistant
+    container_name: homeassistant
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+    volumes:
+      - ./homeAssistant/data:/config
+      - ./homeAssistant/homeAssistant_panel:/config/www/homeAssistant_panel
+      - ./homeAssistant/HADB:/DB
+    restart: unless-stopped
+
   resourcecatalog:
-    container_name: Resource_Catalog
+    container_name: resourceCatalog
     image: resourcecatalog
     ports:
     - 8099:8099
@@ -16,6 +46,8 @@ services:
     networks:
       frontend:
         ipv4_address: 172.20.0.2
+    volumes:
+      - ./resourceCatalog:/ResCat
     healthcheck: # to allow other containers to wait for this one
       test: ["CMD", "curl", "-f", "http://localhost:15672"]
       interval: 30s
@@ -23,7 +55,7 @@ services:
       retries: 5
 
   deviceconnector:
-    container_name: Device_Connector
+    container_name: deviceConnector
     image: deviceconnector
     ports:
     - 8067:8067
@@ -32,3 +64,67 @@ services:
         ipv4_address: 172.20.0.3
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog
+
+  onlinetracker:
+    container_name: onlineTracker
+    image: onlinetracker
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.4
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+
+  maxpowercontrol:
+    container_name: maxPowerControl
+    image: maxpowercontrol
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.5
+    volumes:
+      - ./homeAssistant/HADB:/homeAssistant/HADB
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+
+  standbypowerdetection:
+    container_name: standbyPowerDetection
+    image: standbypowerdetection
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.6
+    volumes:
+      - ./homeAssistant/HADB:/homeAssistant/HADB
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+
+  blackoutfaultydetection:
+    container_name: blackoutFaultyDetection
+    image: blackoutfaultydetection
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.7
+    volumes:
+      - ./homeAssistant/HADB:/homeAssistant/HADB
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+
+  moduleconsumptioncontrol:
+    container_name: moduleConsumptionControl
+    image: moduleconsumptioncontrol
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.8
+    volumes:
+      - ./homeAssistant/HADB:/homeAssistant/HADB
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+
+  timeshift:
+    container_name: timeShift
+    image: timeshift
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.9
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+
+  

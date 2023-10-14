@@ -31,9 +31,18 @@ void onRecMeshMsgBridge(uint32_t from, String &data) {
   }
 
   unsigned long now = millis();
-  if(now-prevTime>10000){
-    sendData2MQTT();
+  if(now - prevTime > 10000){
+    sendMasterData2MQTT();
     prevTime = now;
+  }
+}
+
+void setSwitchState(JSONVar states){
+  digitalWrite (LED_BUILTIN, (int)states[1]);
+  for(int i=0; i<3; i++){
+    if((int)states[i] != -1){
+      SwitchStates[i] = (int)states[i];
+    }
   }
 }
 
@@ -43,8 +52,7 @@ void onRecMeshMsg(uint32_t from, String &data) {
   JSONVar payload = JSON.parse(data);
   String temp = JSON.stringify(payload["deviceID"]);
   if(temp == deviceID || temp == "*" ){
-    digitalWrite (LED_BUILTIN, payload["state"]);
-    SwitchStates[(int) payload["plugID"]] = (int) payload["state"];
+    setSwitchState(payload["states"]);
   }
 }
 
@@ -68,8 +76,8 @@ void sendData2Mesh(){
   sendMeshMsg(JSON.stringify(payload));
 }
 
-void sendData2MQTT(){
-  float temp = random(23, 24)+random(0,100)/100;
+void sendMasterData2MQTT(){
+  float temp = random(230, 240)/10+random(0,100)/100;
 
   JSONVar payload;
   payload["deviceID"] = deviceID;
@@ -111,7 +119,8 @@ void getRole(){
   Serial.println(masterNode);
 
   if(autoBroker){
-    mqttBroker = fixJSONString(response["brokerIP"]);
+    if(JSON.stringify(response["IN_DOCKER"]) == "No") mqttBroker = fixJSONString(response["brokerIP"]);
+    else mqttBroker = connectorIP;
     mqttPort = response["brokerPort"];
     mqttUSR = fixJSONString(response["brokerUser"]);
     mqttPWD = fixJSONString(response["brokerPassword"]);
@@ -160,7 +169,7 @@ void loop2(void* pvParameters){
 
           /*unsigned long now = millis();
           if(now-prevTime>10000){
-            sendData2MQTT();
+            sendMasterData2MQTT();
             prevTime = now;
           }*/
         }

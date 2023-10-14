@@ -7,15 +7,20 @@ from .Error_Handler import *
 from threading import Event
 import dns.resolver
 
+import sqlite3 as sq
+import pandas as pd
+
 IN_DOCKER = os.environ.get("IN_DOCKER", False)
 
 class ServiceBase(object):
-    def __init__(self, config_file=None, 
+    def __init__(self, config_file=None, isCatalog=False, 
                  init_REST_func=None, add_REST_funcs = None, 
                  init_MQTT_func = None, add_MQTT_funcs = None, 
                  GET=None, POST=None, PUT=None, DELETE=None, PATCH=None, 
                  Notifier=None):
-        try: 
+        try:
+            self.isCatalog = isCatalog
+
             self.clientErrorHandler = Client_Error_Handler()
             self.serverErrorHandler = Server_Error_Handler()
             self.config_file = config_file
@@ -38,18 +43,20 @@ class ServiceBase(object):
                     "activatedMethod": ["REST", "MQTT"],
                     "HomeAssistant": ["enabled", "token", "autoHA", "HA_mDNS", "address", "port"]
                 },
-                "REGISTRATION": ["enabled", "serviceID", "serviceName", "catalog_mDNS", "catalogAddress", "catalogPort", "T_Registration"]
+                "REGISTRATION": ["enabled", "serviceID", "serviceName", "catalogAddress", "catalogPort", "T_Registration"]
             }
 
             self.check_and_loadConfigs()
 
             if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"] and self.generalConfigs["CONFIG"]["HomeAssistant"]["autoHA"]):
                 self.getHAEndpoint()
+
+            self.HADB_path = "homeAssistant/HADB/HADB.db"   
             
             # Wait for the catalog to be ready
             cond = bool(IN_DOCKER)
             cond &= self.generalConfigs["REGISTRATION"]["enabled"]
-            cond &= self.generalConfigs["REGISTRATION"]["serviceName"] != "ResourceCatalog"
+            cond &= self.generalConfigs["REGISTRATION"]["serviceName"] != "resourceCatalog"
             if(cond):
                 time.sleep(5)
 
@@ -125,8 +132,8 @@ class ServiceBase(object):
                 elif type(self.configParams[key]) is list:
                     a = sorted(self.configParams[key])
                     b = sorted(self.generalConfigs[key].keys())
-                    if(a != b):
-                        print("here")
+                    diff = list(set(a)-set(b))
+                    if(len(list(set(b).intersection(diff))) > 0):
                         raise self.clientErrorHandler.BadRequest(message = message)
                 
     def validate_HA_Params(self):
@@ -145,10 +152,16 @@ class ServiceBase(object):
                         raise self.clientErrorHandler.BadRequest(message="HomeAssistant " + key + " parameter must be a string")
                     self.HAToken = configs[key]
                 case "HA_mDNS":
+                    trueIP = ""
                     if(not isinstance(configs[key], str)):
                         message = "HomeAssistant " + key + " parameter must be a string"
                         raise self.clientErrorHandler.BadRequest(message=message)
-                    trueIP = "http://"+self.resolvemDNS(configs[key])
+                    if(not self.isCatalog and not IN_DOCKER):             
+                        trueIP = "http://" + self.resolvemDNS(configs[key])
+                    if(IN_DOCKER):
+                        #trueIP = "http://" + socket.gethostbyname("homeassistant")
+                        trueIP = "127.0.0.1"
+
                     self.updateConfigFile(["CONFIG", "HomeAssistant"], {"address": trueIP})
                     self.HAIP = trueIP
                 case "address":
@@ -173,7 +186,7 @@ class ServiceBase(object):
     
     def validate_registrationParams(self):
         configs = self.generalConfigs["REGISTRATION"]
-        params = ["enabled", "serviceID", "serviceName", "catalog_mDNS", "catalogAddress", "catalogPort", "T_Registration"]
+        params = ["enabled", "serviceID", "serviceName", "catalogAddress", "catalogPort", "T_Registration"]
         if(not all(key in configs.keys() for key in params)):
             raise self.clientErrorHandler.BadRequest(message="Missing parameters in REGISTRATION configs")
         
@@ -186,14 +199,14 @@ class ServiceBase(object):
                     if(not isinstance(configs[key], str)):
                         raise self.clientErrorHandler.BadRequest(message="REGISTRATION " + key + " parameter must be a string")
                     if(configs["enabled"]):
-                        if(key == "catalog_mDNS" and not IN_DOCKER):
+                        if(key == "catalog_mDNS" and not IN_DOCKER and not self.isCatalog):                            
                             trueIP = "http://" + self.resolvemDNS(configs[key])
                             print("Resolved mDNS: " + trueIP)
                             self.generalConfigs["REGISTRATION"]["catalogAddress"] = trueIP
                             self.updateConfigFile(["REGISTRATION"], {"catalogAddress": trueIP})
                         if(key == "catalogAddress" and IN_DOCKER):
                             try:
-                                trueIP = "http://" + socket.gethostbyname("resourcecatalog")
+                                trueIP = "http://" + socket.gethostbyname("resourceCatalog")
                                 print("Resolved catalog: " + trueIP)
                                 self.generalConfigs["REGISTRATION"]["catalogAddress"] = trueIP
                                 self.updateConfigFile(["REGISTRATION"], {"catalogAddress": trueIP})
@@ -212,7 +225,7 @@ class ServiceBase(object):
                     if(cond):
                         raise self.clientErrorHandler.BadRequest(message="REGISTRATION T_Registration parameter must be a positive number")
         
-        print("Catalog address: " + self.generalConfigs["REGISTRATION"]["catalogAddress"])
+        #print("Catalog address: " + self.generalConfigs["REGISTRATION"]["catalogAddress"])
         
     def validateParams(self):
         for key in self.configParams:
@@ -253,6 +266,7 @@ class ServiceBase(object):
             config.update(dict)
             with open(self.config_file, "w") as file:
                 json.dump(configs, file, indent=4)
+            self.generalConfigs = json.load(open(self.config_file, 'r'))
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError(message=
                 "An error occurred while updating the configuration file: \u0085\u0009" + str(e)
@@ -314,14 +328,84 @@ class ServiceBase(object):
     
     def resolvemDNS(self, mDNS):
         try:
-            resolver = dns.resolver.Resolver()
-            resolver.nameservers = ["224.0.0.251"]
-            resolver.port = 5353
-            sol = resolver.resolve(mDNS, "A")
-            return str(sol[0].to_text())
+            if(os.name != "nt"):
+                resolver = dns.resolver.Resolver()
+                resolver.nameservers = ["224.0.0.251"]
+                resolver.port = 5353
+                sol = resolver.resolve(mDNS, "A")
+                return str(sol[0].to_text())
+            else:
+                PORT = 50000
+                MAGIC = "smartSocket" #to make sure we don't confuse or get confused by other programs
+                from socket import socket, AF_INET, SOCK_DGRAM
+
+                s = socket(AF_INET, SOCK_DGRAM) #create UDP socket
+                s.bind(('', PORT))
+                data, addr = s.recvfrom(1024) #wait for a packet
+                if data.startswith(MAGIC.encode()):
+                    IP = data[len(MAGIC):].decode()
+                    print ("got service announcement from %s", IP)
+
+                return IP
         except Exception as e:
             raise self.serverErrorHandler.InternalServerError(message="An error occurred while resolving mDNS: \u0085\u0009" + str(e))
+        
+    """To remove later"""    
+    def advertise_catalog(self):
+        PORT = 50000
+        MAGIC = "smartSocket" #to make sure we don't confuse or get confused by other programs
 
+        from time import sleep
+        from socket import socket, AF_INET, SOCK_DGRAM, SOL_SOCKET, SO_BROADCAST, gethostbyname, gethostname
+
+        s = socket(AF_INET, SOCK_DGRAM) #create UDP socket
+        s.bind(('', 0))
+        s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1) #this is a broadcast socket
+        my_ip= gethostbyname(gethostname()) #get our IP. Be careful if you have multiple network interfaces or IPs
+
+        while True:
+            data = MAGIC + my_ip
+            data = data.encode()
+            temp = "<broadcast>"
+            temp = temp.encode()
+            s.sendto(data, (temp, PORT))
+            print ("sent service announcement")
+            sleep(5)
+
+    def getMetaHAIDs(self, deviceID):
+        """
+            Returns a dictionary containing the metadata IDs 
+            for the entity IDs of the specified device.
+            The dictionary will be of the following form:
+            >>> {
+            >>>     "entityID": "metaID",
+            >>>     ...
+            >>> }
+        """
+        if(self.generalConfigs["CONFIG"]["HomeAssistant"]["enabled"]):
+            try:
+                conn = sq.connect(self.HADB_path)
+
+                deviceID = deviceID.lower()
+                query = "SELECT * FROM states_meta WHERE entity_id LIKE '%"+deviceID+"%'"
+                selectedData = pd.read_sql_query(query, conn).to_dict(orient="records")
+                
+                conn.close()
+
+                result = {}
+                for data in selectedData:
+                    selDevID = "d" + data["entity_id"].split("_d")[1].split("_")[0]
+                    if(selDevID == deviceID):
+                        metaID = data["metadata_id"]
+                        entityID = data["entity_id"].split(deviceID+"_")[1]
+
+                        result[entityID] = metaID
+                
+                return result
+            except Exception as e:
+                raise self.serverErrorHandler.InternalServerError(message="An error occurred while getting Home Assistant IDs: \u0085\u0009" + str(e))
+        else:
+            raise self.clientErrorHandler.BadRequest(message="Home Assistant is not enabled")
 
 if __name__ == "__main__":
     Service = ServiceBase()

@@ -1,0 +1,2 @@
+- endpoint per tutti i microservizi
+- connessione al db di HA con docker
