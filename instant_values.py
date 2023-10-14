@@ -23,7 +23,7 @@ class House_instantvalues():
             self.client = ServiceBase(config_file)
             self.client.start()
             
-            HADB_loc = "HADB3.db"
+            HADB_loc = "HADB.db"
             HADB_loc="homeAssistant/HADB/"+ HADB_loc
 
             self.HADBConn = sqlite3.connect(HADB_loc)
