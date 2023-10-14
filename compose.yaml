@@ -82,7 +82,7 @@ services:
       frontend:
         ipv4_address: 172.20.0.5
     volumes:
-      - ./maxPowerControl:/HomeAssistant
+      - ./homeAssistant/HADB:/homeAssistant/HADB
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog
 
@@ -93,7 +93,7 @@ services:
       frontend:
         ipv4_address: 172.20.0.6
     volumes:
-      - ./maxPowerControl:/HomeAssistant
+      - ./homeAssistant/HADB:/homeAssistant/HADB
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog
 
@@ -104,7 +104,7 @@ services:
       frontend:
         ipv4_address: 172.20.0.7
     volumes:
-      - ./maxPowerControl:/HomeAssistant
+      - ./homeAssistant/HADB:/homeAssistant/HADB
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog
 
@@ -115,7 +115,7 @@ services:
       frontend:
         ipv4_address: 172.20.0.8
     volumes:
-      - ./maxPowerControl:/HomeAssistant
+      - ./homeAssistant/HADB:/homeAssistant/HADB
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog
 
