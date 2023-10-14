@@ -4,21 +4,21 @@
             "MQTT": true,
             "REST": false
         },
-
         "HomeAssistant": {
             "enabled": false,
             "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNjlmNWFiMzQ3Nzk0NTExYjAwZDE0YzA5ZTVkYmUwMCIsImlhdCI6MTY4MTczNzc2NiwiZXhwIjoxOTk3MDk3NzY2fQ.gn76jF7NYDzAxhW4tiQZ9kfD8K3TaTqGE__z_7xChOU",
             "autoHA": false,
-            "address": "http://192.168.2.163",
+            "HA_mDNS": "smartsocket.local",
+            "address": "http://192.168.1.139",
             "port": 8123,
             "baseTopic": "homeassistant",
             "system": "smartSocket"
         }
     },
-    "REST":{
+    "REST": {
         "endPointID": "ENTYzMz",
-        "endPointName": "deviceConnector",
-        "IPAddress": "127.0.0.1",
+        "endPointName": "Data_Analysis",
+        "IPAddress": "192.168.2.145",
         "port": 8067,
         "CRUDMethods": {
             "GET": true,
@@ -28,37 +28,33 @@
             "PATCH": false
         }
     },
-    "MQTT":  {
-        "endPointID": "ENTYzMz",
-        "endPointName": "deviceConnector",
-        "autoBroker": false,
+    "MQTT": {
+        "endPointID": "EDATAANALYSIS",
+        "endPointName": "dataAnalysis",
+        "autoBroker": true,
         "brokerAddress": "broker.emqx.io",
         "brokerPort": 1883,
         "username": "",
         "password": "",
         "subPub": {
-            "sub": true,
+            "sub": false,
             "pub": true
         },
-        "clientID": "deviceConnector",
+        "clientID": "dataAnalysis",
         "MQTTTopics": {
-            "sub": [
-                "/smartSocket/data",
-                "/homeassistant/#",
-                "/homeassistant/switch/smartSockets/+/control"
-            ],
+            "sub": [],
             "pub": [
-                "smartSocket/control",
-                "/homeassistant/#"
+                "/homeassistant/sensor/smartSocket/#"
             ]
         },
         "QOS": 0
     },
     "REGISTRATION": {
         "enabled": true,
-        "serviceID": "SNTk3MD",
-        "serviceName": "deviceConnector",
-        "catalogAddress": "http://127.0.0.1",
+        "serviceID": "SDATAANALYSIS",
+        "serviceName": "Data_Analysis",
+        "catalog_mDNS": "smartsocket.local",
+        "catalogAddress": "http://192.168.1.139",
         "catalogPort": 8099,
         "T_Registration": 1
     }
