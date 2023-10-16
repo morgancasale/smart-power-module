@@ -64,7 +64,7 @@ class ModuleConsumptionControl():
             = ?""".format(self.database),(powerID,))
         result = self.curHA.fetchone()[2]
 
-        if result !='unavailable':
+        if result !='unknown' and result !='unavailable':
             return float(result)
         else:
             return None 
