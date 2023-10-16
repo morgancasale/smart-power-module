@@ -20,10 +20,13 @@ def notify(self, topic, payload):
     Topic = topic.split("/")
     config_command = ["homeassistant","switch","smartSocket","control"]
     config_data = ["smartSocket","data"]
+    control_data = ["smartSocket", "control"]
     if( all(x in Topic for x in config_command)):
         commandHandler.getCMD_fromHA(self, topic, payload)
     elif( all(x in Topic for x in config_data)):
         DataHandler.regData_toHa(self, topic, payload)
+    elif( all(x in Topic for x in control_data)):
+        DataHandler.control_HA(self, topic, payload)
     else:
         raise Client_Error_Handler.BadRequest("Topic not valid")
 
@@ -60,6 +63,7 @@ class DeviceConnector():
 
         self.service.MQTT.Subscribe("smartSocket/data")
         self.service.MQTT.Subscribe("homeassistant/switch/smartSocket/+/control/#")
+        self.service.MQTT.Subscribe("smartSocket/control")
 
 
     def setOnlineStatus(self, deviceID, status):

@@ -170,7 +170,6 @@ class StandByPowerDetection():
             
     
     def MQTTInterface(self, ID):
-        self.client.start()
         topic="/smartSocket/data"
         #socket= self.retrieveSocket(ID)
         #socket_states =  [-1 if item == '0' else 0 for item in socket]

@@ -89,6 +89,15 @@ class DataHandler():
                 e
             )
             raise Server_Error_Handler.InternalServerError(message=message)
+
+    def control_HA(self, topic, payload):
+        payload = json.loads(payload)
+        switchStates = payload["states"]
+        pubTopic = "homeassistant/switch/smartSocket/%s/status/" % payload["deviceID"].lower()
+        i = 0
+        for state in switchStates:
+            self.Publish(pubTopic + str(i), str(bool(state)), talk=False)
+
         
     def getPlugEnabled(catalogAddress, catalogPort, deviceID):
         try:

@@ -211,7 +211,7 @@ class maxPowerControl():
         row = lastReadings.loc[lastReadings["power"].idxmax()]
         metaHAID = row["metadata_id"]
         deviceID=self.getDeviceID(metaHAID)
-        topic = "/smartSocket/control"
+        topic = "smartSocket/control"
         msg = {
         "deviceID" : deviceID, 
         "states" : [0,0,0]

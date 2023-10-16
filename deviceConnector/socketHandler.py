@@ -186,7 +186,7 @@ class SocketHandler():
     def genEndpoints(catalogAddress, catalogPort, system, baseTopic, deviceID):
         endPoint = {}
         endPoint["endPointID"] = SocketHandler.genEndPointID(catalogAddress, catalogPort)
-        endPoint["endPointName"] = "Socket " + deviceID +" EndPoint"
+        endPoint["endPointName"] = "Socket " + deviceID.lower() +" EndPoint"
         endPoint["protocols"] = ["MQTT"]
         endPoint["clientID"] = deviceID
         endPoint["MQTTTopics"] = SocketHandler.genTopics(system, baseTopic, deviceID)
@@ -274,7 +274,7 @@ class SocketHandler():
 
         return socketStgs
         
-    def regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, MAC, houseID, autoMasterNode):
+    def regSocket(self, catalogAddress, catalogPort, system, baseTopic, MAC, houseID, autoMasterNode):
         try:
             headers = {
                 'content-type': "application/json",
@@ -412,7 +412,7 @@ class SocketHandler():
                         system = self.generalConfigs["CONFIG"]["HomeAssistant"]["system"]
                         baseTopic = self.generalConfigs["CONFIG"]["HomeAssistant"]["baseTopic"]
                         houseID = self.generalConfigs["CONFIG"]["houseID"]
-                        data = SocketHandler.regSocket(self, catalogAddress, catalogPort, HAIP, HAPort, HAToken, system, baseTopic, params["MAC"], houseID, autoMasterNode)
+                        data = SocketHandler.regSocket(self, catalogAddress, catalogPort, system, baseTopic, params["MAC"], houseID, autoMasterNode)
                         
 
                     out["deviceID"] = data["deviceID"]
@@ -479,15 +479,15 @@ class SocketHandler():
         }
 
         baseTopic += "/"
-        stateSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID + "/state"
-        availableSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID + "/status"
+        stateSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID.lower() + "/state"
+        availableSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID.lower() + "/status"
 
         topics["pub"].append(stateSensorTopic)
         topics["pub"].append(availableSensorTopic)
 
-        stateSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/state"
-        commandSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/control"
-        availableSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/status"
+        stateSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID.lower() + "/state"
+        commandSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID.lower() + "/control"
+        availableSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID.lower() + "/status"
 
         for i in range(3):
             topics["pub"].append(stateSwitchTopic + "/" + str(i))
@@ -499,8 +499,8 @@ class SocketHandler():
     def regSocket_toHA(self, system, baseTopic, deviceID, masterNode, deviceName=None):
         try:
             baseTopic += "/"
-            stateSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID + "/state"
-            availableSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID + "/status"
+            stateSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID.lower() + "/state"
+            availableSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID.lower() + "/status"
 
             sensorsPayload = [
                 {
@@ -546,9 +546,9 @@ class SocketHandler():
                 }
             }
 
-            stateSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/state"
-            commandSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/control"
-            availableSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID + "/status"
+            stateSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID.lower() + "/state"
+            commandSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID.lower() + "/control"
+            availableSwitchTopic = baseTopic + "switch/" + system + "/" + deviceID.lower() + "/status"
 
             switchesPayload = [
                 {
@@ -583,7 +583,7 @@ class SocketHandler():
                 sensor.update(sensorsGeneralPayload)
                 sensor.update(devicePayload)
                 sensor["unique_id"] = sensor["unique_id"] + "_" + sensor["device_class"]
-                discTopic = baseTopic + "sensor/" + system + "/" + deviceID + "_" + sensor["device_class"] + "/config" # homeassistant/sensor/smartSocket/
+                discTopic = baseTopic + "sensor/" + system + "/" + deviceID.lower() + "_" + sensor["device_class"] + "/config" # homeassistant/sensor/smartSocket/
                 print(self.MQTTService.Publish(discTopic, json.dumps(sensor), retain=True))
                 time.sleep(0.1)
 
@@ -592,7 +592,7 @@ class SocketHandler():
                 switch.update(switchesGeneralPayload)
                 switch.update(devicePayload)
                 switch["unique_id"] = switch["unique_id"] + "_" + str(i)
-                discTopic = baseTopic + "switch/" + system + "/" + deviceID + "_" + str(i) + "/config"
+                discTopic = baseTopic + "switch/" + system + "/" + deviceID.lower() + "_" + str(i) + "/config"
                 print(self.MQTTService.Publish(discTopic, json.dumps(switch), retain=True))
                 i+=1
 
@@ -614,8 +614,8 @@ class SocketHandler():
     def regSocketStats_toHA(self, system, baseTopic, deviceID, masterNode, deviceName=None):
         try:
             baseTopic += "/"
-            stateSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID + "/state"
-            availableSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID + "/status"
+            stateSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID.lower() + "/state"
+            availableSensorTopic = baseTopic + "sensor/" + system + "/" + deviceID.lower() + "/status"
 
             stat_sensorsPayload = [
                 {
@@ -698,7 +698,7 @@ class SocketHandler():
                 stat = sensor["value_template"].split("energy_")[1].split(" ")[0]
                 device_class = sensor["device_class"] + "_" + stat
                 sensor["unique_id"] = sensor["unique_id"] + "_" + device_class
-                discTopic = baseTopic + "sensor/" + system + "/" + deviceID + "_" + device_class + "/config" # homeassistant/sensor/smartSocket/
+                discTopic = baseTopic + "sensor/" + system + "/" + deviceID.lower() + "_" + device_class + "/config" # homeassistant/sensor/smartSocket/
                 print(self.MQTTService.Publish(discTopic, json.dumps(sensor), retain=True))
                 time.sleep(0.1)                
                 
@@ -920,7 +920,7 @@ class SocketHandler():
                 {%- set ns = namespace(devices = []) %}
                 {%- for device in devices %}
                 {%- set ids = (device_attr(device, "identifiers") | list)[0] | list -%}
-                {%- if \"""" + deviceID + """\" in ids %}
+                {%- if \"""" + deviceID.lower() + """\" in ids %}
                     {%- set entities = device_entities(device) | list %}
                     {%- if entities %}
                     {%- set ns.devices = ns.devices + 
