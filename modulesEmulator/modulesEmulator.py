@@ -27,8 +27,8 @@ class Emulator:
             self.client.start()
             self.appClient = Appliances()
             print("Emulator started")
-            #self.deviceReg()
-            #json.dump(self.devices, open('modulesEmulator/devices.json', 'w'))
+            self.deviceReg()
+            json.dump(self.devices, open('modulesEmulator/devices.json', 'w'))
 
             self.devices = json.load(open('modulesEmulator/devices.json'))
             
@@ -90,7 +90,7 @@ class Emulator:
     def publishDB(self, dataDB_path):
         try:
             conn = sq.connect(dataDB_path)
-            prev_row = 10000
+            prev_row = 0
             cursor = conn.cursor()
             query = "SELECT COUNT(*) FROM states"
             num_rows = cursor.execute(query).fetchone()[0]
@@ -117,8 +117,11 @@ class Emulator:
 
                 prev_row += len(sel_rows)
 
+                print("Current reached line: %s" % str(prev_row))
+
                 for sel_row in sel_rows:
                     self.sendData(sel_row)
+                time.sleep(5)
         except Exception as e:
             print(e)
 

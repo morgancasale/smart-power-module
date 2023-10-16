@@ -229,9 +229,10 @@ class Device:
             if(not check_presence_inDB(DBPath, "Devices", "deviceID", params["deviceID"])):
                 raise HTTPError(status=400, message="The device with ID \"" + params["deviceID"] + "\" does not exist in the database")
 
-            '''delete_entry_fromDB(DBPath, "UserDevice_conn", "deviceID", params["deviceID"])
+            
             delete_entry_fromDB(DBPath, "DeviceEndP_conn", "deviceID", params["deviceID"])
             EndPoint.cleanDB(DBPath)
+            '''delete_entry_fromDB(DBPath, "UserDevice_conn", "deviceID", params["deviceID"])
             delete_entry_fromDB(DBPath, "DeviceResource_conn", "deviceID", params["deviceID"])
             Resource.cleanDB(DBPath)'''
             delete_entry_fromDB(DBPath, "Devices", "deviceID", params["deviceID"])

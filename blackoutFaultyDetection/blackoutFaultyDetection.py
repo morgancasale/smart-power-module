@@ -19,7 +19,7 @@ class blackoutAndFaulty():
         self.v_lower_bound=216
         #how many measures should be incorrect to consider a blackout
         self.blackout_lim = 5 #dispositivi
-        self.faultyLim = 4 #misure
+        self.faultyLim = 0 #misure   # 44444444444444
 
         config_file = "blackoutFaultyDetection.json"
         if(not IN_DOCKER):
@@ -72,7 +72,7 @@ class blackoutAndFaulty():
             = ?""".format(self.database),(powerID,))
         result = self.curHA.fetchone()[2]
 
-        if result !='unavailable':
+        if result !='unknown' and result !='unavailable':
             power = float(result)
         else:
             power = None
@@ -83,7 +83,8 @@ class blackoutAndFaulty():
             WHERE metadata_id
             = ?""".format(self.database),(voltageID,))
         result = self.curHA.fetchone()[2]
-        if result !='unavailable':
+        if result !='unknown' and result !='unavailable':
+
             voltage = float(result)
         else:
             voltage = None
@@ -230,18 +231,21 @@ class blackoutAndFaulty():
         else: return True
 
     def faultyCheck(self, appl_info, last_meas, ID, single_or_mult):
+        
+    
         if single_or_mult=='s':
             funct_min = appl_info["functioningRangeMin"]
             funct_max = appl_info["functioningRangeMax"]
         
             is_not_faulty = int(last_meas["power"]) >= 0
-            is_not_faulty &= (funct_min < int(last_meas["power"]) < funct_max)
+            is_not_faulty &= (int(funct_min) < int(last_meas["power"]) < int(funct_max))
             is_not_faulty &= (self.v_lower_bound < int(last_meas["voltage"]) < self.v_upper_bound)
+        
         else: 
             funct_min = appl_info["functioningRangeMin"]
             funct_max = appl_info["functioningRangeMax"]
             is_not_faulty = int(last_meas["power"][0]) >= 0
-            is_not_faulty &= (funct_min < int(last_meas["power"][0]) < funct_max)
+            is_not_faulty &= (int(funct_min) < int(last_meas["power"][0]) < int(funct_max))
             is_not_faulty &= (self.v_lower_bound < int(last_meas["voltage"][0]) < self.v_upper_bound)
             
         return not is_not_faulty
@@ -317,14 +321,14 @@ class blackoutAndFaulty():
                     value = self.getRange(module) #info[i][0] = ID
                     #if value is ot none
                     last_measurement = self.lastValueCheck(module)#[power, voltage]
-                    if last_measurement["voltage"] != None and value != None :
+                    if last_measurement["voltage"] != None and value['applianceType']!= "None" :
                         if self.blackOutRangeCheck(last_measurement["voltage"]) :
                             blackout_cont += 1 
                         if blackout_cont > self.blackout_lim:
                             print('Predicted blackout in house %s', house)
                             self.MQTTInterface(module, 'b')
                             break
-                        if module in modules_faulty:
+                        if module in modules_faulty and last_measurement['power']!=None:
                             if self.faultyCheck(value, last_measurement, module,'s'):
                                 prevVoltage, prevPower = self.prevValuesCheck(module)
                                 readings = list(zip(prevVoltage, prevPower))
