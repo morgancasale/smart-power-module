@@ -93,7 +93,7 @@ class DataHandler():
     def control_HA(self, topic, payload):
         payload = json.loads(payload)
         switchStates = payload["states"]
-        pubTopic = "homeassistant/switch/smartSocket/%s/status/" % payload["deviceID"]
+        pubTopic = "homeassistant/switch/smartSocket/%s/status/" % payload["deviceID"].lower()
         i = 0
         for state in switchStates:
             self.Publish(pubTopic + str(i), str(bool(state)), talk=False)

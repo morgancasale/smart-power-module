@@ -157,7 +157,6 @@ class ModuleConsumptionControl():
             self.client.MQTT.notifyHA(notifyMsg)
         else: 
             self.MQTTInterface(ID)
-            self.client.start()
             topic="/smartSocket/control"
             msg= {
                 "deviceID" : ID, 

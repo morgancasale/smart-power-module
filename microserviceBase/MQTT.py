@@ -82,6 +82,7 @@ class MQTTServer(Thread):
             self.Client = MQTT.Client(self.clientID, True)
 
             self.Client.on_connect = self.OnConnect
+            self.Client.on_disconnect = self.OnDisconnect
             #self.Client.on_message = self.OnMessageReceived
 
         except HTTPError as e:
@@ -117,13 +118,19 @@ class MQTTServer(Thread):
             )
 
     def OnConnect(self, a, b, c, rc):
-        print("Connected to %s with result code: %d" % (self.broker, rc))
+        threadName = current_thread().getName()
+        print("Thread %s connected to %s with result code: %d" % (threadName, self.broker, rc))
+        print()
         if(rc == 0):
             self.connected = True
         else:
             raise self.serverErrorHandler.InternalServerError(
                 "No connection to broker"
             )
+        
+    def OnDisconnect(self, client, userdata, rc):
+        print("Disconnection reason " + str(rc))
+        self.connected = False
 
     def OnMessageReceived(self, a, b, message):
         self.subNotifier(self, message.topic, message.payload)

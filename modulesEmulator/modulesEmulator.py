@@ -27,16 +27,14 @@ class Emulator:
             self.client.start()
             self.appClient = Appliances()
             print("Emulator started")
-            self.deviceReg()
-            json.dump(self.devices, open('modulesEmulator/devices.json', 'w'))
+            #self.deviceReg()
+            #json.dump(self.devices, open('modulesEmulator/devices.json', 'w'))
 
             self.devices = json.load(open('modulesEmulator/devices.json'))
             
-            #self.publishApp('normal')
+            self.publishApp('normal')
 
-            self.publishDB("modulesEmulator/hist_data.db")
-
-            self.joinThreads()  # Start the threads
+            #self.publishDB("modulesEmulator/hist_data.db")
         except HTTPError as e:
             message = "An error occurred while running the service: \u0085\u0009" + e._message
             raise Exception(message)
@@ -142,7 +140,7 @@ class Emulator:
             "SwitchStates" : switch_states
         }
         msg = json.dumps(data)
-        self.client.MQTT.Publish(self.pubTopic,msg)   
+        MQTT.Publish(self.pubTopic,msg)   
 
 
     #modes: faulty o blackout
@@ -154,23 +152,15 @@ class Emulator:
     #normal : funziona senza problemi
     #standbypower
     def publishApp(self, mode):
-        self.client.start()
         for dev in self.devices:
             thread = threading.Thread(target=self.deviceSim, args=(mode, dev))
-            self.threads.append(thread)
+            thread.start()
             
     def deviceSim(self, mode, dev):
         while True:
             msg = self.messageGenerator(mode, dev)
             self.client.MQTT.Publish(self.pubTopic,msg)
-            time.sleep(8)
-    
-    def joinThreads(self):
-        for thread in self.threads:
-            if not self.running:#not thread.is_alive():  # Start only if the thread is not already running
-                thread.start()
-        self.running=1        
+            time.sleep(8)  
 
-    
 if __name__ == "__main__":
-    Emulator() #3326399
+    Emulator()
