@@ -16,8 +16,8 @@ void onMQTTReceived(String topic, String msg){
   if(fixJSONString(payload["deviceID"]) != deviceID){
     socket_mesh.sendBroadcast(msg);
   } else if (fixJSONString(payload["deviceID"]) == deviceID){
-    digitalWrite (LED_BUILTIN, payload["state"]);
-    SwitchStates[(int)payload["plugID"]] = (int) payload["state"];
+    digitalWrite (LED_BUILTIN, payload["states"][1]);
+    setSwitchState(payload["states"]);
   }
 }
 

@@ -26,13 +26,16 @@ class commandHandler:
             if commandHandler.checkPresenceOfIDSocket(info[0], catalogAddress, catalogPort):
                 commandHandler.checkPayload(payload)
 
+                states = [-1,-1,-1]
+                states[int(info[1])] = int(bool(payload))
+
                 cmdSensorTopic = "smartSocket/control"
                 datafixed = {
                     "deviceID": info[0],
-                    "plugID": int(info[1]),
-                    "state": int(bool(payload)),
+                    "states": states
                 }
-                self.Publish(cmdSensorTopic, json.dumps(datafixed))
+                print("Received command from HA, forwarding to device %s..." % info[0])
+                self.Publish(cmdSensorTopic, json.dumps(datafixed), talk=True)
 
             else:
                 raise Client_Error_Handler.NotFound(
