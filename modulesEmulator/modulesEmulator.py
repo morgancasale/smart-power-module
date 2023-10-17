@@ -17,7 +17,7 @@ class Emulator:
     def __init__(self):
         self.threads = [] 
         self.running = 0
-        self.devices = []
+        self.devices = json.load(open("C:/Users/mirip/Desktop/smart-power-module-main/modulesEmulator/devices.json"))
         self.pubTopic = "smartSocket/data"
         try:
             self.configFile_loc = "modulesEmulator.json"
@@ -28,7 +28,7 @@ class Emulator:
             self.appClient = Appliances()
             print("Emulator started")
             #self.deviceReg()
-            #json.dump(self.devices, open('modulesEmulator/devices.json', 'w'))
+            json.dump(self.devices, open('modulesEmulator/devices.json', 'w'))
 
             self.devices = json.load(open('modulesEmulator/devices.json'))
             
@@ -51,6 +51,7 @@ class Emulator:
         return msg
 
     def deviceReg(self):
+        self.devices = []
         data_reg = json.load(open('modulesEmulator/registration.json'))
         catalog_address = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
         catalog_port = self.client.generalConfigs["REGISTRATION"]["catalogPort"]
@@ -140,7 +141,7 @@ class Emulator:
             "SwitchStates" : switch_states
         }
         msg = json.dumps(data)
-        MQTT.Publish(self.pubTopic,msg)   
+        self.client.MQTT.Publish(self.pubTopic,msg, talk= True)   
 
 
     #modes: faulty o blackout
@@ -159,7 +160,7 @@ class Emulator:
     def deviceSim(self, mode, dev):
         while True:
             msg = self.messageGenerator(mode, dev)
-            self.client.MQTT.Publish(self.pubTopic,msg)
+            self.client.MQTT.Publish(self.pubTopic,msg, talk=True)
             time.sleep(8)  
 
 if __name__ == "__main__":
