@@ -17,7 +17,7 @@ class Emulator:
     def __init__(self):
         self.threads = [] 
         self.running = 0
-        self.devices = json.load(open("C:/Users/mirip/Desktop/smart-power-module-main/modulesEmulator/devices.json"))
+        self.devices = json.load(open("modulesEmulator/devices.json"))
         self.pubTopic = "smartSocket/data"
         try:
             self.configFile_loc = "modulesEmulator.json"

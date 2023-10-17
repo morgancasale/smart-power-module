@@ -61,7 +61,7 @@ class DataHandler():
             enabledSockets = DataHandler.getPlugEnabled(self.catalogAddress, self.catalogPort, payload["deviceID"])
             enabledSockets = ["online" if bool(int(x)) else "offline" for x in enabledSockets]
 
-            self.Publish(availableSensorTopic, "online")
+            self.Publish(availableSensorTopic, "online", talk=True)
             switchAvaibilityTopic = self.baseTopic +"switch/" + self.system + "/" + payload["deviceID"] + "/status"
             for i in range(3):
                 self.Publish(switchAvaibilityTopic + "/" + str(i), enabledSockets[i], talk=False)
