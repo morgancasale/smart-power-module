@@ -25,3 +25,31 @@
       data_template:
         topic: "homeassistant/HAID"
         payload: "{{ HAID }}"
+
+- id: purgeDevices
+  alias: purgeDevices
+  trigger:
+    - platform: mqtt
+      topic: homeassistant/sensor/smartSocket/+/config
+      payload: ''
+  variables:
+    deviceID: "{{ trigger.topic.split('smartSocket/')[1].split('_')[0] }}"
+  action:
+    - service: recorder.purge_entities
+      target:
+        entity_id:
+          - sensor.smart_socket_{{ deviceID }}_voltage
+          - sensor.smart_socket_{{ deviceID }}_current
+          - sensor.smart_socket_{{ deviceID }}_power
+          - sensor.smart_socket_{{ deviceID }}_energy
+          - sensor.smart_socket_{{ deviceID }}_left_plug
+          - sensor.smart_socket_{{ deviceID }}_center_plug
+          - sensor.smart_socket_{{ deviceID }}_right_plug
+          - sensor.smart_socket_{{ deviceID }}_hourly_average
+          - sensor.smart_socket_{{ deviceID }}_hourly_total
+          - sensor.smart_socket_{{ deviceID }}_daily_average
+          - sensor.smart_socket_{{ deviceID }}_daily_total
+          - sensor.smart_socket_{{ deviceID }}_monthly_average
+          - sensor.smart_socket_{{ deviceID }}_monthly_total
+          - sensor.smart_socket_{{ deviceID }}_yearly_average
+          - sensor.smart_socket_{{ deviceID }}_yearly_total
