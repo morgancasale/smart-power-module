@@ -27,14 +27,19 @@ class Emulator:
             self.client.start()
             self.appClient = Appliances()
             print("Emulator started")
-            #self.deviceReg()
+
+            # Da decommentare se devi registrare la prima volta i dispositivi
+            self.deviceReg()
             json.dump(self.devices, open('modulesEmulator/devices.json', 'w'))
 
-            self.devices = json.load(open('modulesEmulator/devices.json'))
+            # Da decommentare se non devi registrare la prima volta i dispositivi
+            #self.devices = json.load(open('modulesEmulator/devices.json')) 
             
-            self.publishApp('normal')
-
-            #self.publishDB("modulesEmulator/hist_data.db")
+            # Da decommentare se si vogliono pubblicare dati nuovi
+            self.publishApp('normal') 
+            
+            # Da decommentare se si vogliono pubblicare dati storici
+            #self.publishDB("modulesEmulator/hist_data.db") 
         except HTTPError as e:
             message = "An error occurred while running the service: \u0085\u0009" + e._message
             raise Exception(message)

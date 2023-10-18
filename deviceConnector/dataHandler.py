@@ -34,7 +34,7 @@ class DataHandler():
                     + "sensor/"
                     + self.system
                     + "/"
-                    + payload["deviceID"]
+                    + payload["deviceID"].lower()
                     + "/state"
                 )
                 availableSensorTopic = (
@@ -42,7 +42,7 @@ class DataHandler():
                     + "sensor/"
                     + self.system
                     + "/"
-                    + payload["deviceID"]
+                    + payload["deviceID"].lower()
                     + "/status"
                 )
             else:
@@ -61,12 +61,12 @@ class DataHandler():
             enabledSockets = DataHandler.getPlugEnabled(self.catalogAddress, self.catalogPort, payload["deviceID"])
             enabledSockets = ["online" if bool(int(x)) else "offline" for x in enabledSockets]
 
-            self.Publish(availableSensorTopic, "online")
-            switchAvaibilityTopic = self.baseTopic +"switch/" + self.system + "/" + payload["deviceID"] + "/status"
+            self.Publish(availableSensorTopic, "online", talk=True)
+            switchAvaibilityTopic = self.baseTopic +"switch/" + self.system + "/" + payload["deviceID"].lower() + "/status"
             for i in range(3):
                 self.Publish(switchAvaibilityTopic + "/" + str(i), enabledSockets[i], talk=False)
 
-            switchStateTopic = self.baseTopic +"switch/" + self.system + "/" + payload["deviceID"] + "/state"
+            switchStateTopic = self.baseTopic +"switch/" + self.system + "/" + payload["deviceID"].lower() + "/state"
             self.Publish(stateSensorTopic, json.dumps(datafixed))
             for i in range(3):
                 self.Publish(switchStateTopic + "/" + str(i), str(bool(payload["SwitchStates"][i])), talk=False)

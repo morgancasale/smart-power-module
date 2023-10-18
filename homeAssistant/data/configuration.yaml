@@ -22,6 +22,9 @@ panel_custom:
     sidebar_icon: mdi:server
     module_url: /local/homeAssistant_panel/main-page.js
 
+shell_command:
+  delete_req: "curl -X DELETE {{ reqUrl }} -H 'Accept: application-json'"
+
 recorder:
   db_url : sqlite:////DB/HADB.db
   include:
