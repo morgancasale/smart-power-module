@@ -17,7 +17,7 @@ class Emulator:
     def __init__(self):
         self.threads = [] 
         self.running = 0
-        self.devices = json.load(open("C:/Users/mirip/Desktop/smart-power-module-main/modulesEmulator/devices.json"))
+        self.devices = []
         self.pubTopic = "smartSocket/data"
         try:
             self.configFile_loc = "modulesEmulator.json"
@@ -29,14 +29,14 @@ class Emulator:
             print("Emulator started")
 
             # Da decommentare se devi registrare la prima volta i dispositivi
-            self.deviceReg()
-            json.dump(self.devices, open('modulesEmulator/devices.json', 'w'))
+            #self.deviceReg()
+            #json.dump(self.devices, open('modulesEmulator/devices.json', 'w'))
 
             # Da decommentare se non devi registrare la prima volta i dispositivi
             #self.devices = json.load(open('modulesEmulator/devices.json')) 
             
             # Da decommentare se si vogliono pubblicare dati nuovi
-            self.publishApp('normal') 
+            #self.publishApp('normal') 
             
             # Da decommentare se si vogliono pubblicare dati storici
             #self.publishDB("modulesEmulator/hist_data.db") 
