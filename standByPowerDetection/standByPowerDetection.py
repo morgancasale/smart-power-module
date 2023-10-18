@@ -190,10 +190,14 @@ class StandByPowerDetection():
             "states" : [0,0,0]
             }
         str_msg = json.dumps(msg, indent=2)
-        notifyMsg=("The consumption of the appliance connected to %s is parasitic" % ID)
+        device = self.getDeviceInfo(ID)[0]
+        notifyMsg = {
+            "title": "Standby Power exceeded",
+            "message": "The consumption of the appliance connected to module %s has exceeded its standby threshold" % device["deviceName"]
+        }
         self.client.MQTT.notifyHA(notifyMsg)
-        self.client.MQTT.Publish(topic, str_msg)
-        self.client.MQTT.stop() 
+
+        self.client.MQTT.Publish(topic, str_msg) 
 
     def getHouseList(self):
         result = self.getCatalogInfo("Houses", "houseID", "*")

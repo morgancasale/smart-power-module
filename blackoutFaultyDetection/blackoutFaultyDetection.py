@@ -258,35 +258,47 @@ class blackoutAndFaulty():
         #self.client.start()
         topic = "/smartSocket/control"
         settings = self.getDeviceSettingsInfo(ID)[0]
+        device = self.getDeviceInfo(ID)[0]
         if case == 'f' and settings["FBMode"]=="Notify" :
             msg= {
             "deviceID" : ID, 
             "states" : [0,0,0]
             }
-            notifyMsg=("The appliance connected to %s seems to not be working properly" % ID)
+
+            notifyMsg = {
+                "title": "Faulty device",
+                "message": "The appliance connected to module %s seems to not be working properly." % device["deviceName"]
+            }            
             self.client.MQTT.notifyHA(notifyMsg)
         elif case == 'f' and settings["FBMode"]=="Turn OFF":   
             msg= {
             "deviceID" : ID, 
             "states" : [0,0,0]
             }
-            notifyMsg=("The appliance connected to %s seems to not be working properly" % ID)
+
+            notifyMsg = {
+                "title": "Faulty device",
+                "message": 
+                """The appliance connected to module %s seems to not be working properly, 
+                turning OFF module.""" % device["deviceName"]
+            }
+            self.client.MQTT.notifyHA(notifyMsg)
+
             str_msg = json.dumps(msg, indent=2)
             self.client.MQTT.Publish(topic, str_msg, talk=False)
-            self.client.MQTT.notifyHA(notifyMsg)
-            self.client.MQTT.stop() 
         else:
             msg= {
             "deviceID" : '*', 
             "states" : [0,0,0]
             }
-            notifyMsg=(" Alert: Blackout Detected ")
-        
-            str_msg = json.dumps(msg, indent=2)
-
-            self.client.MQTT.Publish(topic, str_msg, talk=False)
+            notifyMsg = {
+                "title": "Incoming blackout detected!",
+                "message": "Turning OFF all modules."
+            }
             self.client.MQTT.notifyHA(notifyMsg)
-            self.client.MQTT.stop() 
+            
+            str_msg = json.dumps(msg, indent=2)
+            self.client.MQTT.Publish(topic, str_msg, talk=False)
         
     def getHouseList(self):
         result = self.getCatalogInfo("Houses", "houseID", "*")
