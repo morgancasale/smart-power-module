@@ -17,7 +17,7 @@ class Emulator:
     def __init__(self):
         self.threads = [] 
         self.running = 0
-        self.devices = []
+        self.devices = json.load(open("C:/Users/mirip/Desktop/smart-power-module-main/modulesEmulator/devices.json"))
         self.pubTopic = "smartSocket/data"
         try:
             self.configFile_loc = "modulesEmulator.json"
@@ -74,6 +74,7 @@ class Emulator:
 
         url_dc=  str(catalog_address)+ ":" + str(port) + "/getRole"
         for entry in data_reg["entries"]:
+            print(entry)
             mac = entry["MAC"]
             auto_broker = entry["autoBroker"]
             auto_topics = entry["autoTopics"]
@@ -158,6 +159,7 @@ class Emulator:
     #normal : funziona senza problemi
     #standbypower
     def publishApp(self, mode):
+        print(self.devices)
         for dev in self.devices:
             thread = threading.Thread(target=self.deviceSim, args=(mode, dev))
             thread.start()

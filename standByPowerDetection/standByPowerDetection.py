@@ -45,6 +45,14 @@ class StandByPowerDetection():
             )
             WHERE row_num <= 60 """.format(self.database), (powerID,))      #modddd 60
         results = self.curHA.fetchall()
+        control=False
+        for item in results:
+            if item[1] != 'unavailable' and item[1] != 'unknown':
+                control = True
+        if control== False:
+            return (results)
+        else:
+            return None 
         
         
         #for result in results:
@@ -61,8 +69,10 @@ class StandByPowerDetection():
             FROM {}
             WHERE metadata_id
             = ?""".format(self.database),(powerID,))
-        results = self.curHA.fetchone()
-        if results !="unavailable":
+        results = self.curHA.fetchone()[2]
+        
+        if results !='unknown' and results !='unavailable':
+
             return (results)
         else:
             return None   
@@ -170,6 +180,7 @@ class StandByPowerDetection():
             
     
     def MQTTInterface(self, ID):
+        #self.client.start()
         topic="/smartSocket/data"
         #socket= self.retrieveSocket(ID)
         #socket_states =  [-1 if item == '0' else 0 for item in socket]
@@ -235,12 +246,13 @@ class StandByPowerDetection():
                 standByPowercont=0 
                 value = self.getRange(info) #info[i][0] = ID
                 last_measurement = self.lastValueCheck(info)#[id, time,power]
-                if last_measurement[2] != None and value != None :
-                    if ((1 <= int(last_measurement[2]) <= int(value)) and last_measurement != 0):
+                if last_measurement != None and value != None :
+                    if ((1 <= int(last_measurement) <= int(value)) and int(last_measurement) != 0):
                         prevRows= self.prevValuesCheck(info)
-                        for prevValues in prevRows:
-                            if (1<=int(prevValues[1])<=value):
-                                standByPowercont+=1   
+                        if prevRows!= None:
+                            for prevValues in prevRows:
+                                if (1<=int(prevValues)<=int(value)):
+                                    standByPowercont+=1   
                         if standByPowercont>=60:
                             self.MQTTInterface(info)
                                 

@@ -19,7 +19,7 @@ class blackoutAndFaulty():
         self.v_lower_bound=216
         #how many measures should be incorrect to consider a blackout
         self.blackout_lim = 5 #dispositivi
-        self.faultyLim = 0 #misure   # 44444444444444
+        self.faultyLim = 4 #misure   
 
         config_file = "blackoutFaultyDetection.json"
         if(not IN_DOCKER):
@@ -238,14 +238,14 @@ class blackoutAndFaulty():
             funct_max = appl_info["functioningRangeMax"]
         
             is_not_faulty = int(last_meas["power"]) >= 0
-            is_not_faulty &= (int(funct_min) < int(last_meas["power"]) < int(funct_max))
+            is_not_faulty &= (funct_min < int(last_meas["power"]) < funct_max)
             is_not_faulty &= (self.v_lower_bound < int(last_meas["voltage"]) < self.v_upper_bound)
         
         else: 
             funct_min = appl_info["functioningRangeMin"]
             funct_max = appl_info["functioningRangeMax"]
             is_not_faulty = int(last_meas["power"][0]) >= 0
-            is_not_faulty &= (int(funct_min) < int(last_meas["power"][0]) < int(funct_max))
+            is_not_faulty &= (funct_min < int(last_meas["power"][0]) < funct_max)
             is_not_faulty &= (self.v_lower_bound < int(last_meas["voltage"][0]) < self.v_upper_bound)
             
         return not is_not_faulty
@@ -255,6 +255,7 @@ class blackoutAndFaulty():
         return switches
         
     def MQTTInterface(self, ID, case):
+        #self.client.start()
         topic = "/smartSocket/control"
         settings = self.getDeviceSettingsInfo(ID)[0]
         if case == 'f' and settings["FBMode"]=="Notify" :
