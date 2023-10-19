@@ -719,7 +719,7 @@ class SocketHandler():
         try:
             baseTopic += "/"
             stateSensorTopic = baseTopic + "sensor/" + system + "/" + "house" + "/state"
-            availableSensorTopic = baseTopic + "sensor/" + system + "/" + "+" + "/status"
+            availableSensorTopic = baseTopic + "sensor/" + system + "/" + "house" + "/status"
 
             stat_sensorsPayload = [
                 {
