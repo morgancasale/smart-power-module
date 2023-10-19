@@ -255,7 +255,6 @@ class blackoutAndFaulty():
         return switches
         
     def MQTTInterface(self, ID, case):
-        #self.client.start()
         topic = "/smartSocket/control"
         settings = self.getDeviceSettingsInfo(ID)[0]
         device = self.getDeviceInfo(ID)[0]

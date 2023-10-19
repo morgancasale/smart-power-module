@@ -26,10 +26,11 @@ class House_instantvalues():
             HADB_loc = "HADB.db"
             HADB_loc="homeAssistant/HADB/"+ HADB_loc
 
-            self.HADBConn = sqlite3.connect(HADB_loc)
-            self.HADBCur = self.HADBConn.cursor()       
+                 
             
-            while(True): 
+            while(True):
+                self.HADBConn = sqlite3.connect(HADB_loc)
+                self.HADBCur = self.HADBConn.cursor()  
                 self.compute_instantHousesdata()
                 time.sleep(30)
         except HTTPError as e:
@@ -121,9 +122,15 @@ class House_instantvalues():
                 self.HADBCur.execute(query,(selectedMetaHAIDs+[thirty_seconds_ago,recent_timestamp]))
                 total_state = self.HADBCur.fetchone()[0]
                 self.HADBConn.close()
-                topic='/homeassistant/sensor/smartSocket/house/state'
-                msg='{"energy_Tot": %f}' % (total_state)
-                self.client.MQTT.Publish(topic, msg)
+
+                stateTopic = 'homeassistant/sensor/smartSocket/house/state'
+                stateMsg = '{"energy_Tot": %f}' % (total_state)
+
+                availabTopic = "homeassistant/sensor/smartSocket/house/status"
+                availabMsg = "online"
+
+                self.client.MQTT.Publish(availabTopic, availabMsg)
+                self.client.MQTT.Publish(stateTopic, stateMsg)
                 return total_state
             else:
                 return None

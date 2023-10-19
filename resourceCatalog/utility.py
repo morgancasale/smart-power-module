@@ -149,7 +149,7 @@ def update_entry_inDB(DBPath, table, primaryKeyNames, entryData):
     except Exception as e:
         raise Server_Error_Handler.InternalServerError(message=str(e))
 
-def delete_entry_fromDB(DBPath, table, keyName, keyValue):
+def delete_entry_fromDB(DBPath, table, keyName, keyValue, caseSensitive = True):
     try:
         if(not isinstance(keyName, list)) : keyName = [keyName]
         if(not isinstance(keyValue, list)) : keyValue = [keyValue]
@@ -161,7 +161,10 @@ def delete_entry_fromDB(DBPath, table, keyName, keyValue):
 
         keyName = "(" + ", ".join(keyName) + ")"
         keyValue = "(\"" + "\", \"".join(keyValue) + "\")"
+
         query = "DELETE FROM " + table + " WHERE " + keyName + " = " + keyValue
+        if(not caseSensitive):
+            query += " COLLATE NOCASE"
         cursor = conn.cursor()
         cursor.execute(query)
         conn.commit()
