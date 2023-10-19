@@ -726,6 +726,7 @@ class SocketHandler():
                     "name": "Instant Total",
                     "unit_of_measurement": "kWh",
                     "device_class": "energy",
+                    "state_class": "total",
                     "value_template": "{{ value_json.energy_Tot }}"
                 },
                 {
