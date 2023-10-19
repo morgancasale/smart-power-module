@@ -117,7 +117,7 @@ class DeviceSchedule:
         
     def save2DB(self, DBPath):
         try: 
-            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
+            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID, False)):
                 raise HTTPError(status=400, message="Device with ID \"" + self.deviceID + "\" does not exist")
             
             dictData = self.to_dict()
@@ -158,7 +158,7 @@ class DeviceSchedule:
             data = DBQuery_to_dict(DBPath, query)
 
             for entry in data:
-                if(not check_presence_inDB(DBPath, "Devices", "deviceID", entry["deviceID"])):
+                if(not check_presence_inDB(DBPath, "Devices", "deviceID", entry["deviceID"], False)):
                     DeviceSchedule.deleteFromDB(DBPath, {"deviceID": entry["deviceID"]})
 
         except HTTPError as e:

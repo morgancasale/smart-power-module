@@ -72,7 +72,7 @@ class House:
 
             if("deviceID" in self.houseData.keys()):
                 for deviceID in self.deviceID:
-                    if(not check_presence_inDB(DBPath, "Devices", "deviceID", deviceID)):
+                    if(not check_presence_inDB(DBPath, "Devices", "deviceID", deviceID, False)):
                         raise Client_Error_Handler.NotFound(message="A device with ID \"" + deviceID + "\" does not exist in the database")
 
                     save_entry2DB(DBPath, self.connTables[1], {"houseID": self.houseID, "deviceID": deviceID, "lastUpdate": self.lastUpdate})

@@ -79,7 +79,7 @@ class Device:
         Res_Dev_conn = []
         House_Dev_conn = [self.houseID]
         try:
-            if(check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
+            if(check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID, False)):
                 raise Client_Error_Handler.BadRequest(message="A device with ID \"" + self.deviceID + "\" already exists in the database")
             if(self.userID != None and not check_presence_inDB(DBPath, "Users", "userID", self.userID)):
                 raise Client_Error_Handler.NotFound(message="The user with ID \"" + self.userID + "\" does not exist in the database")
@@ -129,7 +129,7 @@ class Device:
         resourceIDs = []
 
         try:
-            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
+            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID, False)):
                 raise Client_Error_Handler.NotFound(message="The device with ID \"" + self.deviceID + "\" does not exist in the database")
 
             self.lastUpdate = time.time()
@@ -178,7 +178,7 @@ class Device:
 
     def set2DB(self, DBPath):
         try:
-            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
+            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID, False)):
                 self.save2DB(DBPath)
             else:
                 self.updateDB(DBPath)
@@ -226,7 +226,7 @@ class Device:
 
     def deleteFromDB(DBPath, params):
         try:
-            if(not check_presence_inDB(DBPath, "Devices", "deviceID", params["deviceID"])):
+            if(not check_presence_inDB(DBPath, "Devices", "deviceID", params["deviceID"], False)):
                 raise HTTPError(status=400, message="The device with ID \"" + params["deviceID"] + "\" does not exist in the database")
 
             delete_entry_fromDB(DBPath, "Devices", "deviceID", params["deviceID"])

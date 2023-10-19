@@ -157,7 +157,7 @@ class DeviceSettings:
     
     def save2DB(self, DBPath):
         try:
-            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
+            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID, False)):
                 raise Client_Error_Handler.NotFound(message="Device not found in DB")
             
             for sched in self.scheduling:
@@ -174,7 +174,7 @@ class DeviceSettings:
         
     def updateDB(self, DBPath):
         try:
-            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID)):
+            if(not check_presence_inDB(DBPath, "Devices", "deviceID", self.deviceID, False)):
                 raise Client_Error_Handler.NotFound(message="Device not found in DB")
             
             if(self.scheduling is not None):
@@ -228,7 +228,7 @@ class DeviceSettings:
             data = DBQuery_to_dict(DBPath, query)
 
             for entry in data:
-                if(not check_presence_inDB(DBPath, "Devices", "deviceID", entry["deviceID"])):
+                if(not check_presence_inDB(DBPath, "Devices", "deviceID", entry["deviceID"], False)):
                     DeviceSettings.deleteFromDB(DBPath, {"deviceID": entry["deviceID"]})
         except HTTPError as e:
             raise HTTPError(status=e.status, message="An error occurred while cleaning device settings table:\u0085\u0009" + str(e._message))

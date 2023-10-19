@@ -28,7 +28,7 @@ class Socket:
                 case ("deviceID"):
                     if(not isinstance(socketData[key], str)):
                         raise Client_Error_Handler.BadRequest(message="Socket's \"" + key + "\" value must be string")
-                    if(not check_presence_inDB(DBPath, "Devices", "deviceID", socketData[key])):
+                    if(not check_presence_inDB(DBPath, "Devices", "deviceID", socketData[key], False)):
                         raise Client_Error_Handler.BadRequest(message="Socket's deviceID not found in DB")
                     self.deviceID = socketData["deviceID"]
 
