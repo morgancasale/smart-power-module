@@ -12,10 +12,13 @@ void onMQTTReceived(String topic, String msg){
   Serial.println(msg);
 
   JSONVar payload = JSON.parse(msg);
+
+  String control_deviceID = deviceID;
+  control_deviceID.toLowerCase();
   
-  if(fixJSONString(payload["deviceID"]) != deviceID){
+  if(fixJSONString(payload["deviceID"]) != control_deviceID){
     socket_mesh.sendBroadcast(msg);
-  } else if (fixJSONString(payload["deviceID"]) == deviceID.toLowerCase()){
+  } else if (fixJSONString(payload["deviceID"]) == control_deviceID){
     digitalWrite (LED_BUILTIN, payload["states"][1]);
     setSwitchState(payload["states"]);
   }
@@ -57,8 +60,12 @@ void onRecMeshMsg(uint32_t from, String &data) {
   Serial.print("Received data from node " + String(from));
   Serial.println(" : "+ data);
   JSONVar payload = JSON.parse(data);
-  String temp = JSON.stringify(payload["deviceID"]);
-  if(temp == deviceID || temp == "*" ){
+  String temp = fixJSONString(payload["deviceID"]);
+  temp.toLowerCase();
+  
+  String control_deviceID = deviceID;
+  control_deviceID.toLowerCase();
+  if(temp == control_deviceID || temp == "*" ){
     setSwitchState(payload["states"]);
   }
 }
