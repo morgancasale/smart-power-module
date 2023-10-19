@@ -1,11 +1,11 @@
-/resourceCatalog/__pycache__
 /resourceCatalog/test.py
 /resourceCatalog/server.py
 
-/microserviceBase/__pycache__
 /microserviceBase/test.py
 
 HomeAssistant_Connector/
+
+*/__pycache__
 
 test.py
 .vscode

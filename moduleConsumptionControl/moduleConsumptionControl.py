@@ -152,21 +152,27 @@ class ModuleConsumptionControl():
             
     def MQTTInterface(self, ID):
         settings = self.getDeviceSettingsInfo(ID)[0]
-        if settings["MPMode"] == "Notify" :
-            notifyMsg=("The consumption of the appliance connected to %s has exceeded the selected threshold" % ID)
-            self.client.MQTT.notifyHA(notifyMsg)
-        else: 
+        device = self.getDeviceInfo(ID)[0]
+        notifyMsg = {
+            "title": "Module power threshold exceeded",
+            "message": "The consumption of the appliance connected to module %s has exceeded the selected threshold" % device["deviceName"]
+        }
+        
+        if settings["MPMode"] is not "Notify" : 
             self.MQTTInterface(ID)
             topic="/smartSocket/control"
-            msg= {
+            msg = {
                 "deviceID" : ID, 
                 "states" : [0,0,0]
                 }
+            
+            notifyMsg["message"] += ",\n turning OFF module"
+
             str_msg = json.dumps(msg, indent=2)
-            notifyMsg=("The consumption of the appliance connected to %s has exceeded the selected threshold" % ID)
-            self.client.MQTT.notifyHA(notifyMsg)
             self.client.MQTT.Publish(topic, str_msg)
-            self.client.MQTT.stop()           
+
+        notifyMsg["message"] += "."
+        self.client.MQTT.notifyHA(notifyMsg)        
             
     def getHouseList(self):
         result = self.getCatalogInfo("Houses", "houseID", "*")

@@ -34,9 +34,13 @@
   variables:
     deviceID: "{{ trigger.topic.split('smartSocket/')[1].split('_')[0] }}"
   action:
-    - if: 
-      - condition: template
-        value_template: "{{ trigger.payload == '' }}"
+    - if:
+      - condition: and
+        conditions: 
+          - condition: template
+            value_template: "{{ trigger.payload == '' }}"
+          - condition: template
+            value_template: "{{ deviceID[0] == 'd' }}"
       then:
         - service: recorder.purge_entities
           target:
@@ -56,8 +60,22 @@
               - sensor.smart_socket_{{ deviceID }}_monthly_total
               - sensor.smart_socket_{{ deviceID }}_yearly_average
               - sensor.smart_socket_{{ deviceID }}_yearly_total
+
         - service: shell_command.delete_req
           data:
             reqUrl: "http://{{ states('sensor.local_ip') }}:8099/delDevice?deviceID={{ deviceID }}"
+          response_variable: response
+
+        - if:
+          - condition: template
+            value_template: "{{ not ('successful' in response['stdout']) }}"
+          
+          then:
+            - service: persistent_notification.create
+              data:
+                title: "An error occured while deleting device"
+                message: "{{ response }}"
+
+        - delay: "00:00:03"
 
         

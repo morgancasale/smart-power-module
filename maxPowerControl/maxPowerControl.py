@@ -205,6 +205,44 @@ class maxPowerControl():
         if self.computeTotalPower(houseID) > self.getPowerLimitHouse(houseID):
             self.myMQTTfunction(houseID)
 
+    def getCatalogInfo(self, table, keyName, keyValue, verbose=False):
+        try:
+            catalogAddress = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
+            catalogPort = self.client.generalConfigs["REGISTRATION"]["catalogPort"]
+            url = "%s:%s/getInfo" % (catalogAddress, str(catalogPort))
+            params = {"table": table, "keyName": keyName, "keyValue": keyValue, "verbose": verbose}
+
+            response = requests.get(url, params=params)
+            if response.status_code != 200:
+                raise HTTPError(response.status_code, str(response.text))
+            result = json.loads(response.text)
+
+            return result
+        except HTTPError as e:
+            message = "An error occurred while retriving info from catalog " + e._message
+            raise HTTPError(status=e.status, message=message)
+        except Exception as e:
+            message = "An error occurred while retriving info from catalog " + str(e)
+            raise Server_Error_Handler.InternalServerError(message=message)
+
+    """Retrieves information about a specific device"""
+    def getDeviceInfo(self, deviceID, verbose = False):
+        try:
+            result = self.getCatalogInfo("Devices", "deviceID", deviceID, verbose=verbose)
+
+            return result
+        except HTTPError as e:
+            raise e
+
+    """Retrieves information about a specific house"""
+    def getHouseInfo(self,houseID):
+        try:
+            result = self.getCatalogInfo("Houses", "houseID", houseID)
+
+            return result[0]
+        except HTTPError as e:
+            raise e
+
     """Finds the device with the last updated highest power consumption in the house and turns it off"""
     def myMQTTfunction(self, houseID):
         lastReadings = self.getlastPower(houseID)
@@ -219,9 +257,11 @@ class maxPowerControl():
         str_msg = json.dumps(msg, indent=2)
         self.client.MQTT.Publish(topic, str_msg, talk=False)
         print("House %s power consumption exceeded limit, device %s was turned off" % (houseID,deviceID))
+        house = self.getHouseInfo(houseID)
+        device = self.getDeviceInfo(deviceID)
         msg = {
-            "title" : ("House %s power consumption exceeded limit" %(houseID)),
-            "message" : ("Device %s was turned off" %(deviceID))
+            "title" : "House %s power consumption exceeded limit" % house["houseName"],
+            "message" : "Device %s was turned off" % device["deviceName"]
         }
         self.client.MQTT.notifyHA(msg, talk = True)
     

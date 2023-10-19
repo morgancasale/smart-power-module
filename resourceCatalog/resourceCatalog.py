@@ -419,8 +419,11 @@ class resourceCatalog:
             table = entry["table"]
             keyName = entry["keyName"]
             keyValue = entry["keyValue"]
+            caseSensitive = True
+            if("caseSensitive" in entry.keys()):
+                caseSensitive = entry["caseSensitive"] == "True"
             
-            return json.dumps({"result" : check_presence_inDB(self.DBPath, table, keyName, keyValue)})
+            return json.dumps({"result" : check_presence_inDB(self.DBPath, table, keyName, keyValue, caseSensitive)})
         except HTTPError as e:
             raise HTTPError(status=e.status, message = "An error occurred while checking the presence of an entry in the DB:\u0085\u0009" + e._message)
         except Exception as e:

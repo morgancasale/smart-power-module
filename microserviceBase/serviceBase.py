@@ -296,7 +296,7 @@ class ServiceBase(object):
             raise self.serverErrorHandler.InternalServerError(message="An error occurred while getting Home Assistant endpoint: \u0085\u0009" + str(e))
 
 
-    def notifyHA(self, payload):
+    '''def notifyHA(self, payload):
         r"""Allows to trigger a notification in Home Assistant
             The method expects a dictionary with the following structure:
             >>> {
@@ -324,7 +324,7 @@ class ServiceBase(object):
         except HTTPError as e:            
             raise HTTPError(status=e.status, message="An error occurred while notifying Home Assistant: \u0085\u0009" + e._message)
         except Exception as e:
-            raise self.serverErrorHandler.InternalServerError(message="An error occurred while notifying Home Assistant: \u0085\u0009" + str(e))
+            raise self.serverErrorHandler.InternalServerError(message="An error occurred while notifying Home Assistant: \u0085\u0009" + str(e))'''
     
     def resolvemDNS(self, mDNS):
         try:

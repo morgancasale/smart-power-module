@@ -18,7 +18,7 @@ broker = "broker.hivemq.com"
 
 from microserviceBase.serviceBase import *
 
-def check_presence_inDB(DBPath, table, keyName, keyValue):
+def check_presence_inDB(DBPath, table, keyName, keyValue, caseSensitive = True):
     try:
         if(not isinstance(keyName, list)) : keyName = [keyName]
         if(not isinstance(keyValue, list)) : keyValue = [keyValue]
@@ -29,7 +29,8 @@ def check_presence_inDB(DBPath, table, keyName, keyValue):
         keyValue = "(\"" + "\", \"".join(keyValue) + "\")"
 
         query = "SELECT COUNT(*)>0 as result FROM " + table + " WHERE " + keyName + " = " + keyValue
-        query += " COLLATE NOCASE"
+        if(not caseSensitive):
+            query += " COLLATE NOCASE"
         return bool(DBQuery_to_dict(DBPath, query)[0]["result"]) #True if the keyValue is present in the DB
     except Exception as e:
         raise Server_Error_Handler.InternalServerError(message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
@@ -148,7 +149,7 @@ def update_entry_inDB(DBPath, table, primaryKeyNames, entryData):
     except Exception as e:
         raise Server_Error_Handler.InternalServerError(message=str(e))
 
-def delete_entry_fromDB(DBPath, table, keyName, keyValue):
+def delete_entry_fromDB(DBPath, table, keyName, keyValue, caseSensitive = True):
     try:
         if(not isinstance(keyName, list)) : keyName = [keyName]
         if(not isinstance(keyValue, list)) : keyValue = [keyValue]
@@ -160,7 +161,10 @@ def delete_entry_fromDB(DBPath, table, keyName, keyValue):
 
         keyName = "(" + ", ".join(keyName) + ")"
         keyValue = "(\"" + "\", \"".join(keyValue) + "\")"
+
         query = "DELETE FROM " + table + " WHERE " + keyName + " = " + keyValue
+        if(not caseSensitive):
+            query += " COLLATE NOCASE"
         cursor = conn.cursor()
         cursor.execute(query)
         conn.commit()

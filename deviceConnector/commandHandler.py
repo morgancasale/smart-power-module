@@ -78,7 +78,7 @@ class commandHandler:
     def checkPresenceOfIDSocket(deviceID, catalogAddress, catalogPort):
         try:
             url = "%s:%s/checkPresence" % (catalogAddress, str(catalogPort))
-            params = {"table": "Sockets", "keyName": "deviceID", "keyValue": deviceID}
+            params = {"table": "Devices", "keyName": "deviceID", "keyValue": deviceID, "caseSensitive": False}
 
             response = requests.get(url, params=params)
             if response.status_code != 200:

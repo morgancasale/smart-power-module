@@ -64,7 +64,7 @@ class User:
             
             if("deviceID" in self.userData.keys()):
                 for deviceID in self.deviceID:
-                    if(not check_presence_inDB(DBPath, "Devices", "deviceID", deviceID)):
+                    if(not check_presence_inDB(DBPath, "Devices", "deviceID", deviceID, False)):
                         raise Client_Error_Handler.NotFound(message="A device with ID \"" + deviceID + "\" does not exist in the database")
 
                     self.lastUpdate = time.time()

@@ -719,14 +719,19 @@ class SocketHandler():
         try:
             baseTopic += "/"
             stateSensorTopic = baseTopic + "sensor/" + system + "/" + "house" + "/state"
-            availableSensorTopic = baseTopic + "sensor/" + system + "/" + "+" + "/status"
+            availableSensorTopic = baseTopic + "sensor/" + system + "/" + "house" + "/status"
 
             stat_sensorsPayload = [
                 {
                     "name": "Instant Total",
                     "unit_of_measurement": "kWh",
                     "device_class": "energy",
-                    "value_template": "{{ value_json.energy_Tot }}"
+                    "state_class": "measurement",
+                    "value_template": "{{ value_json.energy_Tot }}",
+                    "state": "{{ value_json.energy_Tot }}",
+                    "attributes": {
+                        "last_reset": "2023-10-19T00:00:00+01:00"
+                    }
                 },
                 {
                     "name": "Hourly Average",
