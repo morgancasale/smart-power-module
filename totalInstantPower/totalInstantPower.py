@@ -25,8 +25,6 @@ class House_instantvalues():
             
             HADB_loc = "HADB.db"
             HADB_loc="homeAssistant/HADB/"+ HADB_loc
-
-                 
             
             while(True):
                 self.HADBConn = sqlite3.connect(HADB_loc)

@@ -726,8 +726,12 @@ class SocketHandler():
                     "name": "Instant Total",
                     "unit_of_measurement": "kWh",
                     "device_class": "energy",
-                    "state_class": "total",
-                    "value_template": "{{ value_json.energy_Tot }}"
+                    "state_class": "measurement",
+                    "value_template": "{{ value_json.energy_Tot }}",
+                    "state": "{{ value_json.energy_Tot }}",
+                    "attributes": {
+                        "last_reset": "2023-10-19T00:00:00+01:00"
+                    }
                 },
                 {
                     "name": "Hourly Average",
