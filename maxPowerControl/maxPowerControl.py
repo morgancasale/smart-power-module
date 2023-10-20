@@ -164,7 +164,10 @@ class maxPowerControl():
             self.HADBCur.execute(query,selectedMetaHAIDs)
             rows = self.HADBCur.fetchall()        
             df = pd.DataFrame(rows, columns=['metadata_id','power', 'last_update'])
-            df['power'] = df['power'].astype(float)    
+            if(str(df['power']).replace(".", "").replace("-", "").isnumeric()):
+                df['power'] = df['power'].astype(float)
+            else:
+                df['power'] = 0.0
         except HTTPError as e:
             message = "An error occurred while retriving info from HomeAssistant DB " + e._message
             raise HTTPError(status=e.status, message=message)
@@ -202,7 +205,9 @@ class maxPowerControl():
             
     """Checks for blackouts. If the power recorded exceeds the allowed limit value, then you must turn off a device."""    
     def controlPower(self,houseID):
-        if self.computeTotalPower(houseID) > self.getPowerLimitHouse(houseID):
+        total_power = self.computeTotalPower(houseID)
+        house_limit = self.getPowerLimitHouse(houseID)
+        if total_power > house_limit:
             self.myMQTTfunction(houseID)
 
     def getCatalogInfo(self, table, keyName, keyValue, verbose=False):
