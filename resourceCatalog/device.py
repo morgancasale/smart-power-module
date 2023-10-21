@@ -229,8 +229,7 @@ class Device:
             if(not check_presence_inDB(DBPath, "Devices", "deviceID", params["deviceID"], False)):
                 raise HTTPError(status=400, message="The device with ID \"" + params["deviceID"] + "\" does not exist in the database")
 
-            query = "SELECT * FROM DeviceEndP_conn WHERE deviceID = \"" + params["deviceID"] + "\""
-            query += "COLLATE NOCASE"
+            query = "SELECT * FROM DeviceEndP_conn WHERE lower(deviceID) = lower(\"" + params["deviceID"] + "\")"
             result = DBQuery_to_dict(DBPath, query)[0]
 
             delete_entry_fromDB(DBPath, "EndPoints", "endPointID", result["endPointID"])

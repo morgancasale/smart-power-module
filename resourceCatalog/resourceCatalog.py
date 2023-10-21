@@ -421,7 +421,7 @@ class resourceCatalog:
             keyValue = entry["keyValue"]
             caseSensitive = True
             if("caseSensitive" in entry.keys()):
-                caseSensitive = entry["caseSensitive"] == "True"
+                caseSensitive = entry["caseSensitive"].lower() == "true"
             
             return json.dumps({"result" : check_presence_inDB(self.DBPath, table, keyName, keyValue, caseSensitive)})
         except HTTPError as e:
@@ -434,8 +434,13 @@ class resourceCatalog:
             table = entry["table"]
             keyName = entry["keyName"]
             keyValue = entry["keyValue"]
+
             verbose = False
-            if("verbose" in entry.keys()): verbose = (entry["verbose"] == "True")        
+            if("verbose" in entry.keys()): verbose = (entry["verbose"].lower() == "true")
+            
+            caseSensitive = False
+            if("caseSensitive" in entry.keys()):
+                caseSensitive = (entry["caseSensitive"].lower() == "true")    
 
             selectedData = None
 
@@ -451,11 +456,22 @@ class resourceCatalog:
             if(not isinstance(keyValue, list)) : keyValue = [keyValue]
 
             try:
-                conn = sq.connect(self.DBPath)       
+                conn = sq.connect(self.DBPath)
+
+                keyValues = []
+                if(not caseSensitive):
+                    keyName = "lower(%s)" % keyName
+                    for k in keyValue:
+                        keyValues.append("lower(\"%s\")" % k)
+                else:
+                   for k in keyValue:
+                       keyValues.append("\"%s\"" % k)
+
                 if(keyValue[0] == "*"):
                     query = "SELECT * FROM " + table
                 else:
-                    query = "SELECT * FROM " + table + " WHERE " + keyName + " IN (\"" + "\", \"".join(keyValue) + "\")"
+                    query = "SELECT * FROM " + table + " WHERE " + keyName + " IN (" + ", ".join(keyValues) + ")"
+
                 
                 selectedData = pd.read_sql_query(query, conn).to_dict(orient="records")
                 conn.close()

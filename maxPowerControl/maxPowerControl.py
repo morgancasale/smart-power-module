@@ -157,17 +157,19 @@ class maxPowerControl():
     def getlastPower(self,houseID):
         try:
             selectedMetaHAIDs=self.selectMetaHAIDs(houseID)
-            query = """SELECT metadata_id, state, MAX(last_updated_ts) AS max_timestamp
-                        FROM states
-                        WHERE metadata_id IN ({})
-                        """.format(','.join('?' for _ in selectedMetaHAIDs))
+            query = """
+                SELECT metadata_id, state, MAX(last_updated_ts) AS max_timestamp
+                FROM states
+                WHERE metadata_id IN ({});
+            """.format(','.join('?' for _ in selectedMetaHAIDs))
+            selectedData = pd.read_sql_query(query, self.HADBConn).to_dict(orient="records")
             self.HADBCur.execute(query,selectedMetaHAIDs)
             rows = self.HADBCur.fetchall()        
             df = pd.DataFrame(rows, columns=['metadata_id','power', 'last_update'])
-            if(str(df['power']).replace(".", "").replace("-", "").isnumeric()):
+            if(str(df["power"]).replace(".", "").replace("-", "").isnumeric()):
                 df['power'] = df['power'].astype(float)
             else:
-                df['power'] = 0.0
+                df["power"] = None
         except HTTPError as e:
             message = "An error occurred while retriving info from HomeAssistant DB " + e._message
             raise HTTPError(status=e.status, message=message)
@@ -178,8 +180,10 @@ class maxPowerControl():
         
     """Computes the power recorded for a specific house (sum of the power recorded by the devices)."""
     def computeTotalPower(self,houseID):
-        data_df = self.getlastPower(houseID)  
-        totalpower=data_df['power'].sum()    
+        data_df = self.getlastPower(houseID)
+        if(data_df["power"] is not None):
+            totalpower=data_df['power'].sum()
+        else: totalpower = None    
         return totalpower
         
     """Returns the allowed power limit value for a specific house."""
@@ -206,9 +210,10 @@ class maxPowerControl():
     """Checks for blackouts. If the power recorded exceeds the allowed limit value, then you must turn off a device."""    
     def controlPower(self,houseID):
         total_power = self.computeTotalPower(houseID)
-        house_limit = self.getPowerLimitHouse(houseID)
-        if total_power > house_limit:
-            self.myMQTTfunction(houseID)
+        if(total_power is not None):
+            house_limit = self.getPowerLimitHouse(houseID)
+            if total_power > house_limit:
+                self.myMQTTfunction(houseID)
 
     def getCatalogInfo(self, table, keyName, keyValue, verbose=False):
         try:

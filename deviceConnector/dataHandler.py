@@ -21,9 +21,9 @@ class DataHandler():
             self.catalogPort = self.generalConfigs["REGISTRATION"]["catalogPort"]
             payload = json.loads(payload)
 
-            print("Received data from device %s, forwarding to HA..." % payload["deviceID"])
-
             if (DataHandler.checkPresenceOfIDSocket(payload["deviceID"], self.catalogAddress, self.catalogPort)):
+                print("Received data from device %s, forwarding to HA..." % payload["deviceID"])
+                
                 if (not DataHandler.setStatusDevice(payload["deviceID"], 1,self.catalogAddress, self.catalogPort)):
                     raise Server_Error_Handler.InternalServerError(
                         message="An error occurred while updating device status"
@@ -45,31 +45,28 @@ class DataHandler():
                     + payload["deviceID"].lower()
                     + "/status"
                 )
-            else:
-                raise Client_Error_Handler.NotFound(
-                    "Device that sending data is not registered"
-                )
-            DataHandler.checkpayload(payload)
-            
-            datafixed = {
-                "voltage": payload["Voltage"],
-                "current": payload["Current"],
-                "power": payload["Power"],
-                "energy": payload["Energy"]
-            }
 
-            enabledSockets = DataHandler.getPlugEnabled(self.catalogAddress, self.catalogPort, payload["deviceID"])
-            enabledSockets = ["online" if bool(int(x)) else "offline" for x in enabledSockets]
+                DataHandler.checkpayload(payload)
+                
+                datafixed = {
+                    "voltage": payload["Voltage"],
+                    "current": payload["Current"],
+                    "power": payload["Power"],
+                    "energy": payload["Energy"]
+                }
 
-            self.Publish(availableSensorTopic, "online", talk=True)
-            switchAvaibilityTopic = self.baseTopic +"switch/" + self.system + "/" + payload["deviceID"].lower() + "/status"
-            for i in range(3):
-                self.Publish(switchAvaibilityTopic + "/" + str(i), enabledSockets[i], talk=False)
+                enabledSockets = DataHandler.getPlugEnabled(self.catalogAddress, self.catalogPort, payload["deviceID"])
+                enabledSockets = ["online" if bool(int(x)) else "offline" for x in enabledSockets]
 
-            switchStateTopic = self.baseTopic +"switch/" + self.system + "/" + payload["deviceID"].lower() + "/state"
-            self.Publish(stateSensorTopic, json.dumps(datafixed))
-            for i in range(3):
-                self.Publish(switchStateTopic + "/" + str(i), str(bool(payload["SwitchStates"][i])), talk=False)
+                self.Publish(availableSensorTopic, "online", talk=True)
+                switchAvaibilityTopic = self.baseTopic +"switch/" + self.system + "/" + payload["deviceID"].lower() + "/status"
+                for i in range(3):
+                    self.Publish(switchAvaibilityTopic + "/" + str(i), enabledSockets[i], talk=False)
+
+                switchStateTopic = self.baseTopic +"switch/" + self.system + "/" + payload["deviceID"].lower() + "/state"
+                self.Publish(stateSensorTopic, json.dumps(datafixed))
+                for i in range(3):
+                    self.Publish(switchStateTopic + "/" + str(i), str(bool(payload["SwitchStates"][i])), talk=False)
 
 
         except HTTPError as e:
