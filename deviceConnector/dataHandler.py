@@ -116,7 +116,7 @@ class DataHandler():
         configParams = sorted(["deviceID", "Voltage", "Current", "Power", "Energy", "SwitchStates"])
 
         if not configParams == sorted(payload.keys()):
-            raise HTTPError("Missing parameters in config file")
+            raise HTTPError("Missing parameters in payload")
 
         if not isinstance(payload["deviceID"], str):
             raise Client_Error_Handler.BadRequest("socketID parameter must be a string")
