@@ -31,7 +31,7 @@ class maxPowerControl():
 
             while(True):
                 self.controlPowerforall()
-                time.sleep(5)
+                time.sleep(4)
         except HTTPError as e:
             message = "An error occurred while running the service: \u0085\u0009" + e._message
             raise Exception(message)
@@ -44,7 +44,7 @@ class maxPowerControl():
     def getDeviceID(self, metaHAID):
         try:
             query = "SELECT entity_id FROM states_meta WHERE metadata_id = ?"
-            self.HADBCur.execute(query,(metaHAID,))
+            self.HADBCur.execute(query,(str(metaHAID),))
             rows = self.HADBCur.fetchall()    
             if rows:
                 entity_id = rows[0][0]
@@ -157,14 +157,28 @@ class maxPowerControl():
     def getlastPower(self,houseID):
         try:
             selectedMetaHAIDs=self.selectMetaHAIDs(houseID)
-            query = """SELECT metadata_id, state, MAX(last_updated_ts) AS max_timestamp
+            if selectedMetaHAIDs!=[]:
+                query="""SELECT MAX(last_updated_ts)
+                    FROM states 
+                    WHERE metadata_id IN ({})
+                """.format(','.join('?' for _ in selectedMetaHAIDs))
+                self.HADBCur.execute(query,selectedMetaHAIDs)
+                recent_timestamp = self.HADBCur.fetchone()[0]   
+                thirty_seconds_ago = recent_timestamp - 30
+                query = """SELECT metadata_id, state, last_updated_ts
                         FROM states
-                        WHERE metadata_id IN ({})
+                        WHERE metadata_id IN ({}) AND last_updated_ts >= ? AND last_updated_ts <= ?
                         """.format(','.join('?' for _ in selectedMetaHAIDs))
-            self.HADBCur.execute(query,selectedMetaHAIDs)
-            rows = self.HADBCur.fetchall()        
-            df = pd.DataFrame(rows, columns=['metadata_id','power', 'last_update'])
-            df['power'] = df['power'].astype(float)    
+                self.HADBCur.execute(query,(selectedMetaHAIDs+[thirty_seconds_ago,recent_timestamp]))
+                rows = self.HADBCur.fetchall()        
+                df = pd.DataFrame(rows, columns=["metadata_id","power", "last_update"])
+                for i in range(len(df)):
+                    if df['power'][i]!='unavailable' and df['power'][i]!='unknown':
+                       df['power'][i] = float(df['power'][i])
+                    else:
+                       df['power'][i] = 0.0                
+            else:
+                return None
         except HTTPError as e:
             message = "An error occurred while retriving info from HomeAssistant DB " + e._message
             raise HTTPError(status=e.status, message=message)
@@ -176,8 +190,11 @@ class maxPowerControl():
     """Computes the power recorded for a specific house (sum of the power recorded by the devices)."""
     def computeTotalPower(self,houseID):
         data_df = self.getlastPower(houseID)  
-        totalpower=data_df['power'].sum()    
-        return totalpower
+        if data_df is not None:
+           totalpower=data_df['power'].sum()    
+           return totalpower
+        else:
+            return None
         
     """Returns the allowed power limit value for a specific house."""
     def getPowerLimitHouse (self,houseID):
@@ -202,7 +219,9 @@ class maxPowerControl():
             
     """Checks for blackouts. If the power recorded exceeds the allowed limit value, then you must turn off a device."""    
     def controlPower(self,houseID):
-        if self.computeTotalPower(houseID) > self.getPowerLimitHouse(houseID):
+        total_power = self.computeTotalPower(houseID)
+        house_limit = self.getPowerLimitHouse(houseID)        
+        if total_power is not None and total_power > house_limit:
             self.myMQTTfunction(houseID)
 
     def getCatalogInfo(self, table, keyName, keyValue, verbose=False):
