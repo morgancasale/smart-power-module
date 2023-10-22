@@ -19,7 +19,7 @@ class blackoutAndFaulty():
         self.v_lower_bound=216
         #how many measures should be incorrect to consider a blackout
         self.blackout_lim = 5 #dispositivi
-        self.faultyLim = 4 #misure   
+        self.faultyLim = 1 #misure   
 
         config_file = "blackoutFaultyDetection.json"
         if(not IN_DOCKER):
@@ -332,16 +332,15 @@ class blackoutAndFaulty():
                 for module in modules_bl:
                     faulty_cont = 0
                     value = self.getRange(module) #info[i][0] = ID
-                    #if value is ot none
                     last_measurement = self.lastValueCheck(module)#[power, voltage]
-                    if last_measurement["voltage"] != None and value != None :
+                    if last_measurement["voltage"] != None :
                         if self.blackOutRangeCheck(last_measurement["voltage"]) :
                             blackout_cont += 1 
                         if blackout_cont > self.blackout_lim:
                             print('Predicted blackout in house %s', house)
                             self.MQTTInterface(module, 'b')
                             break
-                        if module in modules_faulty and last_measurement['power']!=None:
+                        if module in modules_faulty and last_measurement['power']!=None and value != None:
                             if self.faultyCheck(value, last_measurement, module,'s'):
                                 prevVoltage, prevPower = self.prevValuesCheck(module)
                                 readings = list(zip(prevVoltage, prevPower))
