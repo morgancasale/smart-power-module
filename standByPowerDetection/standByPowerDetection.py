@@ -181,7 +181,7 @@ class StandByPowerDetection():
     
     def MQTTInterface(self, ID):
         #self.client.start()
-        topic="/smartSocket/data"
+        topic="smartSocket/control"
         #socket= self.retrieveSocket(ID)
         #socket_states =  [-1 if item == '0' else 0 for item in socket]
         #print(socket_states)
@@ -254,8 +254,8 @@ class StandByPowerDetection():
                     if (1<= last_measurement <= limit):
                         prevRows= self.prevValuesCheck(info)
                         if prevRows!= None:
-                            for prevValues in prevRows:
-                                if (1<=int(prevValues)<=int(limit)):
+                            for prevValue in prevRows:
+                                if (1<=int(prevValue[1])<=int(limit)):
                                     standByPowercont+=1   
                         if standByPowercont>=60:
                             self.MQTTInterface(info)
