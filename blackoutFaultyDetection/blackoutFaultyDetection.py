@@ -218,7 +218,9 @@ class blackoutAndFaulty():
     def getRange(self, deviceID):   
 
         device_type = self.getDeviceSettingsInfo(deviceID)[0]["applianceType"]
-        #if dev type is none return none
+        if device_type == "None":
+            return None
+
         dev_range = self.getApplianceInfo(device_type)[0][0]
         if dev_range is not None:
             return dev_range
@@ -332,7 +334,7 @@ class blackoutAndFaulty():
                     value = self.getRange(module) #info[i][0] = ID
                     #if value is ot none
                     last_measurement = self.lastValueCheck(module)#[power, voltage]
-                    if last_measurement["voltage"] != None and value['applianceType']!= "None" :
+                    if last_measurement["voltage"] != None and value != None :
                         if self.blackOutRangeCheck(last_measurement["voltage"]) :
                             blackout_cont += 1 
                         if blackout_cont > self.blackout_lim:
