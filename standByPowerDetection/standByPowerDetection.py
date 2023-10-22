@@ -47,7 +47,7 @@ class StandByPowerDetection():
         results = self.curHA.fetchall()
         control=False
         for item in results:
-            if item[1] != 'unavailable' and item[1] != 'unknown':
+            if item[1] == 'unavailable' and item[1] == 'unknown':
                 control = True
         if control== False:
             return (results)
@@ -251,13 +251,13 @@ class StandByPowerDetection():
                 value = self.getRange(info) #info[i][0] = ID
                 last_measurement = self.lastValueCheck(info)#[id, time,power]
                 if last_measurement != None and value != None :
-                    if ((1 <= int(last_measurement) <= int(value)) and int(last_measurement) != 0):
+                    if (1 <= int(last_measurement) <= int(value)):
                         prevRows= self.prevValuesCheck(info)
                         if prevRows!= None:
                             for prevValues in prevRows:
-                                if (1<=int(prevValues)<=int(value)):
+                                if (1<=int(prevValues[1])<=int(value)):
                                     standByPowercont+=1   
-                        if standByPowercont>=60:
+                        if standByPowercont>=60: 
                             self.MQTTInterface(info)
                                 
 
