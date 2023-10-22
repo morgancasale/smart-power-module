@@ -173,10 +173,10 @@ class maxPowerControl():
                 rows = self.HADBCur.fetchall()        
                 df = pd.DataFrame(rows, columns=["metadata_id","power", "last_update"])
                 for i in range(len(df)):
-                    if df['power'][i]!='unavailable' and df['power'][i]!='unknown':
-                       df['power'][i] = float(df['power'][i])
+                    if df.at[i,'power']!='unavailable' and df.at[i,'power']!='unknown':
+                       df.at[i,'power'] = float(df.at[i,'power'])
                     else:
-                       df['power'][i] = 0.0                
+                       df.at[i,'power']  = 0.0                
             else:
                 return None
         except HTTPError as e:
@@ -248,8 +248,9 @@ class maxPowerControl():
     def getDeviceInfo(self, deviceID, verbose = False):
         try:
             result = self.getCatalogInfo("Devices", "deviceID", deviceID, verbose=verbose)
+            deviceName=result[0]['deviceName']
 
-            return result
+            return deviceName
         except HTTPError as e:
             raise e
 
@@ -257,14 +258,16 @@ class maxPowerControl():
     def getHouseInfo(self,houseID):
         try:
             result = self.getCatalogInfo("Houses", "houseID", houseID)
+            houseName=result[0]['houseName']
 
-            return result[0]
+            return houseName
         except HTTPError as e:
             raise e
 
     """Finds the device with the last updated highest power consumption in the house and turns it off"""
     def myMQTTfunction(self, houseID):
         lastReadings = self.getlastPower(houseID)
+        lastReadings["power"]=lastReadings["power"].astype(float)
         row = lastReadings.loc[lastReadings["power"].idxmax()]
         metaHAID = row["metadata_id"]
         deviceID=self.getDeviceID(metaHAID)
@@ -276,11 +279,11 @@ class maxPowerControl():
         str_msg = json.dumps(msg, indent=2)
         self.client.MQTT.Publish(topic, str_msg, talk=False)
         print("House %s power consumption exceeded limit, device %s was turned off" % (houseID,deviceID))
-        house = self.getHouseInfo(houseID)
-        device = self.getDeviceInfo(deviceID)
+        houseName = self.getHouseInfo(houseID)
+        deviceName = self.getDeviceInfo(deviceID)
         msg = {
-            "title" : "House %s power consumption exceeded limit" % house["houseName"],
-            "message" : "Device %s was turned off" % device["deviceName"]
+            "title" : "House %s power consumption exceeded limit" % houseName,
+            "message" : "Device %s was turned off" % deviceName
         }
         self.client.MQTT.notifyHA(msg, talk = True)
     
