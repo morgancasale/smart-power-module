@@ -19,11 +19,11 @@ class DataAnalysis():
         try:
             config_file = "dataAnalysis.json"
             if(not IN_DOCKER):
-                config_file = "DataAnalysis/" + config_file
+                config_file = "dataAnalysis/" + config_file
             self.client = ServiceBase(config_file)
             self.client.start()
             
-            self.sample_min = 60 
+            self.sample_min = 10 
 
             HADB_loc = "homeAssistant/HADB/HADB.db"
 
@@ -42,7 +42,7 @@ class DataAnalysis():
             raise Server_Error_Handler.InternalServerError(message=message)
     
     """Retrieves information about devices registered in the catalog and selects only those "online" """
-    def getDevicesInfo(self):
+    def getOnlineDevicesInfo(self):
         try:    
             catalogAddress = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
             catalogPort = self.client.generalConfigs["REGISTRATION"]["catalogPort"]
@@ -75,7 +75,9 @@ class DataAnalysis():
                 raise HTTPError(response.status_code, str(response.text))
             result = json.loads(response.text)
 
-            dev_online_list = set(device['deviceID'] for device in self.getDevicesInfo())
+            devices = self.getOnlineDevicesInfo()
+
+            dev_online_list = set(device['deviceID'] for device in devices)
             house_onlinedev = [device for device in result if device['deviceID'] in dev_online_list]
             house_onlinedev_list = []
             for row in house_onlinedev:
@@ -136,8 +138,8 @@ class DataAnalysis():
             result = df.groupby(['metadata_id', 'formatted_timestamp'])['state'].sum().reset_index()       
         if not result.empty:
             for i in range(len(result)):
-                deviceID = self.getDeviceID(int(result['metadata_id'][i]), sm)
-                topic='/homeassistant/sensor/smartSocket/%s/state' % deviceID
+                deviceID = self.getDeviceID(int(result['metadata_id'][i]), sm).lower()
+                topic='homeassistant/sensor/smartSocket/%s/state' % deviceID
 
                 msg='{"energy_%s": %f}' % (statistic_format, result['state'][i])
                 self.client.MQTT.Publish(topic, msg)
@@ -145,7 +147,10 @@ class DataAnalysis():
         else:
             return None
             
-    """Calculates the statistics (average or sum of consumption) and an estimate of the cost for each house according to the input parameters."""
+    """
+    Calculates the statistics (average or sum of consumption) and an estimate of 
+    the cost for each house according to the input parameters.
+    """
     def computedata_House(self,houseID, df, time_format, avg, statistic_format):
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         df['formatted_timestamp'] = df['timestamp'].dt.strftime(time_format)
@@ -156,14 +161,18 @@ class DataAnalysis():
             result = df.groupby(['formatted_timestamp'])['state'].sum().reset_index()       
         if not result.empty:
             for i in range(len(result)):
-                topic='/homeassistant/sensor/smartSocket/house/state'
+                stateTopic='homeassistant/sensor/smartSocket/house/state'
                 msg='{"energy_%s": %f}' % (statistic_format, result['state'][i])
-                self.client.MQTT.Publish(topic, msg)
+                self.client.MQTT.Publish(stateTopic, msg)
             return result
         else:
             return None
-            
-    """Finds the device that consumed the most within a specified period (day, month, year) and the cost associated with that consumption."""
+
+    #TODO
+    """
+    Finds the device that consumed the most within a specified period (day, month, year)
+    and the cost associated with that consumption.
+    """
     def findmax(self,df,time_format,statistic_format,sm):
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         df['formatted_timestamp'] = df['timestamp'].dt.strftime(time_format)
@@ -171,7 +180,8 @@ class DataAnalysis():
         result.columns = ['formatted_timestamp', 'metadata_id', 'state']     
         if not result.empty:
             for i in range(len(result)):
-                topic1='/homeassistant/sensor/smartSocket/%s/%s/state' %(statistic_format,self.getDeviceID(int(result['metadata_id'][i]),sm))
+                deviceID = self.getDeviceID(int(result['metadata_id'][i]),sm).lower()
+                topic1='homeassistant/sensor/smartSocket/%s/%s/state' %(statistic_format,deviceID)
                 msg1='{"energy": %f}' % (result['state'][i])
                 self.client.MQTT.Publish(topic1, msg1)
             return result
@@ -217,42 +227,42 @@ class DataAnalysis():
             return None
     
     def compute_dailyavgdata(self,houseID):
-        hourly_df=self.getdata(houseID,'energy_tothourly')
+        hourly_df=self.getdata(houseID,'hourly_total')
         if hourly_df is not None and not hourly_df.empty:
             self.compute_data(hourly_df,'%Y-%m-%d 00:00:00',True,'DAvg',True)
         else:
             return None
     
     def compute_dailytotdata(self,houseID):
-        hourly_df=self.getdata(houseID,'energy_tothourly')
+        hourly_df=self.getdata(houseID,'hourly_total')
         if hourly_df is not None and not hourly_df.empty:
             self.compute_data(hourly_df,'%Y-%m-%d 00:00:00',False,'DTot',True)
         else:
             return None
     
     def compute_monthlyavgdata(self,houseID):
-        daily_df=self.getdata(houseID,'energy_totdaily')
+        daily_df=self.getdata(houseID,'daily_total')
         if daily_df is not None and not daily_df.empty:
             self.compute_data(daily_df,'%Y-%m-01 00:00:00',True,'MAvg',True)
         else:
             return None
     
     def compute_monthlytotdata(self,houseID):
-        daily_df=self.getdata(houseID,'energy_totdaily')
+        daily_df=self.getdata(houseID,'daily_total')
         if daily_df is not None and not daily_df.empty:
             self.compute_data(daily_df,'%Y-%m-01 00:00:00',False,'MTot',True)
         else:
             return None
     
     def compute_yearlyavgdata(self,houseID):
-        monthly_df=self.getdata(houseID,'energy_totmonthly')
+        monthly_df=self.getdata(houseID,'monthly_total')
         if monthly_df is not None and not monthly_df.empty:
             self.compute_data(monthly_df,'%Y-01-01 00:00:00',True,'YAvg',True)
         else:
             return None
     
     def compute_yearlytotdata(self,houseID):
-        monthly_df=self.getdata(houseID,'energy_totmonthly')
+        monthly_df=self.getdata(houseID,'monthly_total')
         if monthly_df is not None and not monthly_df.empty:
             self.compute_data(monthly_df,'%Y-01-01 00:00:00',False,'YTot',True)
         else:
@@ -268,7 +278,7 @@ class DataAnalysis():
             return None
     
     def compute_dailydataHouse(self,houseID):
-        df=self.getdata(houseID,'energy_tothourly')
+        df=self.getdata(houseID,'hourly_total')
         if df is not None and not df.empty:
             self.computedata_House(houseID,df,'%Y-%m-%d 00:00:00',True,'DAvg')
             self.computedata_House(houseID,df,'%Y-%m-%d 00:00:00',False,'DTot')
@@ -277,7 +287,7 @@ class DataAnalysis():
             return None
     
     def compute_monthlydataHouse(self,houseID):
-        df=self.getdata(houseID,'energy_totdaily')
+        df=self.getdata(houseID,'daily_total')
         if df is not None and not df.empty:
             self.computedata_House(houseID,df,'%Y-%m-01 00:00:00',True,'MAvg')
             self.computedata_House(houseID,df,'%Y-%m-01 00:00:00',False,'MTot')
@@ -286,7 +296,7 @@ class DataAnalysis():
             return None
     
     def compute_yearlydataHouse(self,houseID):
-        df=self.getdata(houseID,'energy_totmonthly')
+        df=self.getdata(houseID,'monthly_total')
         if df is not None and not df.empty:
             self.computedata_House(houseID,df,'%Y-01-01 00:00:00',True,'YAvg')
             self.computedata_House(houseID,df,'%Y-01-01 00:00:00',False,'YTot')
