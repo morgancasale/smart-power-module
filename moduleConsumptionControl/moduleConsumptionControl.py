@@ -129,7 +129,7 @@ class ModuleConsumptionControl():
             update_check= self.onlineTimeCheck(house_module)
             moduleState= self.getSwitchesStates(switch_metaIDs)
             if moduleState:
-                if (result[0]["Online"] & update_check) :
+                if (result[0]["Online"]):# & update_check) :
                     settings = self.getDeviceSettingsInfo(house_module)[0]
                     if(settings["HPMode"] == 1 and settings["MPControl"] == 1):
                         to_consider.append(house_module)
@@ -145,7 +145,7 @@ class ModuleConsumptionControl():
         
     def getRange(self, ID):
         maxPower = self.getDeviceSettingsInfo(ID)[0]["maxPower"]
-        if maxPower is not None:
+        if maxPower != None:
             return maxPower
         else:
             return None
@@ -158,7 +158,7 @@ class ModuleConsumptionControl():
             "message": "The consumption of the appliance connected to module %s has exceeded the selected threshold" % device["deviceName"]
         }
         
-        if settings["MPMode"] is not "Notify" : 
+        if settings["MPMode"] != "Notify" : 
             self.MQTTInterface(ID)
             topic="/smartSocket/control"
             msg = {
@@ -210,7 +210,7 @@ class ModuleConsumptionControl():
         houses = self.getHouseList()
         for house in houses:
             modules = self.houseInfo(house)
-            if(modules is not None):
+            if(modules != None):
                 for module in modules:
                     value = self.getRange(module) #info[i][0] = ID
                     last_measurement = self.lastValueCheck(module)#[id, time,power]
