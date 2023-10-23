@@ -257,7 +257,7 @@ class blackoutAndFaulty():
         return switches
         
     def MQTTInterface(self, ID, case):
-        topic = "/smartSocket/control"
+        topic = "smartSocket/control"
         settings = self.getDeviceSettingsInfo(ID)[0]
         device = self.getDeviceInfo(ID)[0]
         if case == 'f' and settings["FBMode"]=="Notify" :
