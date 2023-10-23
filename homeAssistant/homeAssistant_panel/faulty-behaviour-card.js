@@ -22,10 +22,8 @@ class FaultyBehaviourCard extends LitElement {
         var btn = this.shadowRoot.getElementById("FB_button");
         this.data.FBControl = !btn.checked;
         if (this.data.FBControl) {
-            this.shadowRoot.getElementById("fault_beh").style.display = "flex";
             this.shadowRoot.getElementById("fault_beh_settings").style.display = "flex";
         } else {
-            this.shadowRoot.getElementById("fault_beh").style.display = "none";
             this.shadowRoot.getElementById("fault_beh_settings").style.display = "none";
         }
     }
