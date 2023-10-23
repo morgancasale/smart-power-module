@@ -129,7 +129,7 @@ class ModuleConsumptionControl():
             update_check= self.onlineTimeCheck(house_module)
             moduleState= self.getSwitchesStates(switch_metaIDs)
             if moduleState:
-                if (result[0]["Online"]):# & update_check) :
+                if (result[0]["Online"] & update_check) :
                     settings = self.getDeviceSettingsInfo(house_module)[0]
                     if(settings["HPMode"] == 1 and settings["MPControl"] == 1):
                         to_consider.append(house_module)
