@@ -105,6 +105,10 @@ class blackoutAndFaulty():
             )
             WHERE row_num <= 2 """.format(self.database), (powerID,))
         results_power = self.curHA.fetchall()
+        control_p=False
+        for item in results_power:
+            if item[1] == 'unavailable' and item[1] == 'unknown':
+                control_p = True
         
         voltageID=meta["voltage"]
         self.curHA.execute("""
@@ -116,12 +120,14 @@ class blackoutAndFaulty():
             )
             WHERE row_num <= 2 """.format(self.database), (voltageID,))
         results_voltage = self.curHA.fetchall()
-        
-        
-        #for result in results:
-        #     print(f"ID: {result[0]}, timestamp: {result[1]}")
-        return results_voltage, results_power
-
+        control_v=False
+        for item in results_voltage:
+            if item[1] == 'unavailable' and item[1] == 'unknown':
+                control_v = True
+        if control_p== False and control_v== False:
+            return results_voltage, results_power
+        else:
+            return None 
     
     def getHouseDevList(self, houseID="*"):
         try:
