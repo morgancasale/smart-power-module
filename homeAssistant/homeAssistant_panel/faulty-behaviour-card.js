@@ -22,8 +22,10 @@ class FaultyBehaviourCard extends LitElement {
         var btn = this.shadowRoot.getElementById("FB_button");
         this.data.FBControl = !btn.checked;
         if (this.data.FBControl) {
+            this.shadowRoot.getElementById("fault_beh").style.display = "flex";
             this.shadowRoot.getElementById("fault_beh_settings").style.display = "flex";
         } else {
+            this.shadowRoot.getElementById("fault_beh").style.display = "none";
             this.shadowRoot.getElementById("fault_beh_settings").style.display = "none";
         }
     }
@@ -84,7 +86,7 @@ class FaultyBehaviourCard extends LitElement {
         this.data = this.defaultData;
 
         return html`
-        <ha-card class="Max-Power">
+        <ha-card class="Faulty-Beh">
             <div class="SingleEntry fault_beh_btn">
                 <div class="description" id="btn_descr">Faulty Behaviour Control</div>
                 <div class="button_cont">
