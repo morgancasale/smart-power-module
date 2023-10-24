@@ -107,7 +107,7 @@ class blackoutAndFaulty():
         results_power = self.curHA.fetchall()
         control_p=False
         for item in results_power:
-            if item[1] == 'unavailable' and item[1] == 'unknown':
+            if item[0] == 'unavailable' or item[0] == 'unknown':
                 control_p = True
         
         voltageID=meta["voltage"]
@@ -122,7 +122,7 @@ class blackoutAndFaulty():
         results_voltage = self.curHA.fetchall()
         control_v=False
         for item in results_voltage:
-            if item[1] == 'unavailable' and item[1] == 'unknown':
+            if item[0] == 'unavailable' or item[0] == 'unknown':
                 control_v = True
         if control_p== False and control_v== False:
             return results_voltage, results_power
@@ -348,13 +348,14 @@ class blackoutAndFaulty():
                             break
                         if module in modules_faulty and last_measurement['power']!=None and value != None:
                             if self.faultyCheck(value, last_measurement, module,'s'):
-                                prevVoltage, prevPower = self.prevValuesCheck(module)
-                                readings = list(zip(prevVoltage, prevPower))
-                                for reading in readings:
-                                    r = {"voltage": reading[0], "power": reading[1]}
-                                    if self.faultyCheck(value, r, module,'m'):
-                                        faulty_cont += 1   
-                                        if faulty_cont >= self.faultyLim:
+                                if self.prevValuesCheck(module) is not None:
+                                   prevVoltage, prevPower = self.prevValuesCheck(module)
+                                   readings = list(zip(prevVoltage, prevPower))
+                                   for reading in readings:
+                                       r = {"voltage": reading[0], "power": reading[1]}
+                                       if self.faultyCheck(value, r, module,'m'):
+                                         faulty_cont += 1   
+                                         if faulty_cont >= self.faultyLim:
                                             print("Device with ID " + module + " is faulty!")
                                             self.MQTTInterface( module, 'f')
                                             break
