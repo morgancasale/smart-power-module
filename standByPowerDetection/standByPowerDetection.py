@@ -47,7 +47,7 @@ class StandByPowerDetection():
         results = self.curHA.fetchall()
         control=False
         for item in results:
-            if item[1] != 'unavailable' and item[1] != 'unknown':
+            if item[1] == 'unavailable' or item[1] == 'unknown':
                 control = True
         if control== False:
             return (results)
@@ -163,7 +163,7 @@ class StandByPowerDetection():
                         settings = self.getDeviceSettingsInfo(house_module)[0]
                         if(settings["HPMode"] == 1 and settings["parControl"] == 1):
                             to_consider.append(house_module)
-                return to_consider 
+        return to_consider 
         
     def getRange(self, ID):
         settings = self.getDeviceSettingsInfo(ID)[0]
@@ -181,7 +181,7 @@ class StandByPowerDetection():
     
     def MQTTInterface(self, ID):
         #self.client.start()
-        topic="/smartSocket/data"
+        topic="smartSocket/control"
         #socket= self.retrieveSocket(ID)
         #socket_states =  [-1 if item == '0' else 0 for item in socket]
         #print(socket_states)
@@ -209,24 +209,24 @@ class StandByPowerDetection():
 
 
     def getSwitchesStates(self, ID_list):
-            stateList=[]
-            for element in ID_list:
-                self.curHA.execute("""
-                    SELECT metadata_id, MAX(last_updated_ts)
-                    FROM {}
-                    WHERE metadata_id
-                    = ?""".format(self.database),(element,))
-                result=(self.curHA.fetchone()[0])
-                if result == 'off':
-                    result= 0
-                else : result=1
-                stateList.append(result)
-            finalState= sum(stateList)
-            if finalState > 0:
-                res= True
-            else:
-                res= False
-            return res
+        stateList=[]
+        for element in ID_list:
+            self.curHA.execute("""
+                SELECT metadata_id, MAX(last_updated_ts)
+                FROM {}
+                WHERE metadata_id
+                = ?""".format(self.database),(element,))
+            result=(self.curHA.fetchone()[0])
+            if result == 'off':
+                result = 0
+            else : result = 1
+            stateList.append(result)
+        finalState= sum(stateList)
+        if finalState > 0:
+            res = True
+        else:
+            res= False
+        return res
 
     def controlAndDisconnect(self):        
         HADB_loc = "homeAssistant/HADB/HADB.db"
@@ -248,14 +248,14 @@ class StandByPowerDetection():
                 break
             for info in modules:
                 standByPowercont=0 
-                value = self.getRange(info) #info[i][0] = ID
-                last_measurement = self.lastValueCheck(info)#[id, time,power]
-                if last_measurement != None and value != None :
-                    if ((1 <= int(last_measurement) <= int(value)) and int(last_measurement) != 0):
+                limit = int(self.getRange(info)) #info[i][0] = ID
+                last_measurement = int(self.lastValueCheck(info))#[id, time,power]
+                if last_measurement != None and limit != None :
+                    if (1<= last_measurement <= limit):
                         prevRows= self.prevValuesCheck(info)
                         if prevRows!= None:
-                            for prevValues in prevRows:
-                                if (1<=int(prevValues)<=int(value)):
+                            for prevValue in prevRows:
+                                if (1<=int(prevValue[1])<=int(limit)):
                                     standByPowercont+=1   
                         if standByPowercont>=60:
                             self.MQTTInterface(info)
