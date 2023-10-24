@@ -103,8 +103,12 @@ class blackoutAndFaulty():
                 FROM {}
                 WHERE metadata_id = ?
             )
-            WHERE row_num <= 2 """.format(self.database), (powerID,))
+            WHERE row_num <= 4 """.format(self.database), (powerID,))
         results_power = self.curHA.fetchall()
+        control_p=False
+        for item in results_power:
+            if item[0] == 'unavailable' or item[0] == 'unknown':
+                control_p = True
         
         voltageID=meta["voltage"]
         self.curHA.execute("""
@@ -114,14 +118,16 @@ class blackoutAndFaulty():
                 FROM {}
                 WHERE metadata_id = ?
             )
-            WHERE row_num <= 2 """.format(self.database), (voltageID,))
+            WHERE row_num <= 4 """.format(self.database), (voltageID,))
         results_voltage = self.curHA.fetchall()
-        
-        
-        #for result in results:
-        #     print(f"ID: {result[0]}, timestamp: {result[1]}")
-        return results_voltage, results_power
-
+        control_v=False
+        for item in results_voltage:
+            if item[0] == 'unavailable' or item[0] == 'unknown':
+                control_v = True
+        if control_p== False and control_v== False:
+            return results_voltage, results_power
+        else:
+            return None 
     
     def getHouseDevList(self, houseID="*"):
         try:
@@ -200,7 +206,7 @@ class blackoutAndFaulty():
             update_check= self.onlineTimeCheck(house_module)
             moduleState= self.getSwitchesStates(switch_metaIDs)
             if moduleState:
-                if (result[0]["Online"] & update_check) :
+                if (result[0]["Online"] ):#& update_check) :
                     to_consider_bl.append(house_module)
                     settings = self.getDeviceSettingsInfo(house_module)[0]
                     if(settings["HPMode"] == 1 and settings["FBControl"] == 1):
@@ -218,7 +224,9 @@ class blackoutAndFaulty():
     def getRange(self, deviceID):   
 
         device_type = self.getDeviceSettingsInfo(deviceID)[0]["applianceType"]
-        #if dev type is none return none
+        if device_type == "None":
+            return None
+
         dev_range = self.getApplianceInfo(device_type)[0][0]
         if dev_range is not None:
             return dev_range
@@ -255,7 +263,7 @@ class blackoutAndFaulty():
         return switches
         
     def MQTTInterface(self, ID, case):
-        topic = "/smartSocket/control"
+        topic = "smartSocket/control"
         settings = self.getDeviceSettingsInfo(ID)[0]
         device = self.getDeviceInfo(ID)[0]
         if case == 'f' and settings["FBMode"]=="Notify" :
@@ -330,27 +338,27 @@ class blackoutAndFaulty():
                 for module in modules_bl:
                     faulty_cont = 0
                     value = self.getRange(module) #info[i][0] = ID
-                    #if value is ot none
                     last_measurement = self.lastValueCheck(module)#[power, voltage]
-                    if last_measurement["voltage"] != None and value['applianceType']!= "None" :
+                    if last_measurement["voltage"] != None :
                         if self.blackOutRangeCheck(last_measurement["voltage"]) :
                             blackout_cont += 1 
                         if blackout_cont > self.blackout_lim:
-                            print('Predicted blackout in house %s', house)
+                            print('Predicted blackout in house ', house)
                             self.MQTTInterface(module, 'b')
                             break
-                        if module in modules_faulty and last_measurement['power']!=None:
+                        if module in modules_faulty and last_measurement['power']!=None and value != None:
                             if self.faultyCheck(value, last_measurement, module,'s'):
                                 prevVoltage, prevPower = self.prevValuesCheck(module)
-                                readings = list(zip(prevVoltage, prevPower))
-                                for reading in readings:
-                                    r = {"voltage": reading[0], "power": reading[1]}
-                                    if self.faultyCheck(value, r, module,'m'):
-                                        faulty_cont += 1   
-                                        if faulty_cont >= self.faultyLim:
-                                            print("Device with ID " + module + " is faulty!")
-                                            self.MQTTInterface( module, 'f')
-                                            break
+                                if prevVoltage!=None and prevVoltage!= None:
+                                    readings = list(zip(prevVoltage, prevPower))
+                                    for reading in readings:
+                                        r = {"voltage": reading[0], "power": reading[1]}
+                                        if self.faultyCheck(value, r, module,'m'):
+                                            faulty_cont += 1   
+                                            if faulty_cont >= self.faultyLim:
+                                                print("Device with ID " + module + " is faulty!")
+                                                self.MQTTInterface( module, 'f')
+                                                break
         self.connHA.close()
                                     
 
