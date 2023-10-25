@@ -68,26 +68,23 @@ class blackoutAndFaulty():
         self.curHA.execute("""
             SELECT metadata_id, MAX(last_updated_ts), state
             FROM {}
-            WHERE metadata_id
+            WHERE state!='unavailable' AND state!='unknown' AND metadata_id 
             = ?""".format(self.database),(powerID,))
         result = self.curHA.fetchone()[2]
-
-        if result !='unknown' and result !='unavailable':
-            power = float(result)
-        else:
-            power = None
+        power=float(result)
         
         self.curHA.execute("""
             SELECT metadata_id, MAX(last_updated_ts), state
             FROM {}
-            WHERE metadata_id
+            WHERE state!='unavailable' AND state!='unknown' AND metadata_id
             = ?""".format(self.database),(voltageID,))
         result = self.curHA.fetchone()[2]
-        if result !='unknown' and result !='unavailable':
+        voltage=float(result)
+        #if result !='unknown' and result !='unavailable':
 
-            voltage = float(result)
-        else:
-            voltage = None
+         #   voltage = float(result)
+        #else:
+         #   voltage = None
 
         return {"power": power, "voltage": voltage} 
         #[ID, power, time], [id, voltage, time]
@@ -101,14 +98,10 @@ class blackoutAndFaulty():
                 SELECT state, ROW_NUMBER() 
                 OVER (ORDER BY last_updated_ts DESC) AS row_num
                 FROM {}
-                WHERE metadata_id = ?
+                WHERE metadata_id = ? AND state!='unavailable' AND state!='unknown'
             )
-            WHERE row_num <= 2 """.format(self.database), (powerID,))
+            WHERE row_num <= 4""".format(self.database), (powerID,))
         results_power = self.curHA.fetchall()
-        control_p=False
-        for item in results_power:
-            if item[0] == 'unavailable' or item[0] == 'unknown':
-                control_p = True
         
         voltageID=meta["voltage"]
         self.curHA.execute("""
@@ -116,18 +109,11 @@ class blackoutAndFaulty():
                 SELECT  state, ROW_NUMBER() 
                 OVER (ORDER BY last_updated_ts DESC) AS row_num
                 FROM {}
-                WHERE metadata_id = ?
+                WHERE metadata_id = ? AND state!='unavailable' AND state!='unknown'
             )
-            WHERE row_num <= 2 """.format(self.database), (voltageID,))
+            WHERE row_num <= 4 """.format(self.database), (voltageID,))
         results_voltage = self.curHA.fetchall()
-        control_v=False
-        for item in results_voltage:
-            if item[0] == 'unavailable' or item[0] == 'unknown':
-                control_v = True
-        if control_p== False and control_v== False:
-            return results_voltage, results_power
-        else:
-            return None 
+        return results_voltage, results_power
     
     def getHouseDevList(self, houseID="*"):
         try:
@@ -206,7 +192,7 @@ class blackoutAndFaulty():
             update_check= self.onlineTimeCheck(house_module)
             moduleState= self.getSwitchesStates(switch_metaIDs)
             if moduleState:
-                if (result[0]["Online"] & update_check) :
+                if (result[0]["Online"] ): #& update_check) :
                     to_consider_bl.append(house_module)
                     settings = self.getDeviceSettingsInfo(house_module)[0]
                     if(settings["HPMode"] == 1 and settings["FBControl"] == 1):
@@ -276,7 +262,7 @@ class blackoutAndFaulty():
                 "title": "Faulty device",
                 "message": "The appliance connected to module %s seems to not be working properly." % device["deviceName"]
             }            
-            self.client.MQTT.notifyHA(notifyMsg)
+            self.client.MQTT.notifyHA(notifyMsg,talk=True)
         elif case == 'f' and settings["FBMode"]=="Turn OFF":   
             msg= {
             "deviceID" : ID, 
@@ -289,7 +275,7 @@ class blackoutAndFaulty():
                 """The appliance connected to module %s seems to not be working properly, 
                 turning OFF module.""" % device["deviceName"]
             }
-            self.client.MQTT.notifyHA(notifyMsg)
+            self.client.MQTT.notifyHA(notifyMsg,talk=True)
 
             str_msg = json.dumps(msg, indent=2)
             self.client.MQTT.Publish(topic, str_msg, talk=False)
@@ -302,7 +288,7 @@ class blackoutAndFaulty():
                 "title": "Incoming blackout detected!",
                 "message": "Turning OFF all modules."
             }
-            self.client.MQTT.notifyHA(notifyMsg)
+            self.client.MQTT.notifyHA(notifyMsg,talk=True)
             
             str_msg = json.dumps(msg, indent=2)
             self.client.MQTT.Publish(topic, str_msg, talk=False)
