@@ -80,11 +80,6 @@ class blackoutAndFaulty():
             = ?""".format(self.database),(voltageID,))
         result = self.curHA.fetchone()[2]
         voltage=float(result)
-        #if result !='unknown' and result !='unavailable':
-
-         #   voltage = float(result)
-        #else:
-         #   voltage = None
 
         return {"power": power, "voltage": voltage} 
         #[ID, power, time], [id, voltage, time]
