@@ -57,6 +57,16 @@ class TimeShift():
         except Exception as e:
             message = "An error occurred while retriving info from catalog " + str(e)
             raise Server_Error_Handler.InternalServerError(message=message)
+    
+        """Retrieves information about a specific device"""
+    def getDeviceInfo(self, deviceID, verbose = False):
+        try:
+            result = self.getCatalogInfo("Devices", "deviceID", deviceID, verbose=verbose)
+            deviceName=result[0]['deviceName']
+
+            return deviceName
+        except HTTPError as e:
+            raise e
         
     def getHouseList(self):
         result = self.getCatalogInfo("Houses", "houseID", "*")
@@ -83,7 +93,6 @@ class TimeShift():
                     endTime = schedule["endSchedule"]
                     repeat = schedule["repeat"]
                     combined_results.append((houseID, scheduleID, deviceID, socketID, mode,startTime,enableEnd,endTime,repeat))
-   
             return combined_results
          
         except HTTPError as e:
@@ -106,19 +115,22 @@ class TimeShift():
         }        
         str_msg = json.dumps(msg, indent=2)
         self.client.MQTT.Publish(topic, str_msg)
-
-    '''
-    def update_remove_info(self,repeat,deviceID):
-        repeat-=1
-        if repeat>0:
-            query="UPDATE DeviceScheduling SET repeat = ? WHERE deviceID = ?"
-            self.curs.execute(query,(repeat,deviceID))
-            self.conn.commit()
-        elif repeat==0:
-            query="DELETE FROM DeviceScheduling WHERE deviceID = ?"
-            self.curs.execute(query, (deviceID,))
-            self.conn.commit()
-    '''
+        deviceName = self.getDeviceInfo(deviceID)
+        if case=='ON':
+            print("Socket %s of device %s was turned on as expected." % (socketID,deviceID))
+            msg = {
+                    "title" : "It's time to turn on",
+                    "message" : "Socket %s of device  %s was turned on" % (socketID,deviceName)
+            }
+        
+        else:
+            print("Socket %s of the device %s was turned off as expected." % (socketID,deviceID))
+            msg = {
+                    "title" : "It's time to turn off",
+                    "message" : "Socket %s of device  %s was turned off" % (socketID,deviceName)
+            }
+        
+        self.client.MQTT.notifyHA(msg, talk = True)
     
     def update_remove_info(self, repeat, scheduleID):
         repeat -= 1
@@ -158,9 +170,9 @@ class TimeShift():
         deviceSchedule = pd.DataFrame(comb_res, columns=['houseID', 'scheduleID', 'deviceID', 'socketID', 'mode', 'startTime', 'enableEnd', 'endTime', 'repeat'])
 
         for index, row in deviceSchedule.iterrows():
-            start_time = timegm(time.strptime(row['startTime'], "%d/%m/%Y %H:%M"))
+            start_time=int(time.mktime(time.strptime(row['startTime'], "%d/%m/%Y %H:%M")))
 
-            end_time = row['endTime'] if row['enableEnd'] else None
+            end_time = int(time.mktime(time.strptime(row['endTime'], "%d/%m/%Y %H:%M"))) if row['enableEnd'] else None
             deviceID = row['deviceID']
             scheduleID = row['scheduleID']
             socketID = row['socketID']
