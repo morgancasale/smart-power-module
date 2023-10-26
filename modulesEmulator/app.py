@@ -33,7 +33,7 @@ class Appliances():
         energy_kwh = energy_ws / (3600 * 1000)
         data = ( {
             'deviceID': devID,
-            'Voltage': voltage,
+            'Voltage': voltage[0],
             'Current': current[0],
             'Power': power[0],
             'Energy': energy_kwh,
