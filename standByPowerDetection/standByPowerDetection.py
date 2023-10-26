@@ -41,18 +41,11 @@ class StandByPowerDetection():
                 SELECT metadata_id, state, ROW_NUMBER() 
                 OVER (ORDER BY last_updated_ts DESC) AS row_num
                 FROM {}
-                WHERE metadata_id = ?
+                WHERE metadata_id = ? AND state!='unavailable' AND state!='unknown'
             )
             WHERE row_num <= 60 """.format(self.database), (powerID,))      #modddd 60
         results = self.curHA.fetchall()
-        control=False
-        for item in results:
-            if item[1] == 'unavailable' and item[1] == 'unknown':
-                control = True
-        if control== False:
-            return (results)
-        else:
-            return None 
+        return results 
         
         
         #for result in results:
@@ -253,10 +246,9 @@ class StandByPowerDetection():
                 if last_measurement != None and limit != None :
                     if (1<= last_measurement <= limit):
                         prevRows= self.prevValuesCheck(info)
-                        if prevRows!= None:
-                            for prevValue in prevRows:
-                                if (1<=int(prevValue[1])<=int(limit)):
-                                    standByPowercont+=1   
+                        for prevValue in prevRows:
+                            if (1<=int(prevValue[1])<=int(limit)):
+                                standByPowercont+=1   
                         if standByPowercont>=60:
                             self.MQTTInterface(info)
                                 
