@@ -113,7 +113,7 @@ class DeviceSettings:
                                         raise Client_Error_Handler.BadRequest(message="Device settings' \"" + key + "\" list must contain only dictionaries")
 
                                     sched.update({"deviceID": self.deviceID})
-                                    self.scheduling.append(DeviceSchedule(sched, newSchedule=True))
+                                    self.scheduling.append(DeviceSchedule(sched, self.DBPath, newSchedule=True))
                 
 
                 case _:

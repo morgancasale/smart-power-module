@@ -11,7 +11,7 @@ import time
 
 from microserviceBase.Error_Handler import *
 class DeviceSchedule:
-    def __init__(self, schedulingData, newSchedule = False):
+    def __init__(self, schedulingData, DBPath, newSchedule = False):
         self.schedulingKeys = ["deviceID", "socketID", "mode", "startSchedule", "enableEndSchedule", "endSchedule", "repeat"]
 
         self.enableEndSchedule = False
@@ -21,7 +21,7 @@ class DeviceSchedule:
 
         if(newSchedule) : 
             self.checkKeys(schedulingData)
-            self.scheduleID = self.generateID()
+            self.scheduleID = self.generateID(DBPath)
         self.checkSaveValues(schedulingData)
         
 

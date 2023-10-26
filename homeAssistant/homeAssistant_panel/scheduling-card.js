@@ -48,7 +48,8 @@ class SchedulingCard extends LitElement {
           mode : "OFF",
           startSchedule : offScheduling["startSchedule"],
           enableEndSchedule : offScheduling["enableEndSchedule"],
-          endSchedule : offScheduling["enableEndSchedule"] ? offScheduling["endSchedule"] : ""
+          endSchedule : offScheduling["enableEndSchedule"] ? offScheduling["endSchedule"] : "",
+          repeat : offScheduling["repeat"]
         })
       }
 
@@ -58,7 +59,8 @@ class SchedulingCard extends LitElement {
           mode : "ON",
           startSchedule : onScheduling["startSchedule"],
           enableEndSchedule : onScheduling["enableEndSchedule"],
-          endSchedule : onScheduling["enableEndSchedule"] ? onScheduling["endSchedule"] : ""
+          endSchedule : onScheduling["enableEndSchedule"] ? onScheduling["endSchedule"] : "",
+          repeat : onScheduling["repeat"]
         })
       }
 
