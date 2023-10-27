@@ -248,7 +248,10 @@ def Ping(DBPath, table, KeyName, KeyValue):
 
 def istimeinstance(obj):
     try:
-        datetime.strptime(obj, "%Y-%m-%d %H:%M")
+        if(obj.count(":") < 2):
+            obj += ":00"
+
+        datetime.strptime(obj, "%Y-%m-%d %H:%M:%S")
         return True
     except ValueError:
         return False
