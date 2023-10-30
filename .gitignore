@@ -38,3 +38,7 @@ test.py
 /mosquitto/data
 /mosquitto/log
 
+/libraries
+
+/ESP32Firmware/message_example.json
+/ESP32Firmware/reg_example.json

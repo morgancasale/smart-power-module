@@ -144,9 +144,9 @@ class DeviceSchedule:
 
     def deleteFromDB(DBPath, params):
         try:
-            if(not check_presence_inDB(DBPath, "DeviceScheduling", list(params.keys()), list(params.values()))): # Check if scheduling already exists
+            if(not check_presence_inDB(DBPath, "DeviceScheduling", "scheduleID", params["scheduleID"])): # Check if scheduling already exists
                 raise HTTPError(status=400, message="Scheduling does not exist")
-            delete_entry_fromDB(DBPath, "DeviceScheduling", list(params.keys()), list(params.values()))
+            delete_entry_fromDB(DBPath, "DeviceScheduling", "scheduleID", params["scheduleID"])
         
         except HTTPError as e:
             raise HTTPError(status=e.status, message="An error occured while deleting device settings from DB:\u0085\u0009" + str(e._message))

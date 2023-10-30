@@ -8,7 +8,6 @@ networks:
 
 
 services:
-
   mosquitto:
     container_name: mosquitto
     image: eclipse-mosquitto
@@ -22,6 +21,8 @@ services:
     restart: always
     ports:
       - 1883:1883
+    environment:
+      - TZ=Europe/Rome
 
   homeassistant:
     image: lscr.io/linuxserver/homeassistant
@@ -30,7 +31,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Europe/Berlin
+      - TZ=Europe/Rome
     volumes:
       - ./homeAssistant/data:/config
       - ./homeAssistant/homeAssistant_panel:/config/www/homeAssistant_panel
@@ -53,6 +54,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    environment:
+      - TZ=Europe/Rome
 
   deviceconnector:
     container_name: deviceConnector
@@ -64,6 +67,8 @@ services:
         ipv4_address: 172.20.0.3
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog
+    environment:
+      - TZ=Europe/Rome
 
   onlinetracker:
     container_name: onlineTracker
@@ -73,6 +78,8 @@ services:
         ipv4_address: 172.20.0.4
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog
+    environment:
+      - TZ=Europe/Rome
 
   maxpowercontrol:
     container_name: maxPowerControl
@@ -84,6 +91,8 @@ services:
       - ./homeAssistant/HADB:/homeAssistant/HADB
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog
+    environment:
+      - TZ=Europe/Rome
 
   standbypowerdetection:
     container_name: standbyPowerDetection
@@ -95,6 +104,8 @@ services:
       - ./homeAssistant/HADB:/homeAssistant/HADB
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog
+    environment:
+      - TZ=Europe/Rome
 
   blackoutfaultydetection:
     container_name: blackoutFaultyDetection
@@ -106,6 +117,8 @@ services:
       - ./homeAssistant/HADB:/homeAssistant/HADB
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog
+    environment:
+      - TZ=Europe/Rome
 
   moduleconsumptioncontrol:
     container_name: moduleConsumptionControl
@@ -117,6 +130,8 @@ services:
       - ./homeAssistant/HADB:/homeAssistant/HADB
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog
+    environment:
+      - TZ=Europe/Rome
 
   timeshift:
     container_name: timeShift
@@ -126,5 +141,5 @@ services:
         ipv4_address: 172.20.0.9
     depends_on: # wait for resourcecatalog to be ready
       - resourcecatalog
-
-  
+    environment:
+      - TZ=Europe/Rome

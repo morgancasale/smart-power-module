@@ -1,7 +1,8 @@
 import os
 import time
 import sys
-
+from datetime import datetime
+import pytz
 
 IN_DOCKER = os.environ.get("IN_DOCKER", False)
 if not IN_DOCKER:
@@ -10,10 +11,7 @@ if not IN_DOCKER:
 
 import json
 import pandas as pd
-import numpy as np
-import paho.mqtt.client as mqtt
 import requests
-from calendar import timegm
 
 from microserviceBase.serviceBase import *
 
@@ -124,10 +122,17 @@ class TimeShift():
             }
         
         else:
+            socketName = "Left"
+            match socketID:
+                case 1:
+                    socketName = "Center"
+                case 2:
+                    socketName = "Right"
+
             print("Socket %s of the device %s was turned off as expected." % (socketID,deviceID))
             msg = {
-                    "title" : "It's time to turn off",
-                    "message" : "Socket %s of device  %s was turned off" % (socketID,deviceName)
+                "title" : "It's time to turn off",
+                "message" : "%s socket of device  %s was turned off." % (socketName, deviceName)
             }
         
         self.client.MQTT.notifyHA(msg, talk = True)
@@ -168,7 +173,9 @@ class TimeShift():
         current_time = time.time()
         comb_res = self.getTimeInfo(houseID)
         deviceSchedule = pd.DataFrame(comb_res, columns=['houseID', 'scheduleID', 'deviceID', 'socketID', 'mode', 'startTime', 'enableEnd', 'endTime', 'repeat'])
-
+        
+        temp = datetime.fromtimestamp(int(current_time)).strftime("%d/%m/%Y %H:%M:%S")
+        print("Current time: "+ str(temp))
         for index, row in deviceSchedule.iterrows():
             start_time=int(time.mktime(time.strptime(row['startTime'], "%d/%m/%Y %H:%M")))
 
@@ -179,7 +186,11 @@ class TimeShift():
             mode = row['mode']
             repeat = int(row['repeat'])
             time_diff = current_time - start_time
-            days_passed = time_diff / (24 * 60 * 60)  
+            days_passed = time_diff / (24 * 60 * 60)
+
+            temp = datetime.fromtimestamp(int(start_time)).strftime("%d/%m/%Y %H:%M:%S")
+            print("Start time: "+ str(temp))
+            print("Time diff: "+ str(time_diff/60))
             
             if days_passed >= 1:
                 days_to_add = int(days_passed)
@@ -192,6 +203,7 @@ class TimeShift():
                     self.MQTTInterface(deviceID,socketID,mode)
             else:
                 if current_time>=start_time:
+                    print("HERE!")
                     self.MQTTInterface(deviceID,socketID,mode)
                     self.update_remove_info(repeat,scheduleID)
 
