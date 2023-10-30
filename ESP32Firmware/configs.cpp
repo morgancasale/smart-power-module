@@ -6,7 +6,7 @@ int wifiChannel = 11;
 
 String connectorIP = "192.168.2.145";
 
-String clientID = "pixxapaxxa";
+String clientID = "defaultESP32";
 String mqttBroker = "broker.hivemq.com";
 int mqttPort = 1883;
 String mqttUSR = "public";

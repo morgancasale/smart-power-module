@@ -1,8 +1,0 @@
-{
-    "deviceID" : "string",
-    "Voltage" : "float",
-    "Current" : "float",
-    "Power" : "float",
-    "Energy" : "float",
-    "SwitchStates" : ["int", "int", "int"]
-}
