@@ -160,7 +160,7 @@ class ModuleConsumptionControl():
         
         if settings["MPMode"] != "Notify" : 
             self.MQTTInterface(ID)
-            topic="/smartSocket/control"
+            topic="smartSocket/control"
             msg = {
                 "deviceID" : ID, 
                 "states" : [0,0,0]

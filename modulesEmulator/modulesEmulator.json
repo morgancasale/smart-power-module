@@ -41,10 +41,10 @@
         "clientID": "modulesEmulator",
         "MQTTTopics": {
             "sub": [
-                "/smartSocket/control"
+                "smartSocket/control"
             ],
             "pub": [
-                "/smartSocket/data"
+                "smartSocket/data"
             ]
         },
         "QOS": 0

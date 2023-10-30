@@ -81,7 +81,7 @@ class TimeShift():
             schedules = self.getCatalogInfo("DeviceScheduling", "deviceID", "*")
             
             combined_results = []
-            #houses_devs_list = self.getHouseDevList()
+
             for devSchedules in schedules:
                 for schedule in devSchedules:
                     scheduleID = schedule["scheduleID"]
@@ -105,7 +105,7 @@ class TimeShift():
 
   
     def MQTTInterface(self, deviceID, socketID, case):
-        topic = "/smartSocket/control"
+        topic = "smartSocket/control"
 
         states = [-1,-1,-1]
         states[socketID] = 1 if case == 'ON' else 0  
@@ -148,14 +148,14 @@ class TimeShift():
                 message = "An error occurred while updating info in catalog " + str(e)
                 raise Server_Error_Handler.InternalServerError(message=message)
                 
-        elif repeat==0:
+        else:
             try:
                 catalogAddress = self.client.generalConfigs["REGISTRATION"]["catalogAddress"]
                 catalogPort = self.client.generalConfigs["REGISTRATION"]["catalogPort"]
-                url = "%s:%s/delDevSchedule" % (catalogAddress, str(catalogPort))
-                params = {"table": "DeviceScheduling", "keyName": "scheduleID", "keyValue": scheduleID}      
-                
+                url = "%s:%s/delDevSchedule" % (catalogAddress, str(catalogPort))  
+                params={"scheduleID": scheduleID}                   
                 requests.delete(url, params=params)
+                
             except HTTPError as e:
                 message = "An error occurred while retriving info from catalog " + e._message
                 raise HTTPError(status=e.status, message=message)
@@ -177,7 +177,7 @@ class TimeShift():
             scheduleID = row['scheduleID']
             socketID = row['socketID']
             mode = row['mode']
-            repeat = row['repeat']
+            repeat = int(row['repeat'])
             time_diff = current_time - start_time
             days_passed = time_diff / (24 * 60 * 60)  
             
@@ -186,11 +186,14 @@ class TimeShift():
                 start_time += days_to_add * (24 * 60 * 60)  
                 if end_time is not None:
                     end_time += days_to_add * (24 * 60 * 60)  
-        
-            if current_time >= start_time:
-                self.MQTTInterface(deviceID, socketID, mode)
-                if end_time is None:
-                    self.update_remove_info(repeat, scheduleID)
+
+            if end_time is not None:
+                if current_time>=start_time and current_time < end_time:
+                    self.MQTTInterface(deviceID,socketID,mode)
+            else:
+                if current_time>=start_time:
+                    self.MQTTInterface(deviceID,socketID,mode)
+                    self.update_remove_info(repeat,scheduleID)
 
             if end_time is not None and current_time >= end_time:
                 not_mode = 'OFF' if mode == 'ON' else 'ON'

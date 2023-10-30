@@ -25,13 +25,15 @@ class Appliances():
         ID_num = ''.join(digits)
         ID= 'D' + str(ID_num)
         power=np.random.randint(1,5, 1)
-        voltage= 230
+        v_min=229
+        v_max=232
+        voltage = np.random.randint(v_min,v_max, 1)
         current= power/voltage
         energy_ws = float(power[0]) * 2
         energy_kwh = energy_ws / (3600 * 1000)
         data = ( {
             'deviceID': devID,
-            'Voltage': voltage,
+            'Voltage': voltage[0],
             'Current': current[0],
             'Power': power[0],
             'Energy': energy_kwh,
@@ -60,7 +62,9 @@ class Appliances():
         else: jsonfile=self.normal
         min_p=jsonfile[dev["MAC"]]['min']
         max_p =jsonfile[dev["MAC"]]['max']
-        voltage = jsonfile[dev["MAC"]]['voltage']
+        v_min=jsonfile[dev["MAC"]]["voltage_min"]
+        v_max=jsonfile[dev["MAC"]]["voltage_max"]
+        voltage = np.random.randint(v_min,v_max, 1)
         power = np.random.randint(min_p,max_p, 1)
         power = int(power[0])
         current = power/voltage

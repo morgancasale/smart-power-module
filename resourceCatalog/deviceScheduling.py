@@ -11,7 +11,7 @@ import time
 
 from microserviceBase.Error_Handler import *
 class DeviceSchedule:
-    def __init__(self, schedulingData, newSchedule = False):
+    def __init__(self, schedulingData, DBPath, newSchedule = False):
         self.schedulingKeys = ["deviceID", "socketID", "mode", "startSchedule", "enableEndSchedule", "endSchedule", "repeat"]
 
         self.enableEndSchedule = False
@@ -21,10 +21,9 @@ class DeviceSchedule:
 
         if(newSchedule) : 
             self.checkKeys(schedulingData)
-            self.scheduleID = self.generateID()
+            self.scheduleID = self.generateID(DBPath)
         self.checkSaveValues(schedulingData)
         
-
     def checkKeys(self, schedulingData):
         a = set(schedulingData.keys())
         b = set(self.schedulingKeys)
@@ -65,10 +64,13 @@ class DeviceSchedule:
                     if(not istimeinstance(schedulingData[key])):
                         raise Client_Error_Handler.BadRequest(message="Scheduling's \"" + key + "\" value must be feasible timestamp")
                     
+                    if(schedulingData[key].count(":") < 2):
+                        schedulingData[key] += ":00"
+
                     if(len(schedulingData[key].split("/")[0])<4):
-                        timestamp = datetime.strptime(schedulingData[key], "%d-%m-%Y %H:%M")
+                        timestamp = datetime.strptime(schedulingData[key], "%d-%m-%Y %H:%M:%S")
                     else:
-                        timestamp = datetime.strptime(schedulingData[key], "%Y-%m-%d %H:%M")
+                        timestamp = datetime.strptime(schedulingData[key], "%Y-%m-%d %H:%M:%S")
                     timestamp = time.mktime(timestamp.timetuple())
                     self.startSchedule = timestamp
 
@@ -77,10 +79,13 @@ class DeviceSchedule:
                         if(not istimeinstance(schedulingData[key])):
                             raise Client_Error_Handler.BadRequest(message="Scheduling's \"" + key + "\" value must be feasible timestamp")
                         
+                        if(schedulingData[key].count(":") < 2):
+                            schedulingData[key] += ":00"
+
                         if(len(schedulingData[key].split("/")[0])<4):
-                            timestamp = datetime.strptime(schedulingData[key], "%d/%m/%Y %H:%M")
+                            timestamp = datetime.strptime(schedulingData[key], "%d/%m/%Y %H:%M:%S")
                         else:
-                            timestamp = datetime.strptime(schedulingData[key], "%Y/%m/%d %H:%M")
+                            timestamp = datetime.strptime(schedulingData[key], "%Y/%m/%d %H:%M:%S")
                         timestamp = time.mktime(timestamp.timetuple())
                         self.endSchedule = timestamp
                     

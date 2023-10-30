@@ -83,9 +83,7 @@ class SocketSettings extends LitElement {
         this.HideSockets(state);
         if(state){ //HPMode ON
             this.shadowRoot.getElementById("appl-type-card").style.display = "flex";
-            if(this.FaultBehActive){
-                this.shadowRoot.getElementById("fault_beh").style.display = "flex";
-            }
+            this.ShowFaultyBehaviour();
             this.outData.HPMode = true;
         } else {  //HPMode OFF
             this.shadowRoot.getElementById("appl-type-card").style.display = "none";
@@ -107,8 +105,10 @@ class SocketSettings extends LitElement {
     }
 
     ShowFaultyBehaviour(){
-        this.FaultBehActive = true;
-        this.shadowRoot.getElementById("fault_beh").style.display = "flex";
+        if(this.data.applianceType != "None"){
+            this.FaultBehActive = true;
+            this.shadowRoot.getElementById("fault_beh").style.display = "flex";
+        }
     }
 
     ApplSetHandler(event){

@@ -43,10 +43,10 @@
         "clientID": "moduleConsumptionControl",
         "MQTTTopics": {
             "sub": [
-                "/smartSocket/data"
+                "smartSocket/data"
             ],
             "pub": [
-                "/smartSocket/control"
+                "smartSocket/control"
             ]
         },
         "QOS": 0

@@ -25,12 +25,24 @@ def check_presence_inDB(DBPath, table, keyName, keyValue, caseSensitive = True):
 
         keyValue = [str(value) for value in keyValue]
 
-        keyName = "(" + ", ".join(keyName) + ")"
-        keyValue = "(\"" + "\", \"".join(keyValue) + "\")"
+        keyNames = []
+        keyValues = []
+        if(not caseSensitive):
+            for kN in keyName:
+                keyNames.append("lower(%s)" % kN)
+            for k in keyValue:
+                keyValues.append("lower(\"%s\")" % k)
+        else:
+            keyNames = keyName
+            for k in keyValue:
+                keyValues.append("\"%s\"" % k)
+
+
+        keyName = "(" + ", ".join(keyNames) + ")"
+        keyValue = "(" + ", ".join(keyValues) + ")"
 
         query = "SELECT COUNT(*)>0 as result FROM " + table + " WHERE " + keyName + " = " + keyValue
-        if(not caseSensitive):
-            query += " COLLATE NOCASE"
+        
         return bool(DBQuery_to_dict(DBPath, query)[0]["result"]) #True if the keyValue is present in the DB
     except Exception as e:
         raise Server_Error_Handler.InternalServerError(message="An error occured while extracting data from DB:\u0085\u0009" + str(e))
@@ -159,12 +171,22 @@ def delete_entry_fromDB(DBPath, table, keyName, keyValue, caseSensitive = True):
         conn = sq.connect(DBPath)
         conn.execute("PRAGMA foreign_keys = ON")
 
-        keyName = "(" + ", ".join(keyName) + ")"
-        keyValue = "(\"" + "\", \"".join(keyValue) + "\")"
+        keyNames = []
+        keyValues = []
+        if(not caseSensitive):
+            for kN in keyName:
+                keyNames.append("lower(%s)" % kN)
+            for k in keyValue:
+                keyValues.append("lower(\"%s\")" % k)
+        else:
+            keyNames = keyName
+            for k in keyValue:
+                keyValues.append("\"%s\"" % k)
+
+        keyName = "(" + ", ".join(keyNames) + ")"
+        keyValue = "(" + ", ".join(keyValues) + ")"
 
         query = "DELETE FROM " + table + " WHERE " + keyName + " = " + keyValue
-        if(not caseSensitive):
-            query += " COLLATE NOCASE"
         cursor = conn.cursor()
         cursor.execute(query)
         conn.commit()
@@ -226,7 +248,10 @@ def Ping(DBPath, table, KeyName, KeyValue):
 
 def istimeinstance(obj):
     try:
-        datetime.strptime(obj, "%Y-%m-%d %H:%M")
+        if(obj.count(":") < 2):
+            obj += ":00"
+
+        datetime.strptime(obj, "%Y-%m-%d %H:%M:%S")
         return True
     except ValueError:
         return False

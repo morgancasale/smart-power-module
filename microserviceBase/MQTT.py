@@ -57,7 +57,9 @@ class MQTTServer(Thread):
                         self.broker = broker_AddPort["IPAddress"]
                     
                         if(self.generalConfigs["REGISTRATION"]["catalog_mDNS"] != None):
-                            self.broker = self.resolvemDNS(self.generalConfigs["REGISTRATION"]["catalog_mDNS"])
+                            loc = "../general.json"
+                            system_mDNS = json.load(open(loc, 'r'))["hostname"]+".local"
+                            self.broker = self.resolvemDNS(system_mDNS)
                     else:
                         self.broker = "172.20.0.10"
                     self.brokerPort = broker_AddPort["port"]

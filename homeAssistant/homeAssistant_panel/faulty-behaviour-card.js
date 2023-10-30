@@ -84,7 +84,7 @@ class FaultyBehaviourCard extends LitElement {
         this.data = this.defaultData;
 
         return html`
-        <ha-card class="Max-Power">
+        <ha-card class="Faulty-Beh">
             <div class="SingleEntry fault_beh_btn">
                 <div class="description" id="btn_descr">Faulty Behaviour Control</div>
                 <div class="button_cont">
