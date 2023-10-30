@@ -45,8 +45,7 @@ class StandByPowerDetection():
             )
             WHERE row_num <= 60 """.format(self.database), (powerID,))      #modddd 60
         results = self.curHA.fetchall()
-        return results 
-        
+        return results       
         
         #for result in results:
         #     print(f"ID: {result[0]}, timestamp: {result[1]}")
@@ -248,7 +247,7 @@ class StandByPowerDetection():
                         prevRows= self.prevValuesCheck(info)
                         for prevValue in prevRows:
                             if (1<=int(prevValue[1])<=int(limit)):
-                                standByPowercont+=1   
+                                standByPowercont+=1
                         if standByPowercont>=60:
                             self.MQTTInterface(info)
                                 

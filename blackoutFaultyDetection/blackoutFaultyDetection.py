@@ -97,6 +97,10 @@ class blackoutAndFaulty():
             )
             WHERE row_num <= 4""".format(self.database), (powerID,))
         results_power = self.curHA.fetchall()
+        control_p=False
+        for item in results_power:
+            if item[0] == 'unavailable' or item[0] == 'unknown':
+                control_p = True
         
         voltageID=meta["voltage"]
         self.curHA.execute("""

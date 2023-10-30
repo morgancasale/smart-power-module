@@ -176,7 +176,7 @@ class maxPowerControl():
                     if df.at[i,'power']!='unavailable' and df.at[i,'power']!='unknown':
                        df.at[i,'power'] = float(df.at[i,'power'])
                     else:
-                       df.at[i,'power']  = 0.0                
+                       df.at[i,'power']  = 0.0
             else:
                 return None
         except HTTPError as e:
