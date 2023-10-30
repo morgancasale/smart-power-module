@@ -157,7 +157,7 @@ class ServiceBase(object):
                         message = "HomeAssistant " + key + " parameter must be a string"
                         raise self.clientErrorHandler.BadRequest(message=message)
                     if(not self.isCatalog and not IN_DOCKER):
-                        loc = "../general.json"
+                        loc = os.path.dirname(__file__) + "/../general.json"
                         system_mDNS = json.load(open(loc, 'r'))["hostname"]+".local"          
                         trueIP = "http://" + self.resolvemDNS(system_mDNS)
                     if(IN_DOCKER):
@@ -202,7 +202,7 @@ class ServiceBase(object):
                         raise self.clientErrorHandler.BadRequest(message="REGISTRATION " + key + " parameter must be a string")
                     if(configs["enabled"]):
                         if(key == "catalog_mDNS" and not IN_DOCKER and not self.isCatalog):
-                            loc = "../general.json"
+                            loc = os.path.dirname(__file__) + "/../general.json"
                             system_mDNS = json.load(open(loc, 'r'))["hostname"]+".local"                            
                             trueIP = "http://" + self.resolvemDNS(system_mDNS)
                             print("Resolved mDNS: " + trueIP)
