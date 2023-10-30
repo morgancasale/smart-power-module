@@ -105,7 +105,7 @@ class TimeShift():
 
   
     def MQTTInterface(self, deviceID, socketID, case):
-        topic = "/smartSocket/control"
+        topic = "smartSocket/control"
 
         states = [-1,-1,-1]
         states[socketID] = 1 if case == 'ON' else 0  

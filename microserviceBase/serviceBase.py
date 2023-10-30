@@ -156,8 +156,10 @@ class ServiceBase(object):
                     if(not isinstance(configs[key], str)):
                         message = "HomeAssistant " + key + " parameter must be a string"
                         raise self.clientErrorHandler.BadRequest(message=message)
-                    if(not self.isCatalog and not IN_DOCKER):             
-                        trueIP = "http://" + self.resolvemDNS(configs[key])
+                    if(not self.isCatalog and not IN_DOCKER):
+                        loc = "../general.json"
+                        system_mDNS = json.load(open(loc, 'r'))["hostname"]+".local"          
+                        trueIP = "http://" + self.resolvemDNS(system_mDNS)
                     if(IN_DOCKER):
                         #trueIP = "http://" + socket.gethostbyname("homeassistant")
                         trueIP = "127.0.0.1"
@@ -199,8 +201,10 @@ class ServiceBase(object):
                     if(not isinstance(configs[key], str)):
                         raise self.clientErrorHandler.BadRequest(message="REGISTRATION " + key + " parameter must be a string")
                     if(configs["enabled"]):
-                        if(key == "catalog_mDNS" and not IN_DOCKER and not self.isCatalog):                            
-                            trueIP = "http://" + self.resolvemDNS(configs[key])
+                        if(key == "catalog_mDNS" and not IN_DOCKER and not self.isCatalog):
+                            loc = "../general.json"
+                            system_mDNS = json.load(open(loc, 'r'))["hostname"]+".local"                            
+                            trueIP = "http://" + self.resolvemDNS(system_mDNS)
                             print("Resolved mDNS: " + trueIP)
                             self.generalConfigs["REGISTRATION"]["catalogAddress"] = trueIP
                             self.updateConfigFile(["REGISTRATION"], {"catalogAddress": trueIP})

@@ -1,0 +1,15 @@
+{
+    "hostname": "smartsocket",
+    "images": [
+        "resourceCatalog",
+        "deviceConnector",
+        "onlineTracker",
+        "blackoutFaultyDetection",
+        "maxPowerControl",
+        "moduleConsumptionControl",
+        "standByPowerDetection",
+        "timeShift",
+        "dataAnalysis",
+        "totalInstantPower"
+    ]
+}
