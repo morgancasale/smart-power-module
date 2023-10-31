@@ -21,6 +21,26 @@ This can be achieved by opening the url `http://systemIP:8123`.
 ### Following runs ###
 To run the system again one must only run the command `docker compose up` inside the smart-power-module root directory.
 
+### Data Generation ###
+
+Running the code in "modulesEmulator.py" it is possible to generate data and register devices.
+To register devices for the first time these two lines of code should be used:
+            #self.deviceReg()
+            #json.dump(self.devices, open('modulesEmulator/devices.json', 'w'))
+
+If the devices are already registered instead this line is needed:        
+            #self.devices = json.load(open('modulesEmulator/devices.json')) 
+To publish data instead, this function should be used:
+            #self.publishApp('normal') 
+Different types of data can be created, simulating many possible scenarios.
+The different modes are:
+    faulty: some appliances are broken
+    blackout: a blackout is taking place
+    maxpower: a module exceeds its power consumption limit
+    contatore: the power consumption of the house exceeds the limit of the electric meter
+    normal: no anomalies
+    standbypower: parasitic consumptions are detected
+
 ### Notes ###
 
 - The Home Assistant integration used to calculate the cost of the consumed energy seem to not work in the current version of Home Assistant.
