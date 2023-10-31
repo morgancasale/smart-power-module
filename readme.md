@@ -24,14 +24,13 @@ To run the system again one must only run the command `docker compose up` inside
 ### Data Generation ###
 
 Running the code in "modulesEmulator.py" it is possible to generate data and register devices.
-To register devices for the first time these two lines of code should be used:
-            #self.deviceReg()
-            #json.dump(self.devices, open('modulesEmulator/devices.json', 'w'))
-
-If the devices are already registered instead this line is needed:        
-            #self.devices = json.load(open('modulesEmulator/devices.json')) 
-To publish data instead, this function should be used:
-            #self.publishApp('normal') 
+To register devices for the first time these two lines of code should be used:\
+            #self.deviceReg()\
+            #json.dump(self.devices, open('modulesEmulator/devices.json', 'w'))\
+If the devices are already registered instead this line is needed:   \     
+            #self.devices = json.load(open('modulesEmulator/devices.json')) \
+To publish data instead, this function should be used:\
+            #self.publishApp('normal') \
 Different types of data can be created, simulating many possible scenarios.
 The different modes are:
     faulty: some appliances are broken
