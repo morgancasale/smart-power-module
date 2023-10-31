@@ -37,12 +37,12 @@ To publish data instead, this function should be used:\
             
 Different types of data can be created, simulating many possible scenarios.
 The different modes are:
-    "faulty": some appliances are broken
-    "blackout": a blackout is taking place
-    "maxpower2: a module exceeds its power consumption limit
-    "contatore": the power consumption of the house exceeds the limit of the electric meter
-    "normal": no anomalies
-    "standbypower": parasitic consumptions are detected
+    "faulty": some appliances are broken \
+    "blackout": a blackout is taking place \
+    "maxpower2: a module exceeds its power consumption limit \
+    "contatore": the power consumption of the house exceeds the limit of the electric meter \
+    "normal": no anomalies \
+    "standbypower": parasitic consumptions are detected \
 
 ### Notes ###
 
