@@ -27,13 +27,13 @@ Running the code in "modulesEmulator.py" it is possible to generate data and reg
 
 To register devices for the first time these two lines of code should be used:\
             #self.deviceReg()\
-            #json.dump(self.devices, open('modulesEmulator/devices.json', 'w'))\
+            #json.dump(self.devices, open('modulesEmulator/devices.json', 'w'))
             
 If the devices are already registered instead this line is needed:        
-            #self.devices = json.load(open('modulesEmulator/devices.json')) \
+            #self.devices = json.load(open('modulesEmulator/devices.json')) 
             
 To publish data instead, this function should be used:\
-            #self.publishApp('normal') \
+            #self.publishApp('normal') 
             
 Different types of data can be created, simulating many possible scenarios.
 The different modes are:
