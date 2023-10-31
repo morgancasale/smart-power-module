@@ -48,7 +48,7 @@ The different modes are:
 https://docs.google.com/presentation/d/1cvTFww02qiSiqT2pnZ6O6KxKMdXNd0_R-qigwHpraIU/edit#slide=id.g28d0f85332e_6_9024
 
 ### Videos ###
-promo : https://youtu.be/lid0qi2tw2s?si=_4skZYMqz2Kq8BCT
+promo : https://youtu.be/lid0qi2tw2s?si=_4skZYMqz2Kq8BCT \
 demo: https://youtu.be/WwddRuyb4sg
 
 
