@@ -114,25 +114,26 @@ class TimeShift():
         str_msg = json.dumps(msg, indent=2)
         self.client.MQTT.Publish(topic, str_msg)
         deviceName = self.getDeviceInfo(deviceID)
+
+        socketName = "Left"
+        match socketID:
+            case 1:
+                socketName = "Center"
+            case 2:
+                socketName = "Right"
+
         if case=='ON':
             print("Socket %s of device %s was turned on as expected." % (socketID,deviceID))
             msg = {
-                    "title" : "It's time to turn on",
-                    "message" : "Socket %s of device  %s was turned on" % (socketID,deviceName)
+                "title" : "It's time to turn on",
+                "message" : "%s socket of device %s was turned off." % (socketName, deviceName)
             }
         
         else:
-            socketName = "Left"
-            match socketID:
-                case 1:
-                    socketName = "Center"
-                case 2:
-                    socketName = "Right"
-
             print("Socket %s of the device %s was turned off as expected." % (socketID,deviceID))
             msg = {
                 "title" : "It's time to turn off",
-                "message" : "%s socket of device  %s was turned off." % (socketName, deviceName)
+                "message" : "%s socket of device %s was turned off." % (socketName, deviceName)
             }
         
         self.client.MQTT.notifyHA(msg, talk = True)

@@ -68,9 +68,9 @@ class DeviceSchedule:
                         schedulingData[key] += ":00"
 
                     if(len(schedulingData[key].split("/")[0])<4):
-                        timestamp = datetime.strptime(schedulingData[key], "%d-%m-%Y %H:%M:%S")
+                        timestamp = datetime.strptime(schedulingData[key], "%d/%m/%Y %H:%M:%S")
                     else:
-                        timestamp = datetime.strptime(schedulingData[key], "%Y-%m-%d %H:%M:%S")
+                        timestamp = datetime.strptime(schedulingData[key], "%Y/%m/%d %H:%M:%S")
                     timestamp = time.mktime(timestamp.timetuple())
                     self.startSchedule = timestamp
 
