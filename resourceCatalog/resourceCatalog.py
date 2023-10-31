@@ -253,7 +253,7 @@ class resourceCatalog:
                 
                 case "setDeviceSchedule":
                     for deviceScheduleData in params:
-                        entry = DeviceSchedule(deviceScheduleData, newSchedule = True)
+                        entry = DeviceSchedule(deviceScheduleData, self.DBPath, newSchedule = True)
                         entry.set2DB(self.DBPath)
                     return "Device schedule update was successful"
                 
