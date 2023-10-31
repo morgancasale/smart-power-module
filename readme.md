@@ -44,6 +44,14 @@ The different modes are:
     "normal": no anomalies \
     "standbypower": parasitic consumptions are detected \
 
+### Presentation ###
+https://docs.google.com/presentation/d/1cvTFww02qiSiqT2pnZ6O6KxKMdXNd0_R-qigwHpraIU/edit#slide=id.g28d0f85332e_6_9024
+
+### Videos ###
+https://youtu.be/lid0qi2tw2s?si=_4skZYMqz2Kq8BCT
+
+
+
 ### Notes ###
 
 - The Home Assistant integration used to calculate the cost of the consumed energy seem to not work in the current version of Home Assistant.
