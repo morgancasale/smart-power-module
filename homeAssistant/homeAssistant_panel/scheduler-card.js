@@ -83,6 +83,7 @@ class SchedulerCard extends LitElement {
   getSchedule(mode){
     var date = this.shadowRoot.getElementById(mode + "-date").value;
     date = (date != null) ? date : "";
+    date = date.split("-").join("/");
 
     var time = "";
     if(date != ""){
