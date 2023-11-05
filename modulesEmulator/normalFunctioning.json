@@ -1,13 +1,13 @@
 {
-    "52:4F:AC:3E:8B:F1": {"min": 100, "max": 110, "voltage": 230},
-    "A1:7E:6D:0F:9C:2B": {"min": 500, "max": 550, "voltage": 230},
-    "87:DE:5A:23:1F:C4": {"min": 600, "max": 620, "voltage": 230},
-    "3C:9B:E8:6D:5A:0E": {"min": 0, "max": 1, "voltage": 230},
-    "F6:0B:2C:8D:4E:A9": {"min": 50, "max": 100, "voltage": 230},
-    "D9:1A:7F:5E:3C:2B": {"min": 1500, "max": 1550, "voltage": 230},
-    "6E:C3:8A:9D:4B:0F": {"min": 0, "max": 1, "voltage": 230},
-    "14:BC:5F:2E:7D:8A": {"min": 0, "max": 1, "voltage": 230},
-    "A2:6D:9B:8F:1E:3C": {"min": 150, "max": 200, "voltage": 230},
-    "7F:E4:0C:5B:2A:D9": {"min": 0, "max": 1, "voltage": 230},
-    "6A:3D:9E:7F:4C:1B": {"min": 0, "max": 1, "voltage": 230}
+    "52:4F:AC:3E:8B:F1": {"min": 100, "max": 110, "voltage_min": 228.1, "voltage_max": 230.9},
+    "A1:7E:6D:0F:9C:2B": {"min": 500, "max": 550, "voltage_min": 228.1, "voltage_max": 230.9},
+    "87:DE:5A:23:1F:C4": {"min": 600, "max": 620, "voltage_min": 228.1, "voltage_max": 230.9},
+    "3C:9B:E8:6D:5A:0E": {"min": 0, "max": 1, "voltage_min": 228.1, "voltage_max": 230.9},
+    "F6:0B:2C:8D:4E:A9": {"min": 50, "max": 100, "voltage_min": 228.1, "voltage_max": 230.9},
+    "D9:1A:7F:5E:3C:2B": {"min": 1500, "max": 1550, "voltage_min": 228.1, "voltage_max": 230.9},
+    "6E:C3:8A:9D:4B:0F": {"min": 0, "max": 1, "voltage_min": 228.1, "voltage_max": 230.9},
+    "14:BC:5F:2E:7D:8A": {"min": 0, "max": 1, "voltage_min": 228.1, "voltage_max": 230.9},
+    "A2:6D:9B:8F:1E:3C": {"min": 150, "max": 200, "voltage_min": 228.1, "voltage_max": 230.9},
+    "7F:E4:0C:5B:2A:D9": {"min": 0, "max": 1, "voltage_min": 228.1, "voltage_max": 230.9},
+    "6A:3D:9E:7F:4C:1B": {"min": 0, "max": 1, "voltage_min": 228.1, "voltage_max": 230.9}
 } 
