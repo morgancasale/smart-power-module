@@ -14,6 +14,9 @@ automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
 
+logger:
+  default: error
+
 panel_custom:
   - name: main-page
     # url_path needs to be unique for each panel_custom config
@@ -35,4 +38,14 @@ recorder:
 sensor:
   - platform: time_date
     display_options:
-      - "date_time" 
+      - "date_time"
+
+# template:
+#   - sensor:
+#     - name: house_energy_kwh
+#       unit_of_measurement: kWh
+#       state_class: measurement
+#       device_class: energy
+#       state: 10
+#       attributes:         
+#         last_reset: 1970-01-01T00:00:00+00:00
