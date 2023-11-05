@@ -133,6 +133,32 @@ services:
     environment:
       - TZ=Europe/Rome
 
+  dataanalysis:
+    container_name: dataAnalysis
+    image: dataanalysis
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.11
+    volumes:
+      - ./homeAssistant/HADB:/homeAssistant/HADB
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+    environment:
+      - TZ=Europe/Rome
+
+  totalinstantpower:
+    container_name: totalInstantPower
+    image: totalinstantpower
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.12
+    volumes:
+      - ./homeAssistant/HADB:/homeAssistant/HADB
+    depends_on: # wait for resourcecatalog to be ready
+      - resourcecatalog
+    environment:
+      - TZ=Europe/Rome
+
   timeshift:
     container_name: timeShift
     image: timeshift
@@ -143,3 +169,5 @@ services:
       - resourcecatalog
     environment:
       - TZ=Europe/Rome
+
+  

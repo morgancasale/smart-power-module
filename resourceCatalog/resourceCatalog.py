@@ -81,7 +81,7 @@ class resourceCatalog:
         )
         self.server.start()
 
-        if(os.name == "nt") : self.server.advertise_catalog()      
+        if(os.name != None) : self.server.advertise_catalog()      
     
     def handleGetRequest(self, *uri, **params):
         cmd = uri[1]

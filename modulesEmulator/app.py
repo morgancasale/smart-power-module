@@ -1,8 +1,7 @@
-import numpy as np
-#import matplotlib.pyplot as plt
 import json
 import re
 import os
+import random
 
 IN_DOCKER = os.environ.get("IN_DOCKER", False)
 
@@ -24,18 +23,18 @@ class Appliances():
         digits = re.findall(r'\d+', devID)
         ID_num = ''.join(digits)
         ID= 'D' + str(ID_num)
-        power=np.random.randint(1,5, 1)
+        power = round(random.uniform(1,5), 2)
         v_min=229
         v_max=232
-        voltage = np.random.randint(v_min,v_max, 1)
-        current= power/voltage
-        energy_ws = float(power[0]) * 2
-        energy_kwh = energy_ws / (3600 * 1000)
+        voltage = round(random.uniform(v_min,v_max),2)
+        current = round(power/voltage, 2)
+        energy_ws = round(power * 2, 2)
+        energy_kwh = round(energy_ws / (3600 * 1000), 2)
         data = ( {
             'deviceID': devID,
-            'Voltage': voltage[0],
-            'Current': current[0],
-            'Power': power[0],
+            'Voltage': voltage,
+            'Current': current,
+            'Power': power,
             'Energy': energy_kwh,
             'switch_state' : [1,0,0]
         } )
@@ -64,12 +63,11 @@ class Appliances():
         max_p =jsonfile[dev["MAC"]]['max']
         v_min=jsonfile[dev["MAC"]]["voltage_min"]
         v_max=jsonfile[dev["MAC"]]["voltage_max"]
-        voltage = np.random.randint(v_min,v_max, 1)
-        power = np.random.randint(min_p,max_p, 1)
-        power = int(power[0])
-        current = power/voltage
-        energy_ws = power * 2
-        energy_kwh = energy_ws / 3600 * 1000
+        voltage = round(random.uniform(v_min,v_max), 2)
+        power = round(random.uniform(min_p,max_p), 2)
+        current = round(power/voltage, 2)
+        energy_ws =  round(power * 2, 2)
+        energy_kwh = round(energy_ws / 3600 * 1000, 2)
         data = {
             'deviceID': dev["deviceID"],
             'Voltage': voltage,
@@ -80,15 +78,4 @@ class Appliances():
         }
         msg = json.dumps(data)
         return msg 
-
-    '''
-    msg = {
-        "deviceID": ID,# string
-        "Voltage": sensor_data[0] , #float
-        "Current": sensor_data[1], #float
-        "Power": sensor_data[2],#float
-        "Energy":  sensor_data[3],#float
-        "SwitchStates":socket #[ "int", "int", "int"]
-    }
-    '''
 

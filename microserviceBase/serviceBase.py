@@ -332,7 +332,7 @@ class ServiceBase(object):
     
     def resolvemDNS(self, mDNS):
         try:
-            if(os.name != "nt"):
+            if(os.name != None):
                 resolver = dns.resolver.Resolver()
                 resolver.nameservers = ["224.0.0.251"]
                 resolver.port = 5353
