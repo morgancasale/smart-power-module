@@ -1,5 +1,5 @@
 {
-    "hostname": "smartsocket",
+    "hostname": null,
     "images": [
         "resourceCatalog",
         "deviceConnector",
